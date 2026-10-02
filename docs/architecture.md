@@ -1,7 +1,7 @@
 # Architecture
 
-Status: problem statement, the decision-model starting point, and open
-questions. The open questions are framed for a later research pass to answer.
+Status: problem statement, the package plan for the first port, the
+classifier starting point, and open questions.
 
 ## Problem statement
 
@@ -37,10 +37,11 @@ plugin (using OpenCode's provider transform and `http.request` /
 Generalized, `reasoning-router` should provide the same per-step effort routing
 along two independent axes:
 
-- **Any decision model.** Jev is one of several *decision models* (models that
-  pick a reasoning effort for a step), and more are being released. Step 2
-  should call whichever decision model is configured, with provider-specific
-  code limited to talking to that provider.
+- **Any classifier.** The *classifier* is the component that picks a
+  reasoning effort for a step. Jev is one of several decision models that can
+  serve as a classifier, and more are being released. Step 2 should call
+  whichever classifier is configured, with provider-specific code limited to
+  talking to that provider.
 - **Any harness.** Harness-specific code should be limited to whatever is
   needed to intercept or influence the model request.
 
@@ -49,14 +50,42 @@ Steps 1–6 are largely independent of OpenCode; what varies by harness is
 higher-level message list), and *what it can change* (raw body vs. a
 per-request effort parameter vs. nothing, requiring a proxy).
 
-## Constraint: the decision model is configuration
+## Constraint: the classifier is configuration
 
-`reasoning-router` must not depend on Jev or any single decision-model
-provider. The decision model is chosen by configuration, and shared code must
-not import a provider SDK (such as `@typesafe-ai/sdk`) or assume one
-provider's request shape, efforts, or failure modes.
+`reasoning-router` must not depend on Jev or any single classifier provider.
+The classifier is chosen by configuration, and shared code must not import a
+provider SDK (such as `@typesafe-ai/sdk`) or assume one provider's request
+shape, efforts, or failure modes.
 
-## Decision models
+## Packages
+
+The first port of `opencode-jev-router` creates three packages under the
+`@reasoning-router` scope, versioned independently:
+
+- **`@reasoning-router/core`:** validation, rewriting, cache lineage,
+  forwarding, usage observation, decision logging, the model registry, and
+  the classifier interface. It has no classifier SDK dependencies.
+- **`@reasoning-router/opencode`:** the OpenCode V2 plugin (the port of
+  `plugin*.ts`).
+- **`@reasoning-router/classifier-jev`:** the Jev classifier (the port of
+  `jev.ts`), the only package that depends on `@typesafe-ai/sdk`.
+
+Later, `@reasoning-router/classifier-laya` adds Laya as its own package, so
+ONNX Runtime and the model download reach only Laya users.
+
+Naming:
+
+- The core is `@reasoning-router/core`, a common convention (`@babel/core`)
+  that leaves unscoped `reasoning-router` free for a CLI or proxy entry point.
+- Harness adapters use the bare harness name (`@reasoning-router/opencode`),
+  which users type into their harness configuration.
+- Classifiers use a `classifier-` prefix. Names like Jev and Laya do not say
+  what kind of package they are, and some names (Hermes, Codex) could mean
+  either a harness or a model.
+
+The standalone proxy is not part of the first port.
+
+## Classifiers
 
 The starting point is `opencode-jev-router`'s classifier, unchanged except
 that Jev-specific names become provider-neutral.
@@ -81,11 +110,25 @@ that Jev-specific names become provider-neutral.
   a 4000 ms total deadline, one retry for connection errors, timeouts, 429,
   and 5xx, then fallback (`fixed` high by default, or `previous`, or
   `error`). Client cancellation aborts and never falls back.
+- **Configuration:** one `classifier` block selects the provider, for example
+  `classifier: { provider: "jev", apiKey, baseUrl, timeoutMs }`.
 - **Logging:** the same metadata-only decision events, with Jev-specific
-  names (such as `jev_attempts` and `jev_timeout`) made provider-neutral and
-  the decision provider recorded.
+  names made provider-neutral (`jev_attempts` becomes `classifier_attempts`,
+  `jev_timeout` becomes `classifier_timeout`) and the classifier recorded.
 
 ## Open questions
+
+### Before porting
+
+- Environment variable names: replace `JEV_ROUTER_*` with a neutral prefix
+  such as `REASONING_ROUTER_*`?
+- What happens to `opencode-jev-router` once the port reaches parity: frozen
+  with a pointer to `@reasoning-router/opencode`, or kept as a compatibility
+  wrapper for its existing configuration?
+- Copy files fresh (noting the source commit) or preserve their git history?
+- Since OpenCode installs only the plugin package, does
+  `@reasoning-router/opencode` depend on `@reasoning-router/classifier-jev`
+  directly, with other classifiers as optional installs?
 
 ### Which harnesses to target
 
@@ -121,38 +164,16 @@ For each target harness, establish:
 Where no adequate in-process hook exists, is the standalone proxy the
 supported path for that harness?
 
-### What belongs in a shared core
+### Core and remaining boundaries
 
-- Which of validation, classification, fallback, rewriting, forwarding, usage
-  observation, lineage, and decision logging are harness-independent and
-  decision-model-independent?
 - Is the core's input the raw wire request (as in `opencode-jev-router`) or a
-  normalized conversation model that adapters translate into?
-- Do decision-model providers live in the core (with their SDKs as optional
-  dependencies) or in separate packages? Laya's ONNX Runtime dependency and
-  model download make this matter.
-- Is the standalone proxy part of the core, a separate package, or one more
-  "adapter"?
-- How much of `opencode-jev-router` can be moved as-is, and does that repo
-  later depend on the core or get replaced by an adapter here?
-
-### Package naming and boundaries
-
-- Scope is `@reasoning-router`. The core is `@reasoning-router/core`
-  (decided): it follows a common convention (`@babel/core`), sorts clearly
-  next to adapters, and leaves unscoped `reasoning-router` free for a CLI or
-  proxy entry point.
-- Adapter naming: bare harness name (`@reasoning-router/opencode`) or a suffix
-  matching the extension type (`@reasoning-router/opencode-plugin`)? Does any
-  harness's discovery convention require a particular name or keyword?
-- If decision-model providers are separate packages, how are they named so
-  they are not confused with harness adapters (e.g. a `decider-` or
-  `classifier-` prefix)?
+  normalized conversation model that adapters translate into? The raw request
+  is the starting point, because the cache-preserving rewrite needs the exact
+  body; revisit this only for a harness that does not expose it.
+- Is the standalone proxy the unscoped `reasoning-router` package, part of the
+  core, or one more adapter?
 - One package per harness, or per harness *and* wire API?
 - Model/effort registries: prefer a reliable third-party package that lists
   models and their supported reasoning efforts, if one exists. Otherwise,
   maintain the registry as a separate package in this repo so it can be
   released more often than the core.
-- Versioning: independent per package, since adapters track different
-  harness release cycles. Release tooling is still deferred until a first
-  package exists.

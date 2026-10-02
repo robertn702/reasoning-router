@@ -15,19 +15,22 @@ proxy).
 
 `reasoning-router` generalizes that idea in two directions:
 
-- **Any decision model.** Jev is one of several models that decide how much
-  reasoning a step needs, and more are being released. Which decision model
-  to use is configuration, not a dependency: `reasoning-router` must not
-  depend on Jev or any single provider.
+- **Any classifier.** Jev is one of several decision models that can classify
+  how much reasoning a step needs, and more are being released. Which
+  classifier to use is configuration, not a dependency: `reasoning-router`
+  must not depend on Jev or any single provider.
 - **Any harness.** The same routing should run inside other agent harnesses,
   not only OpenCode.
 
-The plan is to publish several packages from this
-monorepo under the `@reasoning-router` npm scope: a shared core,
-`@reasoning-router/core`, plus adapters such as one per harness. Other package
-names and the boundaries between packages are **not decided yet**;
-see [docs/architecture.md](docs/architecture.md) for the problem statement and
-the open questions that must be answered first.
+The first packages, planned but not yet created, are:
+
+- `@reasoning-router/core`: the shared, harness- and classifier-independent
+  router.
+- `@reasoning-router/opencode`: the OpenCode plugin.
+- `@reasoning-router/classifier-jev`: the Jev classifier.
+
+See [docs/architecture.md](docs/architecture.md) for the problem statement,
+the package plan, and the open questions.
 
 ## Development
 
