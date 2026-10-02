@@ -38,7 +38,8 @@
   },
   "dependencies": {
     "@reasoning-router/classifier-jev": "^0.0.0",
-    "@reasoning-router/core": "^0.0.0"
+    "@reasoning-router/core": "^0.0.0",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@opencode/plugin": "2.0.18"

@@ -6,11 +6,16 @@ import type {
   SessionHttpResponse,
 } from "@opencode/plugin/promise/session";
 
-import { MODELS, modelsFor, type Provider } from "@reasoning-router/core";
+import {
+  MODELS,
+  modelsFor,
+  type Provider,
+  parseConfig,
+} from "@reasoning-router/core";
+import { z } from "zod";
 import {
   createPluginRuntime,
   type Exchange,
-  isRecord,
   PluginRequestError,
   SESSION,
   valid,
@@ -41,57 +46,67 @@ const rejection = (cause: unknown): Error =>
         "reasoning-router upstream_unavailable (502): upstream_unavailable",
       );
 
+const removed = (key: string) =>
+  z
+    .never(`reasoning-router: ${key} was removed; configure wrap instead`)
+    .optional();
+
+const wrapRefs = (group: Provider) => {
+  const array = `reasoning-router: wrap.${group} must be a nonempty array of provider/model refs`;
+  const ref = `reasoning-router: wrap.${group} requires provider/model refs from another provider`;
+  return z
+    .array(
+      z
+        .string(ref)
+        .regex(/^[^/\s]+\/[^/\s]+$/, ref)
+        .refine((value) => !value.startsWith(`${PROVIDER_ID}/`), ref),
+      array,
+    )
+    .min(1, array)
+    .optional();
+};
+
+const WRAP =
+  "reasoning-router: wrap must be a nonempty object of openai/anthropic model refs";
+
+const wrapOptionsSchema = z.object({
+  upstreamBaseURL: removed("upstreamBaseURL"),
+  upstreamApiKey: removed("upstreamApiKey"),
+  anthropicUpstreamBaseURL: removed("anthropicUpstreamBaseURL"),
+  anthropicUpstreamApiKey: removed("anthropicUpstreamApiKey"),
+  wrap: z
+    .strictObject(
+      { openai: wrapRefs("openai"), anthropic: wrapRefs("anthropic") },
+      {
+        error: (issue) =>
+          issue.code === "unrecognized_keys"
+            ? `reasoning-router: unknown wrap group ${issue.keys.join(", ")}`
+            : WRAP,
+      },
+    )
+    .refine((wrap) => wrap.openai || wrap.anthropic, WRAP),
+});
+
 function parseWrap(
-  options: Readonly<Record<string, unknown>>,
+  options: unknown,
 ): { group: Provider; providerID: string; modelID: string; ref: string }[] {
-  for (const key of [
-    "upstreamBaseURL",
-    "upstreamApiKey",
-    "anthropicUpstreamBaseURL",
-    "anthropicUpstreamApiKey",
-  ]) {
-    if (key in options)
-      throw new Error(
-        `reasoning-router: ${key} was removed; configure wrap instead`,
-      );
-  }
-  if (!isRecord(options.wrap) || !Object.keys(options.wrap).length)
-    throw new Error(
-      "reasoning-router: wrap must be a nonempty object of openai/anthropic model refs",
-    );
-  const refs: ReturnType<typeof parseWrap> = [];
-  for (const [group, values] of Object.entries(options.wrap)) {
-    if (group !== "openai" && group !== "anthropic")
-      throw new Error(`reasoning-router: unknown wrap group ${group}`);
-    if (!Array.isArray(values) || !values.length)
-      throw new Error(
-        `reasoning-router: wrap.${group} must be a nonempty array of provider/model refs`,
-      );
-    for (const ref of values) {
-      if (
-        typeof ref !== "string" ||
-        !/^[^/\s]+\/[^/\s]+$/.test(ref) ||
-        ref.startsWith(`${PROVIDER_ID}/`)
-      )
-        throw new Error(
-          `reasoning-router: wrap.${group} requires provider/model refs from another provider`,
-        );
+  const { wrap } = parseConfig(wrapOptionsSchema, options);
+  return (["openai", "anthropic"] as const).flatMap((group) =>
+    (wrap[group] ?? []).map((ref) => {
       const slash = ref.indexOf("/");
-      refs.push({
+      return {
         group,
         providerID: ref.slice(0, slash),
         modelID: ref.slice(slash + 1),
         ref,
-      });
-    }
-  }
-  return refs;
+      };
+    }),
+  );
 }
 
 export async function setupV2(ctx: Plugin.Context): Promise<() => void> {
-  const options: Readonly<Record<string, unknown>> = ctx.options;
-  const refs = parseWrap(options);
-  const runtime = createPluginRuntime(options);
+  const refs = parseWrap(ctx.options);
+  const runtime = createPluginRuntime(ctx.options);
   const exchanges = new WeakMap<Request, Exchange>();
   let aliases = new Map<string, Alias>();
   let validationError: string | undefined;

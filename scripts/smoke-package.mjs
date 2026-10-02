@@ -155,8 +155,8 @@ try {
   );
   assert.deepEqual(
     Object.keys(core.dependencies ?? {}),
-    [],
-    "core must not depend on a classifier SDK",
+    ["zod"],
+    "core must depend only on zod, not a classifier SDK",
   );
   console.log(
     `Packed and ran ${installed.map((manifest) => `${manifest.name}@${manifest.version}`).join(", ")} with production dependencies only.`,

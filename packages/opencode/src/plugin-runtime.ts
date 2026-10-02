@@ -4,57 +4,71 @@ import { jevClassifierProvider } from "@reasoning-router/classifier-jev";
 import {
   anthropicVersion,
   buildPluginUpstreamRequestHeaders,
-  type ClassificationPolicyOptions,
-  type ClassifierConfig,
   type ClassifierProvider,
-  classificationPolicy,
+  classificationPolicySchema,
   createConfiguredSelector,
   createDecisionLogger,
-  type Effort,
   type EffortSelector,
-  isEffort,
-  MODELS,
   mergeAnthropicBeta,
   type PreparedRequest,
   type Provider,
+  parseConfig,
   pickFetchResponseHeaders,
   ResponsesRouter,
   resolveModel,
-  supportsEffort,
   UnsupportedInputError,
   UsageObserver,
+  universalEffort,
   upstreamHostname,
   validateRequest,
   wireFor,
 } from "@reasoning-router/core";
+import { z } from "zod";
 
 /** Classifiers the plugin can select through `classifier.provider`. */
 const CLASSIFIERS: readonly ClassifierProvider[] = [jevClassifierProvider];
 
-/** The `classifier` option: `provider` (default `jev`) plus that provider's settings. */
-export type ClassifierOptions = Partial<ClassifierConfig> & {
-  apiKey?: string;
-  baseUrl?: string;
-  timeoutMs?: number;
-  model?: string;
+const positiveInteger = (name: string, fallback: number) => {
+  const message = `${name} must be a positive integer`;
+  return z.int(message).min(1, message).default(fallback);
 };
+const optionalString = (name: string) =>
+  z.string(`${name} must be a string`).optional();
+const TIMEOUT = "timeoutMs must be a positive integer";
+
+const pluginOptionsSchema = z.object({
+  ...classificationPolicySchema.shape,
+  /** `provider` (default `jev`) plus that provider's settings. */
+  classifier: z
+    .looseObject(
+      {
+        provider: z
+          .string("classifier.provider must be a string")
+          .default("jev"),
+        timeoutMs: z.int(TIMEOUT).min(1, TIMEOUT).optional(),
+        apiKey: optionalString("classifier.apiKey"),
+        baseUrl: optionalString("classifier.baseUrl"),
+        model: optionalString("classifier.model"),
+      },
+      "classifier must be an object",
+    )
+    .prefault({}),
+  baseEffort: universalEffort("baseEffort is unsupported").optional(),
+  fixedEffort: universalEffort(
+    "fixedEffort must be supported by every model",
+  ).optional(),
+  maxRequestBytes: positiveInteger("maxRequestBytes", 1_048_576),
+  maxInFlight: positiveInteger("maxInFlight", 32),
+  upstreamHeaderTimeoutMs: positiveInteger("upstreamHeaderTimeoutMs", 10_000),
+  upstreamIdleTimeoutMs: positiveInteger("upstreamIdleTimeoutMs", 60_000),
+  decisionsLogPath: z
+    .string("decisionsLogPath must be an absolute path")
+    .optional(),
+});
 
 /** Options for the OpenCode V2 plugin runtime. */
-export type PluginOptions = ClassificationPolicyOptions & {
-  classifier?: ClassifierOptions;
-  baseEffort?: Effort;
-  fixedEffort?: Effort;
-  maxRequestBytes?: number;
-  maxInFlight?: number;
-  upstreamHeaderTimeoutMs?: number;
-  upstreamIdleTimeoutMs?: number;
-  decisionsLogPath?: string;
-};
-
-/** Plugin options as the host passes them, before validation. */
-type UncheckedPluginOptions = {
-  readonly [K in keyof PluginOptions]?: unknown;
-};
+export type PluginOptions = z.input<typeof pluginOptionsSchema>;
+type PluginConfig = z.output<typeof pluginOptionsSchema>;
 
 /** A local rejection with an HTTP status for the plugin request hook. */
 export class PluginRequestError extends Error {
@@ -112,16 +126,6 @@ const hash = (value: string | null | undefined): string =>
   createHash("sha256")
     .update(value ?? "")
     .digest("hex");
-const positive = (value: unknown, fallback: number, name: string): number => {
-  const result = value ?? fallback;
-  if (typeof result !== "number" || !Number.isSafeInteger(result) || result < 1)
-    throw new Error(`${name} must be a positive integer`);
-  return result;
-};
-const supportedByEveryModel = (effort: unknown): effort is Effort =>
-  isEffort(effort) && MODELS.every((model) => supportsEffort(model, effort));
-export const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
 export const requiredString = (value: unknown, name: string): string => {
   if (typeof value !== "string" || !value.trim())
     throw new Error(`${name} is required`);
@@ -189,63 +193,44 @@ async function boundedBody(
   return output;
 }
 
-function classifierSelector(options: UncheckedPluginOptions): EffortSelector {
-  const config = options.classifier ?? {};
-  if (!isRecord(config)) throw new Error("classifier must be an object");
-  const { provider = "jev", timeoutMs } = config;
-  if (typeof provider !== "string")
-    throw new Error("classifier.provider must be a string");
-  if (timeoutMs !== undefined && typeof timeoutMs !== "number")
-    throw new Error("timeoutMs must be a positive integer");
+function classifierSelector({
+  classifier,
+  maxRetries,
+  fallbackMode,
+  fallbackEffort,
+}: PluginConfig): EffortSelector {
   const env = process.env;
   return createConfiguredSelector(
     {
-      ...config,
-      provider,
-      timeoutMs,
-      apiKey: config.apiKey ?? env.REASONING_ROUTER_CLASSIFIER_API_KEY,
-      baseUrl: config.baseUrl ?? env.REASONING_ROUTER_CLASSIFIER_BASE_URL,
+      ...classifier,
+      apiKey: classifier.apiKey ?? env.REASONING_ROUTER_CLASSIFIER_API_KEY,
+      baseUrl: classifier.baseUrl ?? env.REASONING_ROUTER_CLASSIFIER_BASE_URL,
     },
     CLASSIFIERS,
-    classificationPolicy(options),
+    { maxRetries, fallbackMode, fallbackEffort },
   );
 }
 
 /** Per-plugin-instance state, validation, classifier selection, rewrite, and usage observation. */
-export function createPluginRuntime(
-  options: UncheckedPluginOptions,
-): PluginRuntime {
-  const { baseEffort, fixedEffort, decisionsLogPath } = options;
-  if (baseEffort !== undefined && !supportedByEveryModel(baseEffort))
-    throw new Error("baseEffort is unsupported");
-  if (fixedEffort !== undefined && !supportedByEveryModel(fixedEffort))
-    throw new Error("fixedEffort must be supported by every model");
-  if (decisionsLogPath !== undefined && typeof decisionsLogPath !== "string")
-    throw new Error("decisionsLogPath must be an absolute path");
+export function createPluginRuntime(options: unknown): PluginRuntime {
+  const config = parseConfig(pluginOptionsSchema, options);
+  const {
+    baseEffort,
+    fixedEffort,
+    decisionsLogPath,
+    maxRequestBytes: maxBytes,
+    maxInFlight,
+    upstreamHeaderTimeoutMs: headerTimeoutMs,
+    upstreamIdleTimeoutMs: idleTimeoutMs,
+  } = config;
   const selectEffort: EffortSelector =
     fixedEffort === undefined
-      ? classifierSelector(options)
+      ? classifierSelector(config)
       : async () => ({
           effort: fixedEffort,
           classifierLatencyMs: 0,
           fallback: null,
         });
-  const maxBytes = positive(
-    options.maxRequestBytes,
-    1_048_576,
-    "maxRequestBytes",
-  );
-  const maxInFlight = positive(options.maxInFlight, 32, "maxInFlight");
-  const headerTimeoutMs = positive(
-    options.upstreamHeaderTimeoutMs,
-    10_000,
-    "upstreamHeaderTimeoutMs",
-  );
-  const idleTimeoutMs = positive(
-    options.upstreamIdleTimeoutMs,
-    60_000,
-    "upstreamIdleTimeoutMs",
-  );
   const onEvidence =
     decisionsLogPath === undefined
       ? undefined

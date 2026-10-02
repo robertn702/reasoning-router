@@ -1,5 +1,6 @@
 export * from "./classification-policy.js";
 export * from "./classifier.js";
+export * from "./config.js";
 export * from "./decision-log.js";
 export * from "./effort-cache.js";
 export * from "./evidence.js";

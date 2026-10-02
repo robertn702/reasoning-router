@@ -1,4 +1,11 @@
-const EFFORTS = ["none", "low", "medium", "high", "xhigh", "max"] as const;
+export const EFFORTS = [
+  "none",
+  "low",
+  "medium",
+  "high",
+  "xhigh",
+  "max",
+] as const;
 export type Effort = (typeof EFFORTS)[number];
 export type Provider = "openai" | "anthropic";
 

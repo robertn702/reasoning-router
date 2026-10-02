@@ -7,6 +7,7 @@ import {
   createClassifierSelector,
   type Effort,
   type EffortSelector,
+  parseConfig,
 } from "@reasoning-router/core";
 import {
   APIConnectionError,
@@ -17,6 +18,7 @@ import {
   type Fetch,
   TypeSafeClient,
 } from "@typesafe-ai/sdk";
+import { z } from "zod";
 
 function errorCategory(error: unknown): ClassifierErrorCategory {
   if (error instanceof APIError) {
@@ -57,48 +59,63 @@ export interface JevConnection {
   model: string;
 }
 
+/** The Jev model each supported endpoint serves. */
+const JEV_MODELS = new Map([
+  ["https://api.typesafe.ai", "jev-latest"],
+  ["https://ai-gateway.vercel.sh/typesafe", "typesafe-ai/jev"],
+]);
+const API_KEY_REQUIRED = "classifier.apiKey is required for Jev classification";
+const INVALID_URL = "classifier.baseUrl must be a valid HTTPS URL";
+
+const jevConnectionSchema = z
+  .object({
+    apiKey: z.string(API_KEY_REQUIRED).trim().min(1, API_KEY_REQUIRED),
+    baseUrl: z
+      .string(INVALID_URL)
+      .default("https://api.typesafe.ai")
+      .transform((raw, ctx) => {
+        let url: URL;
+        try {
+          url = new URL(raw);
+        } catch {
+          ctx.addIssue(INVALID_URL);
+          return z.NEVER;
+        }
+        if (
+          url.protocol !== "https:" ||
+          !url.hostname ||
+          url.username ||
+          url.password ||
+          url.search ||
+          url.hash
+        ) {
+          ctx.addIssue(
+            "classifier.baseUrl must be an HTTPS URL without credentials, query, or fragment",
+          );
+          return z.NEVER;
+        }
+        const baseURL = url.href.replace(/\/$/, "");
+        const model = JEV_MODELS.get(baseURL);
+        if (model === undefined) {
+          ctx.addIssue(
+            "classifier.baseUrl supports only the TypeSafe direct and Vercel TypeSafe-compatible endpoints",
+          );
+          return z.NEVER;
+        }
+        return { baseURL, model };
+      }),
+  })
+  .transform(({ apiKey, baseUrl }): JevConnection => ({ apiKey, ...baseUrl }));
+
+const systemOneSchema = z.object({
+  answers: z.object({ effort: z.object({ choice: z.unknown() }) }),
+});
+
 /** Validates a Jev key and endpoint, and selects the Jev model that endpoint serves. */
 export function resolveJevConnection(
   config: Readonly<Record<string, unknown>>,
 ): JevConnection {
-  const apiKey = typeof config.apiKey === "string" ? config.apiKey : "";
-  if (!apiKey.trim())
-    throw new Error("classifier.apiKey is required for Jev classification");
-  let url: URL;
-  try {
-    url = new URL(
-      typeof config.baseUrl === "string"
-        ? config.baseUrl
-        : config.baseUrl === undefined
-          ? "https://api.typesafe.ai"
-          : "",
-    );
-  } catch {
-    throw new Error("classifier.baseUrl must be a valid HTTPS URL");
-  }
-  if (
-    url.protocol !== "https:" ||
-    !url.hostname ||
-    url.username ||
-    url.password ||
-    url.search ||
-    url.hash
-  )
-    throw new Error(
-      "classifier.baseUrl must be an HTTPS URL without credentials, query, or fragment",
-    );
-  const baseURL = url.href.replace(/\/$/, "");
-  const model =
-    baseURL === "https://api.typesafe.ai"
-      ? "jev-latest"
-      : baseURL === "https://ai-gateway.vercel.sh/typesafe"
-        ? "typesafe-ai/jev"
-        : null;
-  if (model === null)
-    throw new Error(
-      "classifier.baseUrl supports only the TypeSafe direct and Vercel TypeSafe-compatible endpoints",
-    );
-  return { apiKey: apiKey.trim(), baseURL, model };
+  return parseConfig(jevConnectionSchema, config);
 }
 
 /** The Jev `system_one` transport: one `effort` choice over the target model's supported efforts. */
@@ -130,13 +147,10 @@ export function createJevTransport(
           ),
         ),
       };
-      const result: unknown = await client.systemOne(
-        { state, questions },
-        { signal },
+      const result = systemOneSchema.safeParse(
+        await client.systemOne({ state, questions }, { signal }),
       );
-      if (!isRecord(result) || !isRecord(result.answers)) return null;
-      const answer = result.answers.effort;
-      return isRecord(answer) ? answer.choice : null;
+      return result.success ? result.data.answers.effort.choice : null;
     },
   };
 }
@@ -153,10 +167,6 @@ export interface JevClassifierOptions
 export interface JevClassifier {
   select: EffortSelector;
   client: TypeSafeClient;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 export function createJevClassifier(
