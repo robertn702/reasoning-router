@@ -1,0 +1,26 @@
+{
+  // OpenCode V2 plugin configuration.
+  "$schema": "https://opencode.ai/config.json",
+  "plugins": [
+    {
+      "package": "@reasoning-router/opencode",
+      "options": {
+        // Classifier that picks each step's effort. For a direct TypeSafe key,
+        // delete baseUrl.
+        "classifier": {
+          "provider": "jev",
+          "apiKey": "{env:REASONING_ROUTER_CLASSIFIER_API_KEY}",
+          "baseUrl": "https://ai-gateway.vercel.sh/typesafe"
+        },
+        // Wrap existing OpenCode models with API-key credentials.
+        "wrap": { "openai": ["openai/gpt-6-astra"] }
+        // Add "anthropic": ["anthropic/claude-opus-5-5"] for Messages.
+        // Optional: an absolute path for metadata-only ReasoningDecision JSONL events.
+        // "decisionsLogPath": "/absolute/path/to/reasoning-decisions.jsonl"
+      }
+    }
+  ],
+  // Use OPENAI_API_KEY or an API key from opencode auth login.
+  // If the catalog lacks Astra, add it under providers.openai.models.
+  "model": "reasoning-router/gpt-6-astra"
+}

@@ -2,8 +2,8 @@
 
 Harness-agnostic adaptive reasoning effort for coding agents.
 
-> **Status: pre-alpha.** This repository is workspace scaffolding only. It
-> contains no packages and nothing is published to npm yet.
+> **Status: pre-alpha.** The packages below are a port of
+> `opencode-jev-router`. Nothing is published to npm yet.
 
 ## Intent
 
@@ -22,15 +22,19 @@ proxy).
 - **Any harness.** The same routing should run inside other agent harnesses,
   not only OpenCode.
 
-The first packages, planned but not yet created, are:
+The packages are:
 
-- `@reasoning-router/core`: the shared, harness- and classifier-independent
-  router.
-- `@reasoning-router/opencode`: the OpenCode plugin.
-- `@reasoning-router/classifier-jev`: the Jev classifier.
+- [`@reasoning-router/core`](packages/core): the shared, harness- and
+  classifier-independent router.
+- [`@reasoning-router/opencode`](packages/opencode): the OpenCode V2 plugin.
+- [`@reasoning-router/classifier-jev`](packages/classifier-jev): the Jev
+  classifier.
+- [`reasoning-router`](packages/reasoning-router): the standalone
+  Responses/Messages proxy.
 
 See [docs/architecture.md](docs/architecture.md) for the problem statement,
-the package plan, and the open questions.
+the package plan, and the open questions, and
+[docs/behavior.md](docs/behavior.md) for the router's wire behavior.
 
 ## Development
 
@@ -45,14 +49,21 @@ See [AGENTS.md](AGENTS.md) for the full command list and repo conventions.
 
 ## Decisions so far
 
-These are reversible and can be revisited once the first package exists:
+These are reversible:
 
-- **npm workspaces** (`packages/*`), with no packages yet.
+- **npm workspaces** (`packages/*`); the root package is the private
+  `reasoning-router-workspace` so the unscoped proxy can be `reasoning-router`.
 - **Node 24, TypeScript, Vitest**, matching `opencode-jev-router`.
 - **Biome** for lint and format. `opencode-jev-router` has no linter or
   formatter; Biome covers both with one dev dependency and no plugins.
-- **Release tooling deferred.** Changesets (or similar) will be added with the
-  first publishable package.
+  `noNonNullAssertion` is off, and `noExplicitAny` is off in tests, to keep
+  ported code close to its source.
+- **Source condition.** Package `exports` map the custom
+  `@reasoning-router/source` condition to `src/*.ts`, so typecheck and tests
+  run against source without a build; published consumers get `dist/`.
+- **Changesets** with independent versions and no publish workflow.
+- **The standalone proxy is its own package** (`reasoning-router`), since it
+  needs a classifier and core must not depend on one.
 
 ## License
 
