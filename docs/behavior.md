@@ -1,6 +1,6 @@
 # Router behavior
 
-Reference for the wire behavior shared by the OpenCode plugin and the standalone proxy. Start with the [plugin README](../packages/opencode/README.md) or the [proxy README](../packages/reasoning-router/README.md) for setup.
+Reference for the wire behavior shared by the OpenCode plugin and the standalone proxy. Start with the [plugin README](../packages/opencode/README.md) or the [proxy README](../packages/proxy/README.md) for setup.
 
 ## Scope
 

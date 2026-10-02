@@ -36,7 +36,7 @@ const required = {
     "dist/plugin-v2.js",
     "dist/plugin-runtime.js",
   ],
-  "reasoning-router": ["dist/index.js"],
+  "@reasoning-router/proxy": ["dist/index.js"],
 };
 
 const temp = await mkdtemp(join(tmpdir(), "reasoning-router-package-"));

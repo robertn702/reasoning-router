@@ -36,7 +36,8 @@ another OpenCode V2.
 - `packages/classifier-jev` (`@reasoning-router/classifier-jev`): the Jev
   classifier; the only package that depends on `@typesafe-ai/sdk`.
 - `packages/opencode` (`@reasoning-router/opencode`): the OpenCode V2 plugin.
-- `packages/reasoning-router` (`reasoning-router`): the standalone proxy CLI.
+- `packages/proxy` (`@reasoning-router/proxy`): the standalone proxy, run as
+  the `reasoning-router` command.
 - Each package has `src/`, `test/`, and a `tsconfig.build.json` that compiles
   `src/` to `dist/`. Package `exports` resolve the
   `@reasoning-router/source` condition to `src/*.ts`, which the root
@@ -55,10 +56,10 @@ another OpenCode V2.
   the core.
 - Create only the packages listed under "Packages" in `docs/architecture.md`:
   `@reasoning-router/core`, `@reasoning-router/opencode`,
-  `@reasoning-router/classifier-jev`, and the unscoped `reasoning-router`
-  proxy. Harness adapters use the bare harness name; classifiers use a
-  `classifier-` prefix. Follow the "Porting" decisions in
-  `docs/architecture.md` when porting code into them.
+  `@reasoning-router/classifier-jev`, and `@reasoning-router/proxy`. Harness
+  adapters use the bare harness name; classifiers use a `classifier-` prefix.
+  Follow the "Porting" decisions in `docs/architecture.md` when porting code
+  into them.
 - Each test lives in the package whose code it covers.
 - Do not publish to npm. Changesets is configured for versioning only; there
   is no publish workflow. Add a changeset (`npx changeset`) for user-facing

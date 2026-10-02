@@ -29,8 +29,8 @@ The packages are:
 - [`@reasoning-router/opencode`](packages/opencode): the OpenCode V2 plugin.
 - [`@reasoning-router/classifier-jev`](packages/classifier-jev): the Jev
   classifier.
-- [`reasoning-router`](packages/reasoning-router): the standalone
-  Responses/Messages proxy.
+- [`@reasoning-router/proxy`](packages/proxy): the standalone
+  Responses/Messages proxy (command `reasoning-router`).
 
 See [docs/architecture.md](docs/architecture.md) for the problem statement,
 the package plan, and the open questions, and
@@ -51,8 +51,7 @@ See [AGENTS.md](AGENTS.md) for the full command list and repo conventions.
 
 These are reversible:
 
-- **npm workspaces** (`packages/*`); the root package is the private
-  `reasoning-router-workspace` so the unscoped proxy can be `reasoning-router`.
+- **npm workspaces** (`packages/*`).
 - **Node 24, TypeScript, Vitest**, matching `opencode-jev-router`.
 - **Biome** for lint and format. `opencode-jev-router` has no linter or
   formatter; Biome covers both with one dev dependency and no plugins.
@@ -62,8 +61,10 @@ These are reversible:
   `@reasoning-router/source` condition to `src/*.ts`, so typecheck and tests
   run against source without a build; published consumers get `dist/`.
 - **Changesets** with independent versions and no publish workflow.
-- **The standalone proxy is its own package** (`reasoning-router`), since it
-  needs a classifier and core must not depend on one.
+- **The standalone proxy is its own package** (`@reasoning-router/proxy`,
+  command `reasoning-router`), since it needs a classifier and core must not
+  depend on one. The unscoped `reasoning-router` name stays free for a future
+  umbrella CLI.
 
 ## License
 
