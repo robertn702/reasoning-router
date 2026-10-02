@@ -21,7 +21,6 @@ Use Node.js 24.x from the repo root.
 | Build every package to `dist/`, in dependency order | `npm run build` |
 | Pack, install, and run the packages | `npm run smoke:package` |
 | Install the packed plugin in OpenCode 2.0.18 | `npm run smoke:plugin:v2` |
-| Record a release note | `npx changeset` |
 
 CI (`.github/workflows/ci.yml`) runs install, typecheck, lint, test, and
 `smoke:package` on pushes to `main` and on pull requests, plus the plugin
@@ -62,8 +61,8 @@ another OpenCode V2.
   into them.
 - Each test lives in the package whose code it covers.
 - Do not publish to npm. Changesets is configured for versioning only; there
-  is no publish workflow. Add a changeset (`npx changeset`) for user-facing
-  package changes.
+  is no publish workflow. Do not add changesets until the packages are first
+  released.
 - Do not modify `opencode-jev-router` from here; read it for reference only.
 - Make the smallest change that works. Add no speculative abstractions and no
   configuration without a current requirement.
