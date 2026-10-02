@@ -11,6 +11,9 @@
   "linter": {
     "rules": {
       "preset": "recommended",
+      "nursery": {
+        "noUnsafeTypeAssertion": "error"
+      },
       "style": {
         "noNonNullAssertion": "off"
       }

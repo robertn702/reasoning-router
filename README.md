@@ -57,6 +57,11 @@ These are reversible:
   formatter; Biome covers both with one dev dependency and no plugins.
   `noNonNullAssertion` is off, and `noExplicitAny` is off in tests, to keep
   ported code close to its source.
+- **No type assertions.** Biome's `nursery/noUnsafeTypeAssertion` is an
+  error, and `as const` is the only exception. Use annotations, `satisfies`,
+  type predicates, or narrowing, and fix flagged code instead of suppressing
+  the rule. The rule is in Biome's nursery, so its behavior may change in a
+  minor release.
 - **Source condition.** Package `exports` map the custom
   `@reasoning-router/source` condition to `src/*.ts`, so typecheck and tests
   run against source without a build; published consumers get `dist/`.
