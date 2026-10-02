@@ -21,12 +21,14 @@ Use Node.js 24.x from the repo root.
 | Build every package to `dist/`, in dependency order | `npm run build` |
 | Pack, install, and run the packages | `npm run smoke:package` |
 | Install the packed plugin in OpenCode 2.0.18 | `npm run smoke:plugin:v2` |
+| Install the packed extension in Pi 1.0.0 | `npm run smoke:pi` |
 
 CI (`.github/workflows/ci.yml`) runs install, typecheck, lint, test, and
 `smoke:package` on pushes to `main` and on pull requests, plus the plugin
-smoke as a separate job. The plugin smoke needs `openssl` and an existing
-`/tmp/opencode`; set `OPENCODE_V2_BIN` or `OPENCODE_V2_VERSION` to test
-another OpenCode V2.
+and Pi smokes as separate jobs. The plugin smoke needs `openssl` and an
+existing `/tmp/opencode`; set `OPENCODE_V2_BIN` or `OPENCODE_V2_VERSION` to
+test another OpenCode V2. The Pi smoke needs `openssl` and runs the pinned
+Pi devDependency; set `PI_BIN` to test another Pi.
 
 Orca runs `./scripts/setup.sh` from `orca.yaml` and waits for it to finish
 before starting an agent. The script runs `npm ci`, copies local `.env*` files
@@ -41,6 +43,7 @@ before starting an agent. The script runs `npm ci`, copies local `.env*` files
 - `packages/classifiers` (`@reasoning-router/classifiers`): every
   classifier (Jev, Clef), as presets selected by `classifier.provider`.
 - `packages/opencode` (`@reasoning-router/opencode`): the OpenCode V2 plugin.
+- `packages/pi` (`@reasoning-router/pi`): the Pi extension.
 - `packages/proxy` (`@reasoning-router/proxy`): the standalone proxy, run as
   the `reasoning-router` command.
 - Each package has `src/`, `test/`, and a `tsconfig.build.json` that compiles
@@ -48,7 +51,7 @@ before starting an agent. The script runs `npm ci`, copies local `.env*` files
   `@reasoning-router/source` condition to `src/*.ts`, which the root
   `tsconfig.json` and `vitest.config.ts` enable, so typecheck and tests run
   against source without building.
-- `scripts/`: package and plugin smoke tests.
+- `scripts/`: package, plugin, and Pi smoke tests.
 - `tsconfig.base.json`: shared compiler options for packages to extend.
 - `biome.json`: lint and format configuration.
 - `.changeset/`: Changesets configuration (independent versions).
@@ -61,7 +64,8 @@ before starting an agent. The script runs `npm ci`, copies local `.env*` files
   the core.
 - Create only the packages listed under "Packages" in `docs/architecture.md`:
   `@reasoning-router/core`, `@reasoning-router/opencode`,
-  `@reasoning-router/classifiers`, and `@reasoning-router/proxy`. Harness
+  `@reasoning-router/classifiers`, `@reasoning-router/pi`, and
+  `@reasoning-router/proxy`. Harness
   adapters use the bare harness name. Add a classifier as a preset in
   `classifiers`, not as a new package; a heavy runtime it needs is an
   optional peer dependency loaded with a dynamic `import()`. Follow the

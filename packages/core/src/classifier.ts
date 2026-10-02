@@ -6,7 +6,7 @@ import {
   classificationPolicy,
 } from "./classification-policy.js";
 import { EffortCache } from "./effort-cache.js";
-import { type ModelProfile, supportsEffort } from "./models.js";
+import { type Effort, type ModelProfile, supportsEffort } from "./models.js";
 import type { EffortDecision, EffortSelector } from "./router.js";
 import { wireFor } from "./wire.js";
 
@@ -75,10 +75,50 @@ function usableCacheKey(value: unknown): string | null {
   return typeof value === "string" && value.trim().length > 0 ? value : null;
 }
 
+/** Selects an effort for a prebuilt classifier state, for harnesses that expose messages rather than a wire body. */
+export type StateEffortSelector = (args: {
+  model: ModelProfile;
+  state: ClassifierState;
+  signal: AbortSignal;
+  /** Keys the in-memory previous-effort cache; null disables it. */
+  cacheKey: string | null;
+  /** The effort for `previous` fallback when the harness stores it; takes precedence over the cache. */
+  previousEffort?: Effort;
+}) => Promise<EffortDecision>;
+
 /** Applies the classification policy (deadline, retries, fallback, previous-effort cache) to a classifier. */
 export function createClassifierSelector(
   options: ClassifierSelectorOptions,
 ): EffortSelector {
+  const select = createStateSelector(options);
+  return async ({
+    body,
+    signal,
+    model,
+    cacheScope,
+    cacheKey: selectedCacheKey,
+  }) => {
+    if (signal.aborted) throw new ClassificationCancelledError();
+    const key =
+      selectedCacheKey !== undefined
+        ? selectedCacheKey
+        : usableCacheKey(body.prompt_cache_key);
+    // A provider instance may serve multiple OpenCode credentials. Keep fallback
+    // state tenant-scoped even though prompt text never enters the cache.
+    return select({
+      model,
+      signal,
+      state: wireFor(model.provider).classifierState(body),
+      cacheKey:
+        key === null ? null : JSON.stringify([cacheScope ?? "", model.id, key]),
+    });
+  };
+}
+
+/** Like `createClassifierSelector`, for a classifier state the harness built. */
+export function createStateSelector(
+  options: ClassifierSelectorOptions,
+): StateEffortSelector {
   const policy = classificationPolicy(options);
   if (!Number.isSafeInteger(options.timeoutMs) || options.timeoutMs < 1)
     throw new Error("timeoutMs must be a positive integer");
@@ -89,28 +129,16 @@ export function createClassifierSelector(
   );
 
   return async ({
-    body,
+    state: classifierState,
     signal,
     model,
-    cacheScope,
-    cacheKey: selectedCacheKey,
+    cacheKey,
+    previousEffort,
   }) => {
     if (signal.aborted) throw new ClassificationCancelledError();
     const startedAt = performance.now();
     const latency = (): number => Math.round(performance.now() - startedAt);
-
-    const key =
-      selectedCacheKey !== undefined
-        ? selectedCacheKey
-        : usableCacheKey(body.prompt_cache_key);
-    // A provider instance may serve multiple OpenCode credentials. Keep fallback
-    // state tenant-scoped even though prompt text never enters the cache.
-    const cacheKey =
-      key === null ? null : JSON.stringify([cacheScope ?? "", model.id, key]);
-    const state = {
-      ...wireFor(model.provider).classifierState(body),
-      model: model.id,
-    };
+    const state = { ...classifierState, model: model.id };
 
     const deadline = new AbortController();
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -179,25 +207,18 @@ export function createClassifierSelector(
             latency(),
             classifier.name,
           );
+        const previous =
+          policy.fallbackMode !== "previous"
+            ? undefined
+            : (previousEffort ??
+              (cacheKey ? previousEfforts.get(cacheKey) : undefined));
+        const usePrevious = supportsEffort(model, previous);
         return {
-          effort: (() => {
-            const previous =
-              policy.fallbackMode === "previous" && cacheKey
-                ? previousEfforts.get(cacheKey)
-                : undefined;
-            return supportsEffort(model, previous)
-              ? previous
-              : policy.fallbackEffort;
-          })(),
+          effort: usePrevious ? previous : policy.fallbackEffort,
           classifier: classifier.name,
           classifierLatencyMs: latency(),
           classifierAttempts: attempts,
-          fallbackSource:
-            policy.fallbackMode === "previous" &&
-            cacheKey &&
-            supportsEffort(model, previousEfforts.get(cacheKey))
-              ? "previous"
-              : "fixed",
+          fallbackSource: usePrevious ? "previous" : "fixed",
           fallback: code,
         };
       };
@@ -241,6 +262,23 @@ export function createConfiguredSelector(
   providers: readonly ClassifierProvider[],
   options: Omit<ClassifierSelectorOptions, "classifier" | "timeoutMs">,
 ): EffortSelector {
+  return createClassifierSelector(configured(config, providers, options));
+}
+
+/** Like `createConfiguredSelector`, for a classifier state the harness built. */
+export function createConfiguredStateSelector(
+  config: ClassifierConfig,
+  providers: readonly ClassifierProvider[],
+  options: Omit<ClassifierSelectorOptions, "classifier" | "timeoutMs">,
+): StateEffortSelector {
+  return createStateSelector(configured(config, providers, options));
+}
+
+function configured(
+  config: ClassifierConfig,
+  providers: readonly ClassifierProvider[],
+  options: Omit<ClassifierSelectorOptions, "classifier" | "timeoutMs">,
+): ClassifierSelectorOptions {
   const provider = providers.find(
     (candidate) => candidate.name === config.provider,
   );
@@ -248,9 +286,9 @@ export function createConfiguredSelector(
     throw new Error(
       `classifier.provider must be one of ${providers.map((candidate) => candidate.name).join(", ")}`,
     );
-  return createClassifierSelector({
+  return {
     ...options,
     classifier: provider.create(config),
     timeoutMs: config.timeoutMs ?? 4_000,
-  });
+  };
 }
