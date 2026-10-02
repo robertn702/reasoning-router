@@ -2,7 +2,7 @@
 
 `reasoning-router` is a pre-alpha npm-workspaces monorepo that will generalize
 [`opencode-jev-router`](https://github.com/robertn702/opencode-jev-router) to
-multiple agent harnesses. It currently contains **no packages**.
+multiple agent harnesses and multiple decision models. It currently contains **no packages**.
 `docs/architecture.md` frames the problem and the open design questions.
 
 ## Commands
@@ -31,6 +31,10 @@ pushes to `main` and on pull requests.
 
 ## Conventions
 
+- The decision model (the model that picks the reasoning effort, such as Jev)
+  is configuration. Do not make shared code depend on Jev or any single
+  decision-model provider; provider-specific code and dependencies stay out
+  of the core.
 - Do not create packages under `packages/` until package names and
   boundaries are decided (see the open questions in `docs/architecture.md`).
 - Do not publish to npm. Release tooling (e.g. Changesets) is deferred until

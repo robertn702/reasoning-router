@@ -13,8 +13,16 @@ needs, then applies that effort to the outgoing model request without breaking
 the prompt cache. It works, but only inside OpenCode (or behind its standalone
 proxy).
 
-`reasoning-router` generalizes that idea so the same routing can run inside
-other agent harnesses. The plan is to publish several packages from this
+`reasoning-router` generalizes that idea in two directions:
+
+- **Any decision model.** Jev is one of several models that decide how much
+  reasoning a step needs, and more are being released. Which decision model
+  to use is configuration, not a dependency: `reasoning-router` must not
+  depend on Jev or any single provider.
+- **Any harness.** The same routing should run inside other agent harnesses,
+  not only OpenCode.
+
+The plan is to publish several packages from this
 monorepo under the `@reasoning-router` npm scope, such as a shared core plus
 one adapter per harness. Package names and boundaries are **not decided yet**;
 see [docs/architecture.md](docs/architecture.md) for the problem statement and
