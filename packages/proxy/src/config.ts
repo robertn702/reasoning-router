@@ -1,17 +1,17 @@
 import { isAbsolute } from "node:path";
 import {
-  type ClassificationPolicyOptions,
+  type ClassificationPolicy,
   type ClassifierConfig,
-  classificationPolicy,
+  classificationPolicySchema,
   type Effort,
-  isEffort,
-  MODELS,
-  supportsEffort,
+  parseConfig,
+  universalEffort,
 } from "@reasoning-router/core";
+import { z } from "zod";
 
 const EFFORTS: readonly string[] = ["low", "medium", "high", "xhigh", "max"];
 
-export interface AppConfig extends ClassificationPolicyOptions {
+export interface AppConfig extends ClassificationPolicy {
   port: number;
   upstreamBaseUrl: string;
   upstreamAuth: UpstreamAuth;
@@ -35,274 +35,257 @@ export type UpstreamAuth =
   | { policy: "forward" }
   | { policy: "bearer"; apiKey: string };
 
+/** A variable that must be unset. */
+const unsupported = (message: string) => z.never(message).optional();
+
+const UNSUPPORTED_JEV =
+  "JEV_ROUTER_API_KEY and JEV_ROUTER_BASE_URL are unsupported; use REASONING_ROUTER_CLASSIFIER_API_KEY and REASONING_ROUTER_CLASSIFIER_BASE_URL";
+
+const classifierEnvSchema = z
+  .object({
+    TYPESAFE_API_KEY: unsupported(
+      "TYPESAFE_API_KEY is unsupported; use REASONING_ROUTER_CLASSIFIER_API_KEY",
+    ),
+    JEV_ROUTER_API_KEY: unsupported(UNSUPPORTED_JEV),
+    JEV_ROUTER_BASE_URL: unsupported(UNSUPPORTED_JEV),
+    REASONING_ROUTER_CLASSIFIER: z.string().default("jev"),
+    REASONING_ROUTER_CLASSIFIER_API_KEY: z.string().optional(),
+    REASONING_ROUTER_CLASSIFIER_BASE_URL: z.string().optional(),
+  })
+  .transform(
+    (env): ClassifierConfig => ({
+      provider: env.REASONING_ROUTER_CLASSIFIER,
+      apiKey: env.REASONING_ROUTER_CLASSIFIER_API_KEY,
+      baseUrl: env.REASONING_ROUTER_CLASSIFIER_BASE_URL,
+    }),
+  );
+
 /** The `classifier` block from `REASONING_ROUTER_CLASSIFIER*` variables; the provider validates its own fields. */
 export function loadClassifierConfig(
   env: Record<string, string | undefined>,
 ): ClassifierConfig {
-  if (env.TYPESAFE_API_KEY !== undefined) {
-    throw new Error(
-      "TYPESAFE_API_KEY is unsupported; use REASONING_ROUTER_CLASSIFIER_API_KEY",
-    );
-  }
-  if (
-    env.JEV_ROUTER_API_KEY !== undefined ||
-    env.JEV_ROUTER_BASE_URL !== undefined
-  ) {
-    throw new Error(
-      "JEV_ROUTER_API_KEY and JEV_ROUTER_BASE_URL are unsupported; use REASONING_ROUTER_CLASSIFIER_API_KEY and REASONING_ROUTER_CLASSIFIER_BASE_URL",
-    );
-  }
-  return {
-    provider: env.REASONING_ROUTER_CLASSIFIER ?? "jev",
-    apiKey: env.REASONING_ROUTER_CLASSIFIER_API_KEY,
-    baseUrl: env.REASONING_ROUTER_CLASSIFIER_BASE_URL,
-  };
+  return parseConfig(classifierEnvSchema, env);
 }
 
-function positiveInteger(
-  raw: string | undefined,
-  fallback: number,
-  name: string,
-): number {
-  const value = raw === undefined ? fallback : Number(raw);
-  if (!Number.isSafeInteger(value) || value < 1) {
-    throw new Error(`${name} must be a positive integer`);
-  }
-  return value;
-}
+const positiveInteger = (name: string, fallback: number) => {
+  const message = `${name} must be a positive integer`;
+  return z.coerce
+    .number(message)
+    .int(message)
+    .min(1, message)
+    .default(fallback);
+};
 
-function parsePort(raw: string | undefined): number {
-  const port = Number.parseInt(raw ?? "4320", 10);
-  if (!Number.isInteger(port) || port < 1 || port > 65_535) {
-    throw new Error(
-      "REASONING_ROUTER_PORT must be an integer between 1 and 65535",
-    );
-  }
-  return port;
-}
+/** Parses with `parseInt`, so trailing text after the digits is ignored. */
+const leadingInteger = (fallback: string, schema: z.ZodNumber) =>
+  z
+    .string()
+    .default(fallback)
+    .transform((raw) => Number.parseInt(raw, 10))
+    .pipe(schema);
 
-function parseTimeout(raw: string | undefined): number {
-  const ms = Number.parseInt(raw ?? "4000", 10);
-  if (!Number.isInteger(ms) || ms < 1) {
-    throw new Error(
-      "REASONING_ROUTER_CLASSIFICATION_TIMEOUT_MS must be a positive integer",
-    );
-  }
-  return ms;
-}
+const PORT = "REASONING_ROUTER_PORT must be an integer between 1 and 65535";
+const TIMEOUT =
+  "REASONING_ROUTER_CLASSIFICATION_TIMEOUT_MS must be a positive integer";
+const UPSTREAM = "REASONING_ROUTER_UPSTREAM_BASE_URL";
+const ANTHROPIC_UPSTREAM = "REASONING_ROUTER_ANTHROPIC_UPSTREAM_BASE_URL";
+const REQUIRED = `${UPSTREAM} is required; set it to a Responses API-compatible base URL`;
 
-function parseEffort(raw: string | undefined): Effort | undefined {
-  if (raw === undefined) return undefined;
-  if (!isEffort(raw) || !MODELS.every((model) => supportsEffort(model, raw))) {
-    throw new Error(
-      `REASONING_ROUTER_BASE_EFFORT must be one of ${EFFORTS.join(", ")}`,
-    );
-  }
-  return raw;
-}
-
-export function loadConfig(env: Record<string, string | undefined>): AppConfig {
-  const classifierPolicy = classificationPolicy({
-    maxRetries:
-      env.REASONING_ROUTER_MAX_RETRIES === undefined
-        ? undefined
-        : Number(env.REASONING_ROUTER_MAX_RETRIES),
-    fallbackMode: env.REASONING_ROUTER_FALLBACK_MODE,
-    fallbackEffort: env.REASONING_ROUTER_FALLBACK_EFFORT,
-  });
-  for (const name of ["UPSTREAM_MODEL", "UPSTREAM_MODELS", "ALLOWED_MODELS"]) {
-    if (env[name] !== undefined)
-      throw new Error(
-        `${name} is unsupported; select a registered model through request.model`,
-      );
-  }
-  if (
-    env.REASONING_ROUTER_DECISIONS_LOG_PATH !== undefined &&
-    !isAbsolute(env.REASONING_ROUTER_DECISIONS_LOG_PATH)
-  ) {
-    throw new Error(
-      "REASONING_ROUTER_DECISIONS_LOG_PATH must be an absolute path",
-    );
-  }
-  if (env.UPSTREAM_MODE !== undefined || env.OPENAI_API_KEY !== undefined) {
-    throw new Error(
-      "UPSTREAM_MODE and OPENAI_API_KEY are unsupported; use REASONING_ROUTER_UPSTREAM_AUTH and REASONING_ROUTER_UPSTREAM_API_KEY",
-    );
-  }
-  const policy = env.REASONING_ROUTER_UPSTREAM_AUTH ?? "forward";
-  if (policy !== "forward" && policy !== "bearer") {
-    throw new Error("REASONING_ROUTER_UPSTREAM_AUTH must be forward or bearer");
-  }
-  if (policy === "bearer" && !env.REASONING_ROUTER_UPSTREAM_API_KEY?.trim()) {
-    throw new Error(
-      "REASONING_ROUTER_UPSTREAM_API_KEY is required when REASONING_ROUTER_UPSTREAM_AUTH=bearer",
-    );
-  }
-  if (
-    policy === "forward" &&
-    env.REASONING_ROUTER_UPSTREAM_API_KEY !== undefined
-  ) {
-    throw new Error(
-      "REASONING_ROUTER_UPSTREAM_API_KEY requires REASONING_ROUTER_UPSTREAM_AUTH=bearer",
-    );
-  }
-
-  const upstreamBaseUrl = env.REASONING_ROUTER_UPSTREAM_BASE_URL;
-  if (!upstreamBaseUrl?.trim()) {
-    throw new Error(
-      "REASONING_ROUTER_UPSTREAM_BASE_URL is required; set it to a Responses API-compatible base URL",
-    );
-  }
-  let url: URL;
-  try {
-    url = new URL(upstreamBaseUrl);
-  } catch {
-    throw new Error(
-      "REASONING_ROUTER_UPSTREAM_BASE_URL must be a valid HTTP(S) URL",
-    );
-  }
-  if (
-    !["http:", "https:"].includes(url.protocol) ||
-    !url.hostname ||
-    url.username ||
-    url.password ||
-    url.search ||
-    url.hash
-  ) {
-    throw new Error(
-      "REASONING_ROUTER_UPSTREAM_BASE_URL must be an HTTP(S) URL without credentials, query, or fragment",
-    );
-  }
-  const loopback = ["127.0.0.1", "localhost", "[::1]"].includes(url.hostname);
-  if (policy === "forward" && !loopback) {
-    throw new Error(
-      "REASONING_ROUTER_UPSTREAM_AUTH=forward requires a loopback REASONING_ROUTER_UPSTREAM_BASE_URL",
-    );
-  }
-  if (policy === "bearer" && url.protocol !== "https:" && !loopback) {
-    throw new Error(
-      "REASONING_ROUTER_UPSTREAM_AUTH=bearer requires HTTPS except for loopback endpoints",
-    );
-  }
-
-  const anthropicBaseUrl = env.REASONING_ROUTER_ANTHROPIC_UPSTREAM_BASE_URL;
-  const anthropicKey = env.REASONING_ROUTER_ANTHROPIC_UPSTREAM_API_KEY;
-  if (anthropicKey !== undefined && !anthropicBaseUrl?.trim()) {
-    throw new Error(
-      "REASONING_ROUTER_ANTHROPIC_UPSTREAM_API_KEY requires REASONING_ROUTER_ANTHROPIC_UPSTREAM_BASE_URL",
-    );
-  }
-  if (anthropicBaseUrl !== undefined && !anthropicBaseUrl.trim()) {
-    throw new Error(
-      "REASONING_ROUTER_ANTHROPIC_UPSTREAM_BASE_URL must be a valid HTTP(S) URL",
-    );
-  }
-  let anthropicUpstream: AppConfig["anthropicUpstream"];
-  if (anthropicBaseUrl !== undefined) {
-    let anthropicUrl: URL;
+const upstreamUrl = (name: string) =>
+  z.string().transform((raw, ctx) => {
+    let url: URL;
     try {
-      anthropicUrl = new URL(anthropicBaseUrl);
+      url = new URL(raw);
     } catch {
-      throw new Error(
-        "REASONING_ROUTER_ANTHROPIC_UPSTREAM_BASE_URL must be a valid HTTP(S) URL",
-      );
+      ctx.addIssue(`${name} must be a valid HTTP(S) URL`);
+      return z.NEVER;
     }
     if (
-      !["http:", "https:"].includes(anthropicUrl.protocol) ||
-      !anthropicUrl.hostname ||
-      anthropicUrl.username ||
-      anthropicUrl.password ||
-      anthropicUrl.search ||
-      anthropicUrl.hash
+      !["http:", "https:"].includes(url.protocol) ||
+      !url.hostname ||
+      url.username ||
+      url.password ||
+      url.search ||
+      url.hash
     ) {
-      throw new Error(
-        "REASONING_ROUTER_ANTHROPIC_UPSTREAM_BASE_URL must be an HTTP(S) URL without credentials, query, or fragment",
+      ctx.addIssue(
+        `${name} must be an HTTP(S) URL without credentials, query, or fragment`,
       );
+      return z.NEVER;
     }
-    const anthropicLoopback = ["127.0.0.1", "localhost", "[::1]"].includes(
-      anthropicUrl.hostname,
-    );
-    if (policy === "forward" && anthropicKey !== undefined) {
-      throw new Error(
+    return {
+      baseUrl: raw,
+      https: url.protocol === "https:",
+      loopback: ["127.0.0.1", "localhost", "[::1]"].includes(url.hostname),
+    };
+  });
+
+const unsupportedModel = (name: string) =>
+  unsupported(
+    `${name} is unsupported; select a registered model through request.model`,
+  );
+const UNSUPPORTED_UPSTREAM =
+  "UPSTREAM_MODE and OPENAI_API_KEY are unsupported; use REASONING_ROUTER_UPSTREAM_AUTH and REASONING_ROUTER_UPSTREAM_API_KEY";
+
+const envSchema = z
+  .object({
+    REASONING_ROUTER_MAX_RETRIES: z
+      .string()
+      .optional()
+      .transform((raw) => (raw === undefined ? undefined : Number(raw)))
+      .pipe(classificationPolicySchema.shape.maxRetries),
+    REASONING_ROUTER_FALLBACK_MODE:
+      classificationPolicySchema.shape.fallbackMode,
+    REASONING_ROUTER_FALLBACK_EFFORT:
+      classificationPolicySchema.shape.fallbackEffort,
+    UPSTREAM_MODEL: unsupportedModel("UPSTREAM_MODEL"),
+    UPSTREAM_MODELS: unsupportedModel("UPSTREAM_MODELS"),
+    ALLOWED_MODELS: unsupportedModel("ALLOWED_MODELS"),
+    UPSTREAM_MODE: unsupported(UNSUPPORTED_UPSTREAM),
+    OPENAI_API_KEY: unsupported(UNSUPPORTED_UPSTREAM),
+    REASONING_ROUTER_DECISIONS_LOG_PATH: z
+      .string()
+      .refine(
+        isAbsolute,
+        "REASONING_ROUTER_DECISIONS_LOG_PATH must be an absolute path",
+      )
+      .optional(),
+    REASONING_ROUTER_UPSTREAM_AUTH: z
+      .enum(
+        ["forward", "bearer"],
+        "REASONING_ROUTER_UPSTREAM_AUTH must be forward or bearer",
+      )
+      .default("forward"),
+    REASONING_ROUTER_UPSTREAM_API_KEY: z.string().optional(),
+    REASONING_ROUTER_UPSTREAM_BASE_URL: z
+      .string(REQUIRED)
+      .refine((raw) => raw.trim().length > 0, REQUIRED)
+      .pipe(upstreamUrl(UPSTREAM)),
+    REASONING_ROUTER_ANTHROPIC_UPSTREAM_BASE_URL:
+      upstreamUrl(ANTHROPIC_UPSTREAM).optional(),
+    REASONING_ROUTER_ANTHROPIC_UPSTREAM_API_KEY: z.string().optional(),
+    REASONING_ROUTER_PORT: leadingInteger(
+      "4320",
+      z.int(PORT).min(1, PORT).max(65_535, PORT),
+    ),
+    REASONING_ROUTER_BASE_EFFORT: universalEffort(
+      `REASONING_ROUTER_BASE_EFFORT must be one of ${EFFORTS.join(", ")}`,
+    ).optional(),
+    REASONING_ROUTER_CLASSIFICATION_TIMEOUT_MS: leadingInteger(
+      "4000",
+      z.int(TIMEOUT).min(1, TIMEOUT),
+    ),
+    REASONING_ROUTER_MAX_REQUEST_BYTES: positiveInteger(
+      "REASONING_ROUTER_MAX_REQUEST_BYTES",
+      1_048_576,
+    ),
+    REASONING_ROUTER_MAX_IN_FLIGHT: positiveInteger(
+      "REASONING_ROUTER_MAX_IN_FLIGHT",
+      32,
+    ),
+    REASONING_ROUTER_UPSTREAM_HEADER_TIMEOUT_MS: positiveInteger(
+      "REASONING_ROUTER_UPSTREAM_HEADER_TIMEOUT_MS",
+      10_000,
+    ),
+    REASONING_ROUTER_UPSTREAM_IDLE_TIMEOUT_MS: positiveInteger(
+      "REASONING_ROUTER_UPSTREAM_IDLE_TIMEOUT_MS",
+      60_000,
+    ),
+    REASONING_ROUTER_EFFORT_CACHE_ENTRIES: positiveInteger(
+      "REASONING_ROUTER_EFFORT_CACHE_ENTRIES",
+      256,
+    ),
+    REASONING_ROUTER_EFFORT_CACHE_TTL_MS: positiveInteger(
+      "REASONING_ROUTER_EFFORT_CACHE_TTL_MS",
+      600_000,
+    ),
+    REASONING_ROUTER_SHUTDOWN_GRACE_MS: positiveInteger(
+      "REASONING_ROUTER_SHUTDOWN_GRACE_MS",
+      30_000,
+    ),
+  })
+  .transform((env, ctx): AppConfig => {
+    const policy = env.REASONING_ROUTER_UPSTREAM_AUTH;
+    const apiKey = env.REASONING_ROUTER_UPSTREAM_API_KEY;
+    const upstream = env.REASONING_ROUTER_UPSTREAM_BASE_URL;
+    const anthropic = env.REASONING_ROUTER_ANTHROPIC_UPSTREAM_BASE_URL;
+    const anthropicKey = env.REASONING_ROUTER_ANTHROPIC_UPSTREAM_API_KEY;
+    const issues: string[] = [];
+    if (policy === "bearer" && !apiKey?.trim())
+      issues.push(
+        "REASONING_ROUTER_UPSTREAM_API_KEY is required when REASONING_ROUTER_UPSTREAM_AUTH=bearer",
+      );
+    if (policy === "forward" && apiKey !== undefined)
+      issues.push(
+        "REASONING_ROUTER_UPSTREAM_API_KEY requires REASONING_ROUTER_UPSTREAM_AUTH=bearer",
+      );
+    if (anthropicKey !== undefined && anthropic === undefined)
+      issues.push(
+        `REASONING_ROUTER_ANTHROPIC_UPSTREAM_API_KEY requires ${ANTHROPIC_UPSTREAM}`,
+      );
+    for (const [name, target] of [
+      [UPSTREAM, upstream],
+      [ANTHROPIC_UPSTREAM, anthropic],
+    ] as const) {
+      if (target === undefined) continue;
+      if (policy === "forward" && !target.loopback)
+        issues.push(
+          `REASONING_ROUTER_UPSTREAM_AUTH=forward requires a loopback ${name}`,
+        );
+      if (policy === "bearer" && !target.https && !target.loopback)
+        issues.push(
+          "REASONING_ROUTER_UPSTREAM_AUTH=bearer requires HTTPS except for loopback endpoints",
+        );
+    }
+    if (
+      anthropic !== undefined &&
+      policy === "forward" &&
+      anthropicKey !== undefined
+    )
+      issues.push(
         "REASONING_ROUTER_ANTHROPIC_UPSTREAM_API_KEY requires REASONING_ROUTER_UPSTREAM_AUTH=bearer",
       );
-    }
-    if (policy === "forward" && !anthropicLoopback) {
-      throw new Error(
-        "REASONING_ROUTER_UPSTREAM_AUTH=forward requires a loopback REASONING_ROUTER_ANTHROPIC_UPSTREAM_BASE_URL",
-      );
-    }
-    if (policy === "bearer" && !anthropicKey?.trim()) {
-      throw new Error(
+    if (anthropic !== undefined && policy === "bearer" && !anthropicKey?.trim())
+      issues.push(
         "REASONING_ROUTER_ANTHROPIC_UPSTREAM_API_KEY is required when REASONING_ROUTER_UPSTREAM_AUTH=bearer",
       );
+    if (issues.length) {
+      for (const issue of issues) ctx.addIssue(issue);
+      return z.NEVER;
     }
-    if (
-      policy === "bearer" &&
-      anthropicUrl.protocol !== "https:" &&
-      !anthropicLoopback
-    ) {
-      throw new Error(
-        "REASONING_ROUTER_UPSTREAM_AUTH=bearer requires HTTPS except for loopback endpoints",
-      );
-    }
-    anthropicUpstream = {
-      baseUrl: anthropicBaseUrl,
-      auth:
-        policy === "forward"
-          ? { policy: "forward" }
-          : { policy: "key", apiKey: anthropicKey!.trim() },
+    return {
+      maxRetries: env.REASONING_ROUTER_MAX_RETRIES,
+      fallbackMode: env.REASONING_ROUTER_FALLBACK_MODE,
+      fallbackEffort: env.REASONING_ROUTER_FALLBACK_EFFORT,
+      port: env.REASONING_ROUTER_PORT,
+      upstreamBaseUrl: upstream.baseUrl,
+      anthropicUpstream:
+        anthropic === undefined
+          ? undefined
+          : {
+              baseUrl: anthropic.baseUrl,
+              auth:
+                policy === "forward"
+                  ? { policy: "forward" }
+                  : { policy: "key", apiKey: anthropicKey?.trim() ?? "" },
+            },
+      upstreamAuth:
+        policy === "bearer"
+          ? { policy, apiKey: apiKey?.trim() ?? "" }
+          : { policy },
+      baseEffort: env.REASONING_ROUTER_BASE_EFFORT,
+      classifierTimeoutMs: env.REASONING_ROUTER_CLASSIFICATION_TIMEOUT_MS,
+      maxRequestBytes: env.REASONING_ROUTER_MAX_REQUEST_BYTES,
+      maxInFlight: env.REASONING_ROUTER_MAX_IN_FLIGHT,
+      upstreamHeaderTimeoutMs: env.REASONING_ROUTER_UPSTREAM_HEADER_TIMEOUT_MS,
+      upstreamIdleTimeoutMs: env.REASONING_ROUTER_UPSTREAM_IDLE_TIMEOUT_MS,
+      effortCacheEntries: env.REASONING_ROUTER_EFFORT_CACHE_ENTRIES,
+      effortCacheTtlMs: env.REASONING_ROUTER_EFFORT_CACHE_TTL_MS,
+      shutdownGraceMs: env.REASONING_ROUTER_SHUTDOWN_GRACE_MS,
+      decisionsLogPath: env.REASONING_ROUTER_DECISIONS_LOG_PATH,
     };
-  }
+  });
 
-  return {
-    ...classifierPolicy,
-    port: parsePort(env.REASONING_ROUTER_PORT),
-    upstreamBaseUrl,
-    anthropicUpstream,
-    upstreamAuth:
-      policy === "bearer"
-        ? { policy, apiKey: env.REASONING_ROUTER_UPSTREAM_API_KEY!.trim() }
-        : { policy },
-    baseEffort: parseEffort(env.REASONING_ROUTER_BASE_EFFORT),
-    classifierTimeoutMs: parseTimeout(
-      env.REASONING_ROUTER_CLASSIFICATION_TIMEOUT_MS,
-    ),
-    maxRequestBytes: positiveInteger(
-      env.REASONING_ROUTER_MAX_REQUEST_BYTES,
-      1_048_576,
-      "REASONING_ROUTER_MAX_REQUEST_BYTES",
-    ),
-    maxInFlight: positiveInteger(
-      env.REASONING_ROUTER_MAX_IN_FLIGHT,
-      32,
-      "REASONING_ROUTER_MAX_IN_FLIGHT",
-    ),
-    upstreamHeaderTimeoutMs: positiveInteger(
-      env.REASONING_ROUTER_UPSTREAM_HEADER_TIMEOUT_MS,
-      10_000,
-      "REASONING_ROUTER_UPSTREAM_HEADER_TIMEOUT_MS",
-    ),
-    upstreamIdleTimeoutMs: positiveInteger(
-      env.REASONING_ROUTER_UPSTREAM_IDLE_TIMEOUT_MS,
-      60_000,
-      "REASONING_ROUTER_UPSTREAM_IDLE_TIMEOUT_MS",
-    ),
-    effortCacheEntries: positiveInteger(
-      env.REASONING_ROUTER_EFFORT_CACHE_ENTRIES,
-      256,
-      "REASONING_ROUTER_EFFORT_CACHE_ENTRIES",
-    ),
-    effortCacheTtlMs: positiveInteger(
-      env.REASONING_ROUTER_EFFORT_CACHE_TTL_MS,
-      600_000,
-      "REASONING_ROUTER_EFFORT_CACHE_TTL_MS",
-    ),
-    shutdownGraceMs: positiveInteger(
-      env.REASONING_ROUTER_SHUTDOWN_GRACE_MS,
-      30_000,
-      "REASONING_ROUTER_SHUTDOWN_GRACE_MS",
-    ),
-    decisionsLogPath: env.REASONING_ROUTER_DECISIONS_LOG_PATH,
-  };
+export function loadConfig(env: Record<string, string | undefined>): AppConfig {
+  return parseConfig(envSchema, env);
 }

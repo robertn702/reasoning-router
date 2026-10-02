@@ -65,6 +65,12 @@ These are reversible:
   command `reasoning-router`), since it needs a classifier and core must not
   depend on one. The unscoped `reasoning-router` name stays free for a future
   umbrella CLI.
+- **Zod for configuration only.** Plugin options, proxy environment
+  variables, and classifier settings are Zod schemas, and their option types
+  are inferred from those schemas. Core exports the shared schemas and `parseConfig`, which
+  reports every problem in one error. Request bodies and streamed usage stay on
+  `isRecord` narrowing so unknown provider fields pass through unchanged. Zod
+  is core's only dependency.
 
 ## License
 

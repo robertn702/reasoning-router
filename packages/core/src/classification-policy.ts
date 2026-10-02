@@ -1,39 +1,34 @@
-import { type Effort, isEffort, MODELS, supportsEffort } from "./models.js";
+import { z } from "zod";
 
-export interface ClassificationPolicyOptions {
-  maxRetries?: number;
-  fallbackMode?: "fixed" | "previous" | "error";
-  fallbackEffort?: Effort;
-}
+import { parseConfig, universalEffort } from "./config.js";
+
+const MAX_RETRIES = "maxRetries must be an integer from 0 to 10";
+
+export const classificationPolicySchema = z.object({
+  maxRetries: z
+    .int(MAX_RETRIES)
+    .min(0, MAX_RETRIES)
+    .max(10, MAX_RETRIES)
+    .default(1),
+  fallbackMode: z
+    .enum(
+      ["fixed", "previous", "error"],
+      "fallbackMode must be fixed, previous, or error",
+    )
+    .default("fixed"),
+  fallbackEffort: universalEffort(
+    "fallbackEffort must be supported by every model",
+  ).default("high"),
+});
+
+export type ClassificationPolicyOptions = z.input<
+  typeof classificationPolicySchema
+>;
+export type ClassificationPolicy = z.output<typeof classificationPolicySchema>;
 
 /** Validates policy options, which may come from untyped configuration. */
-export function classificationPolicy(
-  options: {
-    readonly [K in keyof ClassificationPolicyOptions]?: unknown;
-  },
-): Required<ClassificationPolicyOptions> {
-  const maxRetries = options.maxRetries ?? 1;
-  const fallbackMode = options.fallbackMode ?? "fixed";
-  const fallbackEffort = options.fallbackEffort ?? "high";
-  if (
-    typeof maxRetries !== "number" ||
-    !Number.isSafeInteger(maxRetries) ||
-    maxRetries < 0 ||
-    maxRetries > 10
-  )
-    throw new Error("maxRetries must be an integer from 0 to 10");
-  if (
-    fallbackMode !== "fixed" &&
-    fallbackMode !== "previous" &&
-    fallbackMode !== "error"
-  )
-    throw new Error("fallbackMode must be fixed, previous, or error");
-  if (
-    !isEffort(fallbackEffort) ||
-    !MODELS.every((model) => supportsEffort(model, fallbackEffort))
-  )
-    throw new Error("fallbackEffort must be supported by every model");
-  return { maxRetries, fallbackMode, fallbackEffort };
+export function classificationPolicy(options: unknown): ClassificationPolicy {
+  return parseConfig(classificationPolicySchema, options);
 }
 
 export class ClassificationFailedError extends Error {
