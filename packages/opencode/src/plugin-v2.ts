@@ -23,6 +23,26 @@ import {
 
 type ProviderInput = Parameters<ProviderEditor["add"]>[0];
 type ModelInput = ProviderInput["models"][number];
+type ModelID = ModelInput["id"];
+type ProviderID = ProviderInput["info"]["id"];
+/**
+ * OpenCode's model and provider IDs are `Schema.String` brands with no other
+ * checks, so this is the check `ID.make` performs, without importing the SDK
+ * at runtime.
+ */
+const isID = <ID extends ModelID | ProviderID>(value: string): value is ID =>
+  typeof value === "string";
+const toID = <ID extends ModelID | ProviderID>(value: string): ID => {
+  if (isID<ID>(value)) return value;
+  throw new TypeError(`reasoning-router: invalid OpenCode ID ${value}`);
+};
+/** The part of the plugin context the router uses. */
+export type Host = Pick<Plugin.Context, "options"> & {
+  readonly provider: Pick<Plugin.Context["provider"], "transform">;
+  readonly model: Pick<Plugin.Context["model"], "transform">;
+  readonly integration: Pick<Plugin.Context["integration"], "connection">;
+  readonly session: Pick<Plugin.Context["session"], "hook">;
+};
 type Alias = {
   group: Provider;
   providerID: string;
@@ -104,7 +124,7 @@ function parseWrap(
   );
 }
 
-export async function setupV2(ctx: Plugin.Context): Promise<() => void> {
+export async function setupV2(ctx: Host): Promise<() => void> {
   const refs = parseWrap(ctx.options);
   const runtime = createPluginRuntime(ctx.options);
   const exchanges = new WeakMap<Request, Exchange>();
@@ -115,9 +135,9 @@ export async function setupV2(ctx: Plugin.Context): Promise<() => void> {
     const models = [...new Set(refs.map((ref) => ref.group))].flatMap((group) =>
       modelsFor(group).map(
         (profile): ModelInput => ({
-          id: profile.id as ModelInput["id"],
-          modelID: profile.id as ModelInput["modelID"],
-          providerID: PROVIDER_ID as ModelInput["providerID"],
+          id: toID<ModelID>(profile.id),
+          modelID: toID<ModelID>(profile.id),
+          providerID: toID<ProviderID>(PROVIDER_ID),
           name: profile.name,
           package: PACKAGES[group],
           settings: { baseURL: "http://127.0.0.1:1/v1" },
@@ -137,7 +157,7 @@ export async function setupV2(ctx: Plugin.Context): Promise<() => void> {
     );
     editor.add({
       info: {
-        id: PROVIDER_ID as ProviderInput["info"]["id"],
+        id: toID<ProviderID>(PROVIDER_ID),
         name: "Reasoning Router",
         activation: "enabled",
         package: PROVIDER_PACKAGE,

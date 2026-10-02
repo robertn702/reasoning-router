@@ -11,6 +11,13 @@ import {
 } from "../src/index.js";
 
 const ACCOUNT_ID = "0123456789abcdef0123456789abcdef";
+const state = {
+  model: MODELS[0]!.id,
+  recent_user_text: "",
+  assistant_progress: "",
+  tool_results: [],
+  failure_state: { failed_count: 0, last_failure_excerpt: "" },
+};
 
 const envelope = (result: unknown, success = true) =>
   new Response(JSON.stringify({ result, success, errors: [], messages: [] }), {
@@ -118,17 +125,15 @@ describe("Clef classifier", () => {
       signal = new AbortController().signal,
     ) => {
       const classifier = transport(fetch);
-      return classifier
-        .classify({ state: {}, model: MODELS[0]!, signal } as never)
-        .then(
-          () => {
-            throw new Error("expected a failure");
-          },
-          (error: unknown) => ({
-            category: classifier.errorCategory(error),
-            retryAfterMs: classifier.retryAfterMs?.(error),
-          }),
-        );
+      return classifier.classify({ state, model: MODELS[0]!, signal }).then(
+        () => {
+          throw new Error("expected a failure");
+        },
+        (error: unknown) => ({
+          category: classifier.errorCategory(error),
+          retryAfterMs: classifier.retryAfterMs?.(error),
+        }),
+      );
     };
 
     expect(

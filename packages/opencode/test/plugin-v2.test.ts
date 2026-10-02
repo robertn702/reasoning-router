@@ -2,16 +2,28 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { createServer, type Server } from "node:http";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import type { Plugin } from "@opencode/plugin";
+import {
+  Agent,
+  type Credential,
+  Integration,
+  Model,
+  Provider,
+} from "@opencode/plugin";
 import type { ModelEditor } from "@opencode/plugin/promise/model";
 import type { ProviderEditor } from "@opencode/plugin/promise/provider";
+import type { Registration } from "@opencode/plugin/promise/registration";
 import type {
   SessionHttpRequest,
   SessionHttpResponse,
+  SessionRequestKind,
 } from "@opencode/plugin/promise/session";
+import type { DeepMutable } from "@opencode/plugin/promise/types";
+import { Money } from "@opencode/schema/money";
+import { Session } from "@opencode/schema/session";
 import { MODELS } from "@reasoning-router/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import plugin from "../src/plugin.js";
+import type { Host } from "../src/plugin-v2.js";
 
 const originalFetch = globalThis.fetch;
 function portOf(server: Server): number {
@@ -54,19 +66,42 @@ const body = {
   stream: true,
   prompt_cache_key: "ses_test",
 };
+type EditableModel = DeepMutable<Model.Info>;
 type Source = {
-  provider: Record<string, unknown>;
-  models: Map<string, Record<string, unknown>>;
+  provider: Provider.Info;
+  models: Map<string, Model.Info>;
 };
+const usd = (amount: number) => Money.USDPerMillionTokens.make(amount);
+/** A complete source model; `apiID` is the model ID sent upstream. */
+const model = (
+  providerID: string,
+  id: string,
+  fields: Partial<Omit<Model.Info, "id" | "modelID" | "providerID">> = {},
+  apiID = id,
+): Model.Info => ({
+  ...Model.Info.default(Provider.ID.make(providerID), Model.ID.make(id)),
+  modelID: Model.ID.make(apiID),
+  ...fields,
+});
+const editable = (info: Model.Info): EditableModel => ({
+  ...info,
+  capabilities: {
+    ...info.capabilities,
+    input: [...info.capabilities.input],
+    output: [...info.capabilities.output],
+  },
+  variants: [...info.variants],
+  cost: [...info.cost],
+});
 const sources = () =>
   new Map<string, Source>([
     [
       "gw",
       {
         provider: {
-          id: "gw",
+          ...Provider.Info.empty(Provider.ID.make("gw")),
           package: OPENAI,
-          integrationID: "gw",
+          integrationID: Integration.ID.make("gw"),
           settings: {
             baseURL: "https://a.test/v1",
             apiKey: "config-key",
@@ -78,16 +113,20 @@ const sources = () =>
         models: new Map([
           [
             "gpt-6-astra",
-            {
-              id: "gpt-6-astra",
-              modelID: "gpt-6-astra",
+            model("gw", "gpt-6-astra", {
               settings: { extra: 1 },
               headers: { "x-model": "yes" },
               body: { model: true },
-              limit: { context: 123 },
-              cost: [1],
-              variants: ["high"],
-            },
+              limit: { context: 123, output: 32_000 },
+              cost: [
+                {
+                  input: usd(1),
+                  output: usd(2),
+                  cache: { read: usd(3), write: usd(4) },
+                },
+              ],
+              variants: [{ id: Model.VariantID.make("high") }],
+            }),
           ],
         ]),
       },
@@ -96,109 +135,121 @@ const sources = () =>
       "claude",
       {
         provider: {
-          id: "claude",
+          ...Provider.Info.empty(Provider.ID.make("claude")),
           package: ANTHROPIC,
-          integrationID: "claude",
+          integrationID: Integration.ID.make("claude"),
           settings: { baseURL: "https://claude.test/v1" },
         },
         models: new Map([
           [
             "claude-opus-5-5",
-            {
-              id: "claude-opus-5-5",
-              modelID: "claude-opus-5-5",
-              limit: { context: 456 },
-            },
+            model("claude", "claude-opus-5-5", {
+              limit: { context: 456, output: 32_000 },
+            }),
           ],
           [
             "claude-sonnet-5-5",
-            {
-              id: "claude-sonnet-5-5",
-              modelID: "claude-sonnet-5-5",
-              limit: { context: 456 },
-            },
+            model("claude", "claude-sonnet-5-5", {
+              limit: { context: 456, output: 32_000 },
+            }),
           ],
         ]),
       },
     ],
   ]);
+const oauthCredential = (access: string): Credential.Value => ({
+  type: "oauth",
+  methodID: Integration.MethodID.make("oauth"),
+  refresh: "",
+  access,
+  expires: 0,
+});
 
 async function host(
   options: Record<string, unknown> = base,
   source = sources(),
-  credentials: Record<string, unknown> = {},
+  credentials: Record<string, Credential.Value> = {},
 ) {
   const registrations: Parameters<ProviderEditor["add"]>[0][] = [];
-  const aliases = new Map<string, Record<string, unknown>>();
+  const aliases = new Map<string, EditableModel>();
   const hooks = new Map<string, (event: any) => Promise<void> | void>();
   let providerTransform!: (editor: ProviderEditor) => void;
   let modelTransform!: (editor: ModelEditor) => void;
-  const ctx = {
+  const registration: Registration = { dispose: async () => {} };
+  const ctx: Host = {
     options,
     provider: {
-      async transform(callback: typeof providerTransform) {
+      async transform(callback) {
         providerTransform = callback;
+        return registration;
       },
     },
     model: {
-      async transform(callback: typeof modelTransform) {
+      async transform(callback) {
         modelTransform = callback;
+        return registration;
       },
     },
     integration: {
       connection: {
-        async active(id: string) {
-          return credentials[id] ? { id } : undefined;
+        async active(id) {
+          const credential = credentials[id];
+          return credential
+            ? { type: "credential", id, label: id, method: credential.type }
+            : undefined;
         },
-        async resolve(connection: { id: string }) {
-          return credentials[connection.id];
+        async resolve(connection) {
+          return connection.type === "credential"
+            ? credentials[connection.id]
+            : undefined;
         },
       },
     },
     session: {
-      async hook(
-        name: string,
-        callback: (event: any) => void,
-        scope: { providerID: string },
-      ) {
-        expect(scope.providerID).toBe("reasoning-router");
+      async hook(name, callback, scope) {
+        expect(scope).toEqual({ providerID: "reasoning-router" });
         hooks.set(name, callback);
+        return registration;
       },
     },
-  } as unknown as Plugin.Context;
+  };
   const cleanup = await plugin.setup(ctx);
+  const providerEditor: ProviderEditor = {
+    list: () => [],
+    get: () => undefined,
+    add(input) {
+      registrations.push(input);
+      for (const info of input.models) aliases.set(info.id, editable(info));
+    },
+    update() {},
+    remove() {},
+    models: { set() {}, update() {}, remove() {} },
+  };
+  const modelEditor: ModelEditor = {
+    list: () => [],
+    get(providerID, modelID) {
+      const found = source.get(providerID)?.models.get(modelID);
+      return found ? editable(found) : aliases.get(modelID);
+    },
+    update(_providerID, modelID, update) {
+      const alias = aliases.get(modelID);
+      if (alias) update(alias);
+    },
+    remove(_providerID, modelID) {
+      aliases.delete(modelID);
+    },
+    default: { get: () => undefined, set() {} },
+    provider: {
+      list: () => [...source.values()],
+      get: (providerID) => source.get(providerID),
+    },
+  };
   const providerPass = () => {
     aliases.clear();
-    providerTransform({
-      add(registration) {
-        registrations.push(registration);
-        for (const model of registration.models)
-          aliases.set(model.id, { ...model });
-      },
-    } as ProviderEditor);
+    providerTransform(providerEditor);
   };
   const modelPass = () => {
-    modelTransform({
-      get(providerID: string, modelID: string) {
-        return (source.get(providerID)?.models.get(modelID) ??
-          aliases.get(modelID)) as never;
-      },
-      provider: {
-        get(providerID: string) {
-          return source.get(providerID) as never;
-        },
-      },
-      update(
-        _providerID: string,
-        modelID: string,
-        update: (model: any) => void,
-      ) {
-        update(aliases.get(modelID));
-      },
-      remove(_providerID: string, modelID: string) {
-        aliases.delete(modelID);
-      },
-    } as unknown as ModelEditor);
+    modelTransform(modelEditor);
   };
   const reload = () => {
     providerPass();
@@ -209,46 +260,40 @@ async function host(
     data: unknown = body,
     init: {
       model?: string;
-      kind?: string;
+      kind?: SessionRequestKind;
       url?: string;
       headers?: Record<string, string>;
       signal?: AbortSignal;
     } = {},
-  ) =>
-    ({
-      model: {
-        providerID: "reasoning-router",
-        id: init.model ?? "gpt-6-astra",
+  ): SessionHttpRequest => ({
+    sessionID: Session.ID.make("ses_test"),
+    agent: Agent.ID.make("build"),
+    model: {
+      providerID: Provider.ID.make("reasoning-router"),
+      id: Model.ID.make(init.model ?? "gpt-6-astra"),
+    },
+    kind: init.kind ?? "primary",
+    request: new Request(init.url ?? "https://a.test/v1/responses", {
+      method: "POST",
+      headers: {
+        authorization: "Bearer config-key",
+        "content-type": "application/json",
+        ...init.headers,
       },
-      sessionID: "ses_test",
-      kind: init.kind ?? "primary",
-      request: new Request(init.url ?? "https://a.test/v1/responses", {
-        method: "POST",
-        headers: {
-          authorization: "Bearer config-key",
-          "content-type": "application/json",
-          ...init.headers,
-        },
-        body: JSON.stringify(data),
-        signal: init.signal,
-      }),
-    }) as SessionHttpRequest;
+      body: JSON.stringify(data),
+      signal: init.signal,
+    }),
+  });
   const exchange = async (
     data: unknown = body,
-    init: {
-      model?: string;
-      kind?: string;
-      url?: string;
-      headers?: Record<string, string>;
-      signal?: AbortSignal;
-    } = {},
+    init: Parameters<typeof event>[1] = {},
   ) => {
     const call = event(data, init);
     await hooks.get("http.request")!(call);
-    const response = {
+    const response: SessionHttpResponse = {
       ...call,
       response: await fetch(call.request),
-    } as SessionHttpResponse;
+    };
     await hooks.get("http.response")!(response);
     return { request: call.request, response: response.response };
   };
@@ -348,7 +393,13 @@ describe("V2 wrap aliases", () => {
       name: "GPT-6 Astra",
       modelID: "gpt-6-astra",
       limit: { context: 123 },
-      cost: [1],
+      cost: [
+        {
+          input: usd(1),
+          output: usd(2),
+          cache: { read: usd(3), write: usd(4) },
+        },
+      ],
       variants: [],
       settings: {
         baseURL: "https://a.test/v1",
@@ -398,7 +449,7 @@ describe("V2 wrap aliases", () => {
 
   it("validates the resolved API model ID and package, not just the source ref", async () => {
     const source = sources();
-    source.get("gw")!.models.set("other", { id: "other", modelID: "other" });
+    source.get("gw")!.models.set("other", model("gw", "other"));
     const unsupported = await host(
       { ...base, wrap: { openai: ["gw/other"] } },
       source,
@@ -407,7 +458,8 @@ describe("V2 wrap aliases", () => {
       "not a registered openai profile",
     );
     unsupported.cleanup();
-    source.get("gw")!.models.get("gpt-6-astra")!.package = ANTHROPIC;
+    const gw = source.get("gw")!.models;
+    gw.set("gpt-6-astra", { ...gw.get("gpt-6-astra")!, package: ANTHROPIC });
     const mismatch = await host(
       { ...base, wrap: { openai: ["gw/gpt-6-astra"] } },
       source,
@@ -416,10 +468,7 @@ describe("V2 wrap aliases", () => {
       `requires package ${OPENAI}`,
     );
     mismatch.cleanup();
-    source
-      .get("gw")!
-      .models.set("alias", { id: "alias", modelID: "gpt-6-astra" });
-    source.get("gw")!.models.get("alias")!.package = OPENAI;
+    gw.set("alias", model("gw", "alias", { package: OPENAI }, "gpt-6-astra"));
     const resolved = await host(
       { ...base, wrap: { openai: ["gw/alias"] } },
       source,
@@ -430,7 +479,11 @@ describe("V2 wrap aliases", () => {
 
   it("accepts the built-in OpenAI package without changing its source model", async () => {
     const source = sources();
-    source.get("gw")!.provider.package = "@opencode/ai/providers/openai";
+    const gw = source.get("gw")!;
+    source.set("gw", {
+      ...gw,
+      provider: { ...gw.provider, package: "@opencode/ai/providers/openai" },
+    });
     const h = await host(base, source);
     expect(h.aliases.get("gpt-6-astra")?.package).toBe(
       "@opencode/ai/providers/openai",
@@ -499,16 +552,18 @@ describe("V2 wrap aliases", () => {
 
   it("pins HTTP transport over a source model's top-level websocket preference", async () => {
     const source = sources();
-    source.get("gw")!.models.get("gpt-6-astra")!.transport = "websocket";
+    Object.assign(source.get("gw")!.models.get("gpt-6-astra")!, {
+      transport: "websocket",
+    });
     const h = await host(base, source);
-    expect(h.aliases.get("gpt-6-astra")?.transport).toBe("http");
+    expect(h.aliases.get("gpt-6-astra")).toMatchObject({ transport: "http" });
     h.cleanup();
   });
 
   it("uses a present wire auth header unchanged without resolving an OAuth integration", async () => {
     mockFetch();
     const h = await host(base, sources(), {
-      gw: { type: "oauth", access: "token" },
+      gw: oauthCredential("token"),
     });
     const call = h.event();
     const original = call.request;
@@ -644,7 +699,7 @@ describe("V2 wrap aliases", () => {
 
   it("rejects an OAuth source without an existing wire credential", async () => {
     const oauth = await host(base, sources(), {
-      gw: { type: "oauth", access: "token" },
+      gw: oauthCredential("token"),
     });
     await expect(
       oauth.exchange(body, { headers: { authorization: "" } }),
@@ -773,24 +828,20 @@ describe("V2 wrap aliases", () => {
   it("selects Clef from the classifier environment variables", async () =>
     withLog(async (path) => {
       const classifierUrls: string[] = [];
-      globalThis.fetch = vi.fn(
-        async (request: RequestInfo | URL, init?: RequestInit) => {
-          const url =
-            request instanceof Request ? request.url : String(request);
-          if (!url.startsWith("https://api.cloudflare.com/"))
-            return new Response("{}", {
-              headers: { "content-type": "application/json" },
-            });
-          classifierUrls.push(url);
-          expect(JSON.parse(String(init?.body)).model).toBe("clef-flash");
-          return new Response(
-            JSON.stringify({
-              success: true,
-              result: { answers: { effort: { choice: "high" } } },
-            }),
-          );
-        },
-      ) as typeof fetch;
+      mockFetch(async (request) => {
+        if (!request.url.startsWith("https://api.cloudflare.com/"))
+          return new Response("{}", {
+            headers: { "content-type": "application/json" },
+          });
+        classifierUrls.push(request.url);
+        expect((await request.json()).model).toBe("clef-flash");
+        return new Response(
+          JSON.stringify({
+            success: true,
+            result: { answers: { effort: { choice: "high" } } },
+          }),
+        );
+      });
       vi.stubEnv("REASONING_ROUTER_CLASSIFIER", "clef");
       vi.stubEnv("REASONING_ROUTER_CLASSIFIER_API_KEY", "cf-token");
       vi.stubEnv(
@@ -970,7 +1021,7 @@ describe("V2 wrap aliases", () => {
   it("ignores responses for requests it did not route", async () => {
     const h = await host();
     const original = new Response("untouched");
-    const event = { ...h.event(), response: original } as SessionHttpResponse;
+    const event: SessionHttpResponse = { ...h.event(), response: original };
     await h.hooks.get("http.response")!(event);
     expect(event.response).toBe(original);
     h.cleanup();
