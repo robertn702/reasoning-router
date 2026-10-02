@@ -35,6 +35,9 @@ export function packWorkspaces(root, names, destination, tarballs = []) {
         path,
       ]),
     );
+  // Build in dependency order first; each prepack compiles against the
+  // dist/ of the packages it imports.
+  run("npm", ["run", "build"], { cwd: root, stdio: "ignore" });
   const packed = JSON.parse(
     run(
       "npm",

@@ -18,7 +18,7 @@ Use Node.js 24.x from the repo root.
 | Lint and format check (Biome) | `npm run lint` |
 | Apply lint fixes and formatting | `npm run format` |
 | Run tests (Vitest) | `npm test` |
-| Build every package to `dist/` | `npm run build --workspaces` |
+| Build every package to `dist/`, in dependency order | `npm run build` |
 | Pack, install, and run the packages | `npm run smoke:package` |
 | Install the packed plugin in OpenCode 2.0.18 | `npm run smoke:plugin:v2` |
 | Record a release note | `npx changeset` |
