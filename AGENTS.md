@@ -68,9 +68,12 @@ before starting an agent. The script runs `npm ci`, copies local `.env*` files
   `@reasoning-router/classifiers`, `@reasoning-router/pi`, and
   `@reasoning-router/proxy`. Harness
   adapters use the bare harness name. Add a classifier as a preset in
-  `classifiers`, not as a new package; a heavy runtime it needs is an
-  optional peer dependency loaded with a dynamic `import()`. Follow the
-  "Porting" decisions in `docs/architecture.md` when porting code into them.
+  `classifiers`, not as a new package. Follow the "Porting" decisions in
+  `docs/architecture.md` when porting code into them.
+- Reach every classifier over HTTP. A classifier that runs a local model
+  (such as Laya) is a server the user runs; never install, download, load,
+  or start a model, its weights, or its runtime from these packages, and add
+  no model runtime dependency.
 - Each test lives in the package whose code it covers.
 - Do not publish to npm. Changesets is configured for versioning only; there
   is no publish workflow. Do not add changesets until the packages are first

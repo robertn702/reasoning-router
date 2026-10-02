@@ -79,19 +79,20 @@ The first port of `opencode-jev-router` creates three packages under the
 One package holds every classifier because the decision models share one
 request format but not one endpoint: Jev, Clef, Laya, and others accept the
 same System One `state` and `questions` and return the same `answers`, but are
-reached through different URLs, auth, and response envelopes, or run
-in-process. A new compatible model is a preset of a few lines, not a new
-package. Harnesses cannot install extra packages next to a plugin, so
-per-classifier packages would all be dependencies of every harness anyway.
+reached through different URLs, auth, and response envelopes. A new
+compatible model is a preset of a few lines, not a new package. Harnesses
+cannot install extra packages next to a plugin, so per-classifier packages
+would all be dependencies of every harness anyway. Split a classifier into
+its own package only if someone else needs to release it independently.
 
-A classifier that needs a heavy runtime is an optional peer dependency of
-`classifiers`, loaded with a dynamic `import()` only when configured, and
-reported with a clear error when it is not installed. Laya is the first:
-`@receptron/laya` depends on `onnxruntime-node`, which is about 300 MB
-unpacked and runs a native `postinstall`, so it must not reach or break
-installs for other classifiers. Split a classifier into its own package only
-if its dependency cannot be loaded lazily or someone else needs to release it
-independently.
+Every classifier is reached over HTTP. A classifier that runs a local model
+is a server the user installs, runs, and supervises (for Laya,
+`laya-serve`); the preset only needs its URL. Our packages never install,
+download, load, or start a model, its weights, or its runtime, and depend on
+no model runtime. Running a model inside the router was rejected for Laya
+([proposal](proposals/laya.md)): inference blocks the router's event loop,
+each process would hold its own 1.7 GB copy of the model, and harnesses
+cannot install the runtime next to a plugin.
 
 Naming:
 
@@ -118,10 +119,10 @@ that Jev-specific names become provider-neutral.
 - **First providers:** [Jev](https://typesafe.ai/) (hosted by TypeSafe or
   through Vercel AI Gateway), the best-known decision model, and
   [Laya](https://huggingface.co/convaiinnovations/laya), an open-source,
-  Jev-compatible model, requested by users. Laya runs locally through
-  [`@receptron/laya`](https://github.com/receptron/laya) on ONNX Runtime; its
-  weights are about 1.7 GB, downloaded on first use, and need about 2 GB of
-  RAM.
+  Jev-compatible model, requested by users. Users run it themselves with
+  `laya-serve` from Laya's authors, which serves the Jev
+  `POST /v1/systemone` API; the `laya` preset calls that server
+  ([proposal](proposals/laya.md)).
 - **Clef:** Cloudflare's
   [Clef and Clef-flash](https://blog.cloudflare.com/clef-decision-models/)
   ([#1](https://github.com/robertn702/reasoning-router/issues/1)), hosted on
@@ -131,7 +132,7 @@ that Jev-specific names become provider-neutral.
   `{baseUrl}/v1/systemone`. `model` (`clef` or `clef-flash`) is required
   until effort selection is evaluated. Running Clef locally is out of scope;
   its backbones need a GPU.
-- **Transport:** hosted presets share one `fetch`-based client that maps HTTP
+- **Transport:** presets share one `fetch`-based client that maps HTTP
   status and `fetch` failures to the error categories and reads
   `Retry-After`. `@typesafe-ai/sdk` is dropped; it only adds a `choice()`
   helper, the HTTP call, and typed errors, and its retries are already off.
@@ -149,8 +150,9 @@ that Jev-specific names become provider-neutral.
   and 5xx, then fallback (`fixed` high by default, or `previous`, or
   `error`). Client cancellation aborts and never falls back.
 - **Configuration:** one `classifier` block selects the provider, for example
-  `classifier: { provider: "jev", apiKey, baseUrl, timeoutMs }` or
-  `classifier: { provider: "clef", accountId, apiKey, model, timeoutMs }`.
+  `classifier: { provider: "jev", apiKey, baseUrl, timeoutMs }`,
+  `classifier: { provider: "clef", accountId, apiKey, model, timeoutMs }`, or
+  `classifier: { provider: "laya", baseUrl, apiKey, model, timeoutMs }`.
 - **Logging:** the same metadata-only decision events, with Jev-specific
   names made provider-neutral (`jev_attempts` becomes `classifier_attempts`,
   `jev_timeout` becomes `classifier_timeout`) and the classifier recorded.
@@ -165,11 +167,10 @@ that Jev-specific names become provider-neutral.
 - Files are copied fresh, with the source commit noted in the port commit
   message; `opencode-jev-router`'s git history is not imported.
 - `@reasoning-router/opencode` depends on `@reasoning-router/classifiers`
-  so every hosted classifier works once the plugin is installed. The
+  so every classifier preset works once the plugin is installed. The
   classifier is still selected by configuration through the core classifier
-  interface. Classifiers behind an optional peer dependency (such as Laya)
-  work only where that dependency can be installed; see "Loading optional
-  classifier runtimes".
+  interface. A classifier that runs a local model (such as Laya) also needs
+  the user's own server running.
 
 ## Open questions
 
@@ -218,11 +219,3 @@ supported path for that harness?
   models and their supported reasoning efforts, if one exists. Otherwise,
   maintain the registry as a separate package in this repo so it can be
   released more often than the core.
-
-### Loading optional classifier runtimes
-
-OpenCode cannot install extra packages alongside a plugin, so a classifier
-behind an optional peer dependency (Laya's `@receptron/laya`) cannot be used
-from the plugin unless the user installs that dependency where the plugin
-resolves it. The proxy has no such limit. How should plugin users enable
-these classifiers?
