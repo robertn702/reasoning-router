@@ -60,7 +60,8 @@ These are reversible:
 - **Source condition.** Package `exports` map the custom
   `@reasoning-router/source` condition to `src/*.ts`, so typecheck and tests
   run against source without a build; published consumers get `dist/`.
-- **Changesets** with independent versions and no publish workflow.
+- **Changesets** with independent versions and no publish workflow. No
+  changesets are recorded until the packages are first released.
 - **The standalone proxy is its own package** (`@reasoning-router/proxy`,
   command `reasoning-router`), since it needs a classifier and core must not
   depend on one. The unscoped `reasoning-router` name stays free for a future
