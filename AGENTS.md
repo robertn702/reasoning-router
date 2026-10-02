@@ -38,8 +38,8 @@ pushes to `main` and on pull requests.
 - Create only the packages listed under "Packages" in `docs/architecture.md`:
   `@reasoning-router/core`, `@reasoning-router/opencode`, and
   `@reasoning-router/classifier-jev`. Harness adapters use the bare harness
-  name; classifiers use a `classifier-` prefix. Resolve the "Before porting"
-  open questions before porting code into them.
+  name; classifiers use a `classifier-` prefix. Follow the "Porting"
+  decisions in `docs/architecture.md` when porting code into them.
 - Do not publish to npm. Release tooling (e.g. Changesets) is deferred until
   the first package exists.
 - Do not modify `opencode-jev-router` from here; read it for reference only.

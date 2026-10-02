@@ -123,15 +123,15 @@ that Jev-specific names become provider-neutral.
 - Once the port reaches parity, `opencode-jev-router` is frozen and its
   README points to `@reasoning-router/opencode`. It is not kept as a
   compatibility wrapper for its existing configuration.
+- Files are copied fresh, with the source commit noted in the port commit
+  message; `opencode-jev-router`'s git history is not imported.
+- `@reasoning-router/opencode` depends on `@reasoning-router/classifier-jev`
+  so the plugin works once installed. The classifier is still selected by
+  configuration through the core classifier interface; other classifiers
+  (such as `classifier-laya`) are optional installs. Revisit if OpenCode
+  supports installing extra packages alongside a plugin.
 
 ## Open questions
-
-### Before porting
-
-- Copy files fresh (noting the source commit) or preserve their git history?
-- Since OpenCode installs only the plugin package, does
-  `@reasoning-router/opencode` depend on `@reasoning-router/classifier-jev`
-  directly, with other classifiers as optional installs?
 
 ### Which harnesses to target
 
