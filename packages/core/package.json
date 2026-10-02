@@ -1,0 +1,34 @@
+{
+  "name": "@reasoning-router/core",
+  "version": "0.0.0",
+  "description": "Classifier- and harness-independent per-step reasoning effort routing: validation, cache-preserving rewrite, lineage, forwarding, and decision logging",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=24.0.0 <25"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/robertn702/reasoning-router.git",
+    "directory": "packages/core"
+  },
+  "keywords": [
+    "reasoning-effort",
+    "llm",
+    "prompt-cache"
+  ],
+  "exports": {
+    ".": {
+      "@reasoning-router/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist/"
+  ],
+  "scripts": {
+    "build": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\" && tsc -p tsconfig.build.json",
+    "prepack": "npm run build"
+  }
+}

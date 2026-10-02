@@ -60,7 +60,7 @@ shape, efforts, or failure modes.
 ## Packages
 
 The first port of `opencode-jev-router` creates three packages under the
-`@reasoning-router` scope, versioned independently:
+`@reasoning-router` scope plus the unscoped proxy, versioned independently:
 
 - **`@reasoning-router/core`:** validation, rewriting, cache lineage,
   forwarding, usage observation, decision logging, the model registry, and
@@ -83,7 +83,11 @@ Naming:
   what kind of package they are, and some names (Hermes, Codex) could mean
   either a harness or a model.
 
-The standalone proxy is not part of the first port.
+The standalone proxy is part of the first port, as unscoped
+`reasoning-router` (the port of `index.ts`, `config.ts`, and `server.ts`,
+with the `reasoning-router` CLI). It depends on core and classifier-jev and
+reads `REASONING_ROUTER_*` variables. Porting it keeps every
+`opencode-jev-router` test, since the proxy tests also cover shared behavior.
 
 ## Classifiers
 
@@ -173,8 +177,6 @@ supported path for that harness?
   normalized conversation model that adapters translate into? The raw request
   is the starting point, because the cache-preserving rewrite needs the exact
   body; revisit this only for a harness that does not expose it.
-- Is the standalone proxy the unscoped `reasoning-router` package, part of the
-  core, or one more adapter?
 - One package per harness, or per harness *and* wire API?
 - Model/effort registries: prefer a reliable third-party package that lists
   models and their supported reasoning efforts, if one exists. Otherwise,

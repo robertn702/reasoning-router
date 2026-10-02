@@ -1,5 +1,5 @@
 {
-  "name": "reasoning-router",
+  "name": "reasoning-router-workspace",
   "private": true,
   "type": "module",
   "license": "MIT",
@@ -17,11 +17,14 @@
     "check": "npm run typecheck && npm run lint && npm test",
     "format": "biome check --write .",
     "lint": "biome check .",
+    "smoke:package": "node scripts/smoke-package.mjs",
+    "smoke:plugin:v2": "node scripts/plugin-smoke-v2.mjs",
     "test": "vitest run --passWithNoTests",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.15",
+    "@changesets/cli": "^3.0.3",
     "@types/node": "^26.6.4",
     "typescript": "^7.0.2",
     "vitest": "^5.0.3"

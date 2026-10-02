@@ -1,0 +1,208 @@
+import { describe, expect, it } from "vitest";
+import { findModel } from "../src/models.js";
+import { UnsupportedInputError } from "../src/wire.js";
+import { validateResponsesRequest as validate } from "../src/wire-openai.js";
+
+function validateResponsesRequest(body: unknown) {
+  if (body && typeof body === "object" && !Array.isArray(body)) {
+    const record = body as Record<string, unknown>;
+    if (record.model === undefined) record.model = "gpt-6-astra";
+  }
+  return validate(body, findModel("gpt-6-astra")!);
+}
+
+describe("validateResponsesRequest", () => {
+  it("accepts the array-form input OpenCode emits, including tool continuations", () => {
+    const body = {
+      model: "gpt-6-astra",
+      stream: true,
+      input: [
+        { role: "developer", content: "instructions" },
+        { role: "user", content: [{ type: "input_text", text: "hi" }] },
+        {
+          type: "function_call",
+          call_id: "c1",
+          name: "read",
+          arguments: "{}",
+        },
+        { type: "function_call_output", call_id: "c1", output: "ok" },
+        { type: "configuration_update", reasoning: { effort: "low" } },
+      ],
+    };
+    expect(validateResponsesRequest(body)).toBe(body);
+  });
+
+  it("accepts typed message, reasoning, and custom tool items", () => {
+    expect(() =>
+      validateResponsesRequest({
+        input: [
+          { type: "message", role: "assistant", content: [] },
+          { type: "reasoning", id: "r1", summary: [] },
+          { type: "custom_tool_call", call_id: "c1", name: "t", input: "{}" },
+          {
+            type: "custom_tool_call_output",
+            call_id: "c1",
+            output: "ok",
+          },
+          { type: "item_reference", id: "i1" },
+        ],
+      }),
+    ).not.toThrow();
+  });
+
+  it("accepts an omitted reasoning object and a standard mode", () => {
+    expect(() =>
+      validateResponsesRequest({ input: [{ role: "user", content: "x" }] }),
+    ).not.toThrow();
+    expect(() =>
+      validateResponsesRequest({
+        reasoning: { mode: "standard", effort: "low" },
+        input: [{ role: "user", content: "x" }],
+      }),
+    ).not.toThrow();
+  });
+
+  it("rejects a non-object body", () => {
+    expect(() => validateResponsesRequest(null)).toThrow(UnsupportedInputError);
+    expect(() => validateResponsesRequest([])).toThrow(UnsupportedInputError);
+    expect(() => validateResponsesRequest("hi")).toThrow(UnsupportedInputError);
+  });
+
+  it("rejects a non-array input, including string input", () => {
+    expect(() => validateResponsesRequest({ input: "hello" })).toThrow(
+      UnsupportedInputError,
+    );
+    expect(() => validateResponsesRequest({})).toThrow(UnsupportedInputError);
+  });
+
+  it("rejects non-object input items", () => {
+    expect(() =>
+      validateResponsesRequest({
+        input: [{ role: "user", content: "x" }, "str"],
+      }),
+    ).toThrow(UnsupportedInputError);
+  });
+
+  it("passes through structurally valid typed items without a local type allowlist", () => {
+    const items = [
+      {
+        type: "computer_call",
+        id: "cu1",
+        action: { type: "screenshot" },
+        status: "completed",
+      },
+      {
+        type: "computer_call_output",
+        call_id: "cu1",
+        output: {
+          type: "computer_screenshot",
+          image_url: "data:image/png;base64,AAAA",
+        },
+      },
+      {
+        type: "web_search_call",
+        id: "ws1",
+        action: { query: "weather" },
+        status: "completed",
+      },
+      { type: "file_search_call", id: "fs1", queries: ["manual"] },
+      { type: "item_reference", id: "item_123" },
+      {
+        type: "future_tool_result",
+        payload: { nested: [1, { private: "opaque" }] },
+      },
+    ];
+    const body = { model: "gpt-6-astra", input: items };
+    expect(validateResponsesRequest(body)).toBe(body);
+    expect(body.input).toBe(items);
+  });
+
+  it.each([null, 1, [], {}, ""])(
+    "rejects malformed typed item discriminators %j",
+    (type) => {
+      expect(() => validateResponsesRequest({ input: [{ type }] })).toThrow(
+        "request.input[0].type must be a non-empty string",
+      );
+    },
+  );
+
+  it("rejects message items with unsupported roles", () => {
+    expect(() =>
+      validateResponsesRequest({ input: [{ role: "tool", content: "x" }] }),
+    ).toThrow(UnsupportedInputError);
+    expect(() =>
+      validateResponsesRequest({
+        input: [{ type: "message", role: "narrator", content: [] }],
+      }),
+    ).toThrow(UnsupportedInputError);
+  });
+
+  it("rejects pro and multi-agent reasoning modes before anything else", () => {
+    for (const mode of ["pro", "multi-agent", "multi_agent", "tournament"]) {
+      expect(() =>
+        validateResponsesRequest({
+          reasoning: { mode },
+          input: [{ role: "user", content: "x" }],
+        }),
+      ).toThrow(UnsupportedInputError);
+    }
+  });
+
+  it("rejects pro model slugs", () => {
+    for (const model of ["gpt-6-astra-pro", "openai/gpt-6-astra-pro"]) {
+      expect(() =>
+        validateResponsesRequest({
+          model,
+          input: [{ role: "user", content: "x" }],
+        }),
+      ).toThrow(UnsupportedInputError);
+    }
+  });
+
+  it("rejects automatic truncation, which is incompatible with updates", () => {
+    expect(() =>
+      validateResponsesRequest({
+        truncation: "auto",
+        input: [{ role: "user", content: "x" }],
+      }),
+    ).toThrow(UnsupportedInputError);
+  });
+
+  it("accepts disabled truncation and rejects unknown strategies", () => {
+    expect(() =>
+      validateResponsesRequest({ truncation: "disabled", input: [] }),
+    ).not.toThrow();
+    expect(() =>
+      validateResponsesRequest({ truncation: "future", input: [] }),
+    ).toThrow('request.truncation must be "disabled" when present');
+  });
+
+  it("keeps configuration updates model-valid and restricted to effort", () => {
+    for (const update of [
+      { type: "configuration_update", reasoning: { effort: "none" } },
+      {
+        type: "configuration_update",
+        reasoning: { effort: "high", mode: "pro" },
+      },
+      {
+        type: "configuration_update",
+        reasoning: { effort: "high" },
+        temperature: 1,
+      },
+      { type: "configuration_update", reasoning: null },
+    ]) {
+      expect(() => validateResponsesRequest({ input: [update] })).toThrow(
+        "request.input[0] configuration_update supports only reasoning.effort valid for request.model",
+      );
+    }
+  });
+
+  it("rejects a non-object reasoning value", () => {
+    expect(() =>
+      validateResponsesRequest({
+        reasoning: "low",
+        input: [{ role: "user", content: "x" }],
+      }),
+    ).toThrow(UnsupportedInputError);
+  });
+});
