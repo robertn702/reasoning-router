@@ -1,8 +1,7 @@
 # Architecture
 
-Status: problem statement, one constraint, and open questions. Apart from the
-constraint below, nothing here is decided; the open questions are framed for
-a later research pass to answer.
+Status: problem statement, the decision-model starting point, and open
+questions. The open questions are framed for a later research pass to answer.
 
 ## Problem statement
 
@@ -45,22 +44,50 @@ along two independent axes:
 - **Any harness.** Harness-specific code should be limited to whatever is
   needed to intercept or influence the model request.
 
-## Constraint: the decision model is configuration
-
-`reasoning-router` must not depend on Jev or any single decision-model
-provider. The decision model is chosen by configuration, and shared code must
-not import a provider SDK (such as `@typesafe-ai/sdk`) or assume one
-provider's request shape, efforts, or failure modes. This is decided; how it is
-achieved is covered in [open question 2](#2-decision-models).
-
 Steps 1–6 are largely independent of OpenCode; what varies by harness is
 *where* the router can hook in, *what it can see* (full request body vs. a
 higher-level message list), and *what it can change* (raw body vs. a
 per-request effort parameter vs. nothing, requiring a proxy).
 
+## Constraint: the decision model is configuration
+
+`reasoning-router` must not depend on Jev or any single decision-model
+provider. The decision model is chosen by configuration, and shared code must
+not import a provider SDK (such as `@typesafe-ai/sdk`) or assume one
+provider's request shape, efforts, or failure modes.
+
+## Decision models
+
+The starting point is `opencode-jev-router`'s classifier, unchanged except
+that Jev-specific names become provider-neutral.
+
+- **First providers:** [Jev](https://typesafe.ai/) (hosted by TypeSafe or
+  through Vercel AI Gateway), the best-known decision model, and
+  [Laya](https://huggingface.co/convaiinnovations/laya), an open-source,
+  Jev-compatible model, requested by users. Laya runs locally through
+  [`@receptron/laya`](https://github.com/receptron/laya) on ONNX Runtime; its
+  weights are about 1.7 GB, downloaded on first use, and need about 2 GB of
+  RAM.
+- **Contract:** one `system_one` call. The state is the bounded,
+  metadata-limited summary `opencode-jev-router` builds (recent user text,
+  assistant progress, up to 8 tool results with names and error flags, a
+  failure summary, and the target model ID). The single question is a
+  `choice` named `effort` whose options are the target model's supported
+  efforts. The answer is `answers.effort.choice`, rejected if the model does
+  not support it. Laya accepts the same request and response shape as Jev's
+  `system_one`, so both providers fit this contract.
+- **Policy:** as in `opencode-jev-router`'s
+  [classification policy](https://github.com/robertn702/opencode-jev-router/blob/main/docs/classification-policy.md):
+  a 4000 ms total deadline, one retry for connection errors, timeouts, 429,
+  and 5xx, then fallback (`fixed` high by default, or `previous`, or
+  `error`). Client cancellation aborts and never falls back.
+- **Logging:** the same metadata-only decision events, with Jev-specific
+  names (such as `jev_attempts` and `jev_timeout`) made provider-neutral and
+  the decision provider recorded.
+
 ## Open questions
 
-### 1. Which harnesses to target
+### Which harnesses to target
 
 Candidates: OpenCode, Hermes, Claude Code, Codex, Pi, and others (e.g. Cline,
 Aider, Goose, Cursor-style IDE agents).
@@ -73,26 +100,7 @@ Aider, Goose, Cursor-style IDE agents).
 - What is the order of work? Which harness is the first to validate the shared
   core against a second, different extension model?
 
-### 2. Decision models
-
-- Which decision models exist today (Jev and others), and which should be
-  supported first? Is a local, no-network heuristic useful as a baseline or
-  fallback?
-- What is the common contract? What state does each model need (recent turns,
-  tool results, errors, target model and its supported efforts), and what does
-  it return (one effort, a score, a confidence)?
-- How does the router keep the classification input bounded and
-  metadata-limited when different providers want different context?
-- What does configuration look like: selecting a provider, its credentials and
-  endpoint, per-model overrides, and whether more than one can be chained (for
-  example a primary model with another as fallback)?
-- Which parts of today's fallback policy (timeout, retries, fixed or previous
-  effort, `error` mode) are provider-independent, and which belong to a
-  provider?
-- Should decision events record which decision model made the choice, so
-  models can be compared on the same workload?
-
-### 3. Each harness's extension point
+### Each harness's extension point
 
 For each target harness, establish:
 
@@ -113,7 +121,7 @@ For each target harness, establish:
 Where no adequate in-process hook exists, is the standalone proxy the
 supported path for that harness?
 
-### 4. What belongs in a shared core
+### What belongs in a shared core
 
 - Which of validation, classification, fallback, rewriting, forwarding, usage
   observation, lineage, and decision logging are harness-independent and
@@ -121,16 +129,19 @@ supported path for that harness?
 - Is the core's input the raw wire request (as in `opencode-jev-router`) or a
   normalized conversation model that adapters translate into?
 - Do decision-model providers live in the core (with their SDKs as optional
-  dependencies) or in separate packages?
+  dependencies) or in separate packages? Laya's ONNX Runtime dependency and
+  model download make this matter.
 - Is the standalone proxy part of the core, a separate package, or one more
   "adapter"?
 - How much of `opencode-jev-router` can be moved as-is, and does that repo
   later depend on the core or get replaced by an adapter here?
 
-### 5. Package naming and boundaries
+### Package naming and boundaries
 
-- Scope is `@reasoning-router`. What is the core called (`core`, `router`,
-  unscoped `reasoning-router`)?
+- Scope is `@reasoning-router`. Recommended core name:
+  `@reasoning-router/core`. It follows a common convention (`@babel/core`),
+  sorts clearly next to adapters, and leaves unscoped `reasoning-router` free
+  for a CLI or proxy entry point. Not yet decided.
 - Adapter naming: bare harness name (`@reasoning-router/opencode`) or a suffix
   matching the extension type (`@reasoning-router/opencode-plugin`)? Does any
   harness's discovery convention require a particular name or keyword?
@@ -138,7 +149,10 @@ supported path for that harness?
   they are not confused with harness adapters (e.g. a `decider-` or
   `classifier-` prefix)?
 - One package per harness, or per harness *and* wire API?
-- Are model/effort registries part of the core or a separate, more frequently
-  released package?
-- Versioning: independent per package or lockstep? (Affects the choice of
-  release tooling, which is deferred until a first package exists.)
+- Model/effort registries: prefer a reliable third-party package that lists
+  models and their supported reasoning efforts, if one exists. Otherwise,
+  maintain the registry as a separate package in this repo so it can be
+  released more often than the core.
+- Versioning: independent per package, since adapters track different
+  harness release cycles. Release tooling is still deferred until a first
+  package exists.
