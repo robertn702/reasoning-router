@@ -17,15 +17,13 @@ describe("local decision telemetry", () => {
       fallback: null,
       outcome: "completed",
     });
+    const withRequestFields = {
+      ...evidence,
+      prompt: "secret",
+      authorization: "Bearer secret",
+    };
     const event = JSON.parse(
-      formatDecisionEvent(
-        {
-          ...evidence,
-          prompt: "secret",
-          authorization: "Bearer secret",
-        } as typeof evidence,
-        new Date("2026-09-23T00:00:00Z"),
-      ),
+      formatDecisionEvent(withRequestFields, new Date("2026-09-23T00:00:00Z")),
     );
     expect(event).toEqual({
       ts: "2026-09-23T00:00:00.000Z",

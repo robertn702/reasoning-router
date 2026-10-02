@@ -1,9 +1,10 @@
 import { once } from "node:events";
 import http from "node:http";
-import type { AddressInfo } from "node:net";
+import { Socket } from "node:net";
+import { isRecord } from "@reasoning-router/core";
 import { afterEach, describe, expect, it } from "vitest";
-
 import { createAppServer } from "../src/server.js";
+import { portOf } from "./port.js";
 
 const cleanups: Array<() => Promise<void>> = [];
 
@@ -88,7 +89,7 @@ describe("local shape validation", () => {
 async function listen(server: http.Server): Promise<string> {
   server.listen(0, "127.0.0.1");
   await once(server, "listening");
-  const { port } = server.address() as AddressInfo;
+  const port = portOf(server);
   cleanups.push(async () => {
     server.closeAllConnections();
     server.close();
@@ -199,11 +200,11 @@ describe("forwarding lifecycle", () => {
       body: JSON.stringify(input),
     });
     expect(response.status).toBe(200);
-    const rewritten = (await response.json()) as Record<string, any>;
-    expect(rewritten.model).toBe("claude-opus-5-5");
-    expect(rewritten.output_config.effort).toBe("medium");
-    expect(rewritten.thinking).toEqual({ type: "adaptive" });
-    expect(rewritten.messages).toEqual([
+    const rewritten: unknown = await response.json();
+    expect(rewritten).toHaveProperty("model", "claude-opus-5-5");
+    expect(rewritten).toHaveProperty("output_config.effort", "medium");
+    expect(rewritten).toHaveProperty("thinking", { type: "adaptive" });
+    expect(rewritten).toHaveProperty("messages", [
       { role: "system", content: [], output_config: { effort: "low" } },
       ...input.messages,
     ]);
@@ -437,9 +438,7 @@ describe("forwarding lifecycle", () => {
         body: JSON.stringify(body),
       });
       expect(response.status).toBe(400);
-      expect(((await response.json()) as { error: string }).error).toBe(
-        "invalid_request",
-      );
+      expect(await response.json()).toHaveProperty("error", "invalid_request");
     }
     const unconfigured = await startApp(upstream.url);
     const missing = await fetch(`${unconfigured}/v1/messages`, {
@@ -447,9 +446,7 @@ describe("forwarding lifecycle", () => {
       body: "{}",
     });
     expect(missing.status).toBe(404);
-    expect(((await missing.json()) as { error: string }).error).toBe(
-      "not_found",
-    );
+    expect(await missing.json()).toHaveProperty("error", "not_found");
     expect(selected).toBe(0);
     expect(upstream.requests).toHaveLength(0);
   });
@@ -530,8 +527,7 @@ describe("forwarding lifecycle", () => {
       body: JSON.stringify({ model: "gpt-6-astra", input: items }),
     });
     expect(response.status).toBe(200);
-    const sent = (await response.json()) as { input: unknown[] };
-    expect(sent.input).toEqual([
+    expect(await response.json()).toHaveProperty("input", [
       ...items.slice(0, -1),
       { type: "configuration_update", reasoning: { effort: "high" } },
       items.at(-1),
@@ -601,14 +597,15 @@ describe("forwarding lifecycle", () => {
             { role: "user", content: "private-prompt" },
           ]);
           expect(first.status).toBe(200);
-          const result = (await first.json()) as {
-            model: string;
-            output: unknown[];
-          };
-          expect(result.model).toBe(model);
+          const result: unknown = await first.json();
+          expect(result).toMatchObject({ model, output: expect.any(Array) });
+          const output =
+            isRecord(result) && Array.isArray(result.output)
+              ? result.output
+              : [];
           const next = await post(
             [
-              ...result.output,
+              ...output,
               {
                 type: "function_call_output",
                 call_id: "c",
@@ -1012,8 +1009,9 @@ describe("forwarding lifecycle", () => {
       await once(upstream, "listening");
     } catch (error) {
       if (
-        (error as NodeJS.ErrnoException).code === "EAFNOSUPPORT" ||
-        (error as NodeJS.ErrnoException).code === "EADDRNOTAVAIL"
+        error instanceof Error &&
+        "code" in error &&
+        (error.code === "EAFNOSUPPORT" || error.code === "EADDRNOTAVAIL")
       )
         return;
       throw error;
@@ -1023,9 +1021,7 @@ describe("forwarding lifecycle", () => {
       upstream.close();
       await once(upstream, "close");
     });
-    const app = await startApp(
-      `http://[::1]:${(upstream.address() as AddressInfo).port}/v1`,
-    );
+    const app = await startApp(`http://[::1]:${portOf(upstream)}/v1`);
     const response = await fetch(`${app}/v1/responses`, {
       method: "POST",
       body: simpleInput,
@@ -1063,16 +1059,20 @@ describe("forwarding lifecycle", () => {
       }),
     });
     expect(response.status).toBe(200);
-    const { seen } = (await response.json()) as {
-      seen: { model: string; reasoning: { effort: string }; input: unknown[] };
-    };
-    expect(seen.model).toBe("gpt-6-astra");
-    expect(seen.reasoning.effort).toBe("medium");
-    expect(seen.input.at(-1)).toEqual({
+    const forwarded: unknown = await response.json();
+    expect(forwarded).toHaveProperty("seen.model", "gpt-6-astra");
+    expect(forwarded).toHaveProperty("seen.reasoning.effort", "medium");
+    const input =
+      isRecord(forwarded) &&
+      isRecord(forwarded.seen) &&
+      Array.isArray(forwarded.seen.input)
+        ? forwarded.seen.input
+        : [];
+    expect(input.at(-1)).toEqual({
       type: "configuration_update",
       reasoning: { effort: "high" },
     });
-    expect(seen.input.at(-2)).toEqual({
+    expect(input.at(-2)).toEqual({
       type: "function_call_output",
       call_id: "c1",
       output: "done",
@@ -1113,13 +1113,10 @@ describe("forwarding lifecycle", () => {
       method: "POST",
       body: simpleInput,
     });
-    const forwarded = (await response.json()) as {
-      ok: boolean;
-      seen: Record<string, unknown>;
-    };
-
-    expect(forwarded.ok).toBe(true);
-    expect(forwarded.seen.model).toBe("gpt-6-astra");
+    expect(await response.json()).toMatchObject({
+      ok: true,
+      seen: { model: "gpt-6-astra" },
+    });
     const sent = upstream.requests[0]!;
     expect(sent.headers["content-length"]).toBe(
       String(Buffer.byteLength(sent.body)),
@@ -1195,9 +1192,7 @@ describe("forwarding lifecycle", () => {
       }),
     });
     expect(right.status).toBe(200);
-    expect(((await right.json()) as { model: string }).model).toBe(
-      "gpt-6-luna",
-    );
+    expect(await right.json()).toHaveProperty("model", "gpt-6-luna");
     expect(calls).toBe(2);
   });
 
@@ -1560,16 +1555,9 @@ describe("forwarding lifecycle", () => {
     controller.abort();
 
     const { forwardUpstream } = await import("@reasoning-router/core");
-    const stubResponse = {
-      writableEnded: false,
-      destroyed: false,
-      destroy() {
-        stubResponse.destroyed = true;
-      },
-    };
-    const response = stubResponse as unknown as Parameters<
-      typeof forwardUpstream
-    >[0];
+    const response = new http.ServerResponse(
+      new http.IncomingMessage(new Socket()),
+    );
 
     const outcome = await forwardUpstream(response, {
       method: "POST",

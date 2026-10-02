@@ -7,10 +7,12 @@ import {
   type ClassificationPolicyOptions,
   type ClassifierConfig,
   type ClassifierProvider,
+  classificationPolicy,
   createConfiguredSelector,
   createDecisionLogger,
   type Effort,
   type EffortSelector,
+  isEffort,
   MODELS,
   mergeAnthropicBeta,
   type PreparedRequest,
@@ -47,6 +49,11 @@ export type PluginOptions = ClassificationPolicyOptions & {
   upstreamHeaderTimeoutMs?: number;
   upstreamIdleTimeoutMs?: number;
   decisionsLogPath?: string;
+};
+
+/** Plugin options as the host passes them, before validation. */
+type UncheckedPluginOptions = {
+  readonly [K in keyof PluginOptions]?: unknown;
 };
 
 /** A local rejection with an HTTP status for the plugin request hook. */
@@ -105,16 +112,14 @@ const hash = (value: string | null | undefined): string =>
   createHash("sha256")
     .update(value ?? "")
     .digest("hex");
-const positive = (
-  value: number | undefined,
-  fallback: number,
-  name: string,
-): number => {
+const positive = (value: unknown, fallback: number, name: string): number => {
   const result = value ?? fallback;
-  if (!Number.isSafeInteger(result) || result < 1)
+  if (typeof result !== "number" || !Number.isSafeInteger(result) || result < 1)
     throw new Error(`${name} must be a positive integer`);
   return result;
 };
+const supportedByEveryModel = (effort: unknown): effort is Effort =>
+  isEffort(effort) && MODELS.every((model) => supportsEffort(model, effort));
 export const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 export const requiredString = (value: unknown, name: string): string => {
@@ -184,41 +189,47 @@ async function boundedBody(
   return output;
 }
 
-function classifierSelector(options: PluginOptions): EffortSelector {
-  if (options.classifier !== undefined && !isRecord(options.classifier))
-    throw new Error("classifier must be an object");
-  const env = process.env;
+function classifierSelector(options: UncheckedPluginOptions): EffortSelector {
   const config = options.classifier ?? {};
+  if (!isRecord(config)) throw new Error("classifier must be an object");
+  const { provider = "jev", timeoutMs } = config;
+  if (typeof provider !== "string")
+    throw new Error("classifier.provider must be a string");
+  if (timeoutMs !== undefined && typeof timeoutMs !== "number")
+    throw new Error("timeoutMs must be a positive integer");
+  const env = process.env;
   return createConfiguredSelector(
     {
       ...config,
-      provider: config.provider ?? "jev",
+      provider,
+      timeoutMs,
       apiKey: config.apiKey ?? env.REASONING_ROUTER_CLASSIFIER_API_KEY,
       baseUrl: config.baseUrl ?? env.REASONING_ROUTER_CLASSIFIER_BASE_URL,
     },
     CLASSIFIERS,
-    {
-      maxRetries: options.maxRetries,
-      fallbackMode: options.fallbackMode,
-      fallbackEffort: options.fallbackEffort,
-    },
+    classificationPolicy(options),
   );
 }
 
 /** Per-plugin-instance state, validation, classifier selection, rewrite, and usage observation. */
-export function createPluginRuntime(options: PluginOptions): PluginRuntime {
-  const classified =
-    options.fixedEffort === undefined ? classifierSelector(options) : undefined;
-  if (
-    options.baseEffort !== undefined &&
-    !["low", "medium", "high", "xhigh", "max"].includes(options.baseEffort)
-  )
+export function createPluginRuntime(
+  options: UncheckedPluginOptions,
+): PluginRuntime {
+  const { baseEffort, fixedEffort, decisionsLogPath } = options;
+  if (baseEffort !== undefined && !supportedByEveryModel(baseEffort))
     throw new Error("baseEffort is unsupported");
-  if (
-    options.fixedEffort !== undefined &&
-    !MODELS.every((model) => supportsEffort(model, options.fixedEffort))
-  )
+  if (fixedEffort !== undefined && !supportedByEveryModel(fixedEffort))
     throw new Error("fixedEffort must be supported by every model");
+  if (decisionsLogPath !== undefined && typeof decisionsLogPath !== "string")
+    throw new Error("decisionsLogPath must be an absolute path");
+  const selectEffort: EffortSelector =
+    fixedEffort === undefined
+      ? classifierSelector(options)
+      : async () => ({
+          effort: fixedEffort,
+          classifierLatencyMs: 0,
+          fallback: null,
+        });
   const maxBytes = positive(
     options.maxRequestBytes,
     1_048_576,
@@ -235,19 +246,12 @@ export function createPluginRuntime(options: PluginOptions): PluginRuntime {
     60_000,
     "upstreamIdleTimeoutMs",
   );
-  const selectEffort: EffortSelector =
-    classified ??
-    (async () => ({
-      effort: options.fixedEffort!,
-      classifierLatencyMs: 0,
-      fallback: null,
-    }));
   const onEvidence =
-    options.decisionsLogPath === undefined
+    decisionsLogPath === undefined
       ? undefined
-      : createDecisionLogger(options.decisionsLogPath);
+      : createDecisionLogger(decisionsLogPath);
   const router = new ResponsesRouter({
-    baseEffort: options.baseEffort,
+    baseEffort,
     selectEffort,
     onEvidence,
   });
@@ -296,7 +300,7 @@ export function createPluginRuntime(options: PluginOptions): PluginRuntime {
       throw new PluginRequestError(
         400,
         "invalid_request",
-        (cause as Error).message,
+        cause instanceof Error ? cause.message : String(cause),
       );
     }
     if (inFlight >= maxInFlight)
@@ -358,8 +362,7 @@ export function createPluginRuntime(options: PluginOptions): PluginRuntime {
       }
       // Validate before reading optional fields or calling the classifier.
       const model = resolveModel(body);
-      validateRequest(body, model, provider);
-      const record = body as Record<string, unknown>;
+      const record = validateRequest(body, model, provider);
       const credential =
         provider === "anthropic"
           ? (request.headers.get("x-api-key") ??
@@ -393,7 +396,7 @@ export function createPluginRuntime(options: PluginOptions): PluginRuntime {
             ? [
                 `${url.origin}${url.pathname.replace(/\/(responses|messages)$/, "")}`,
                 model.id,
-                options.baseEffort ?? model.defaultBaseEffort,
+                baseEffort ?? model.defaultBaseEffort,
                 hash(credential),
                 session ?? "",
                 lineageKey ?? "",

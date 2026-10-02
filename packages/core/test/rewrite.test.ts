@@ -46,17 +46,10 @@ describe("rewriteResponsesRequest", () => {
       { model: "gpt-6-astra", input: [userMessage("hi")] },
       options,
     );
-    const input = result.input as Record<string, unknown>[];
-    const updates = input.filter(
-      (item) => item.type === "configuration_update",
-    );
-
-    expect(updates).toHaveLength(1);
-    expect(updates[0]).toEqual({
-      type: "configuration_update",
-      reasoning: { effort: "high" },
-    });
-    expect(input[0]).toBe(updates[0]);
+    expect(result.input).toEqual([
+      { type: "configuration_update", reasoning: { effort: "high" } },
+      userMessage("hi"),
+    ]);
   });
 
   it("preserves incoming reasoning updates without moving them", () => {
@@ -70,9 +63,7 @@ describe("rewriteResponsesRequest", () => {
       },
       options,
     );
-    const input = result.input as Record<string, unknown>[];
-
-    expect(input).toEqual([
+    expect(result.input).toEqual([
       { type: "configuration_update", reasoning: { effort: "high" } },
       userMessage("hi"),
       { type: "configuration_update", reasoning: { effort: "low" } },
@@ -92,9 +83,7 @@ describe("rewriteResponsesRequest", () => {
       },
       options,
     );
-    const input = result.input as Record<string, unknown>[];
-
-    expect(input).toEqual([
+    expect(result.input).toEqual([
       { type: "configuration_update", reasoning: { effort: "high" } },
       userMessage("hi"),
       { type: "configuration_update", reasoning: { effort: "low" } },

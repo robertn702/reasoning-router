@@ -1,13 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { findModel } from "../src/models.js";
-import { UnsupportedInputError } from "../src/wire.js";
+import { isRecord, UnsupportedInputError } from "../src/wire.js";
 import { validateResponsesRequest as validate } from "../src/wire-openai.js";
 
 function validateResponsesRequest(body: unknown) {
-  if (body && typeof body === "object" && !Array.isArray(body)) {
-    const record = body as Record<string, unknown>;
-    if (record.model === undefined) record.model = "gpt-6-astra";
-  }
+  if (isRecord(body) && body.model === undefined) body.model = "gpt-6-astra";
   return validate(body, findModel("gpt-6-astra")!);
 }
 

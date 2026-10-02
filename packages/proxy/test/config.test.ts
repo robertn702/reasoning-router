@@ -75,7 +75,7 @@ describe("Jev connection", () => {
       try {
         loadJevConnection(env);
       } catch (error) {
-        message = (error as Error).message;
+        message = error instanceof Error ? error.message : String(error);
       }
       expect(message).not.toBe("");
       expect(message).not.toMatch(/secret|password/);
@@ -198,7 +198,7 @@ describe("upstream configuration", () => {
       try {
         load(env);
       } catch (error) {
-        message = (error as Error).message;
+        message = error instanceof Error ? error.message : String(error);
       }
       expect(message).not.toBe("");
       expect(message).not.toContain("secret");

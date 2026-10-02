@@ -1,5 +1,10 @@
 import type { ClassifierState } from "./classifier.js";
-import { type Effort, type ModelProfile, supportsEffort } from "./models.js";
+import {
+  type Effort,
+  isEffort,
+  type ModelProfile,
+  supportsEffort,
+} from "./models.js";
 import {
   isRecord,
   type RewriteOptions,
@@ -96,6 +101,10 @@ export function validateResponsesRequest(
   return body;
 }
 
+function inputOf(body: Record<string, unknown>): unknown[] {
+  return Array.isArray(body.input) ? body.input : [];
+}
+
 function defaultInput(input: unknown[], effort: Effort): unknown[] {
   const update = openaiWire.makeUpdate(effort);
   const user = input.findIndex((item) => openaiWire.isUserMessage(item));
@@ -126,8 +135,7 @@ export function rewriteResponsesRequest(
       effort: options.baseEffort,
     },
     input:
-      options.replayedInput ??
-      defaultInput(record.input as unknown[], options.effort),
+      options.replayedInput ?? defaultInput(inputOf(record), options.effort),
   };
 }
 
@@ -233,7 +241,7 @@ export const openaiWire: WireAdapter = {
   provider: "openai",
   path: "responses",
   tailUpdate: true,
-  items: (body) => body.input as unknown[],
+  items: inputOf,
   validate: validateResponsesRequest,
   rewrite: rewriteResponsesRequest,
   updateEffort(item) {
@@ -243,9 +251,7 @@ export const openaiWire: WireAdapter = {
       !isRecord(item.reasoning)
     )
       return null;
-    return typeof item.reasoning.effort === "string"
-      ? (item.reasoning.effort as Effort)
-      : null;
+    return isEffort(item.reasoning.effort) ? item.reasoning.effort : null;
   },
   makeUpdate: (effort) => ({
     type: CONFIGURATION_UPDATE,
@@ -270,5 +276,5 @@ export const openaiWire: WireAdapter = {
       ? body.prompt_cache_key
       : null,
   scopeParts: (body) => [body.instructions ?? null, body.tools ?? null],
-  classifierState: (body) => buildClassifierState(body.input as unknown[]),
+  classifierState: (body) => buildClassifierState(inputOf(body)),
 };

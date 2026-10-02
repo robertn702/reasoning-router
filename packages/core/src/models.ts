@@ -1,5 +1,10 @@
-export type Effort = "none" | "low" | "medium" | "high" | "xhigh" | "max";
+const EFFORTS = ["none", "low", "medium", "high", "xhigh", "max"] as const;
+export type Effort = (typeof EFFORTS)[number];
 export type Provider = "openai" | "anthropic";
+
+export function isEffort(value: unknown): value is Effort {
+  return EFFORTS.some((effort) => effort === value);
+}
 
 export interface ModelProfile {
   readonly provider: Provider;

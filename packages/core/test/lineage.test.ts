@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { LineageStore } from "../src/lineage.js";
+import { isRecord } from "../src/wire.js";
 
 const user = (content: string) => ({ role: "user", content });
 
@@ -55,7 +56,7 @@ describe("historical effort replay", () => {
     });
     expect(
       retry.input.filter(
-        (item) => (item as { type?: string }).type === "configuration_update",
+        (item) => isRecord(item) && item.type === "configuration_update",
       ),
     ).toHaveLength(1);
   });
@@ -125,7 +126,7 @@ describe("historical effort replay", () => {
     expect(edited).toMatchObject({ status: "reset_edited", unsafe: true });
     expect(
       edited.input.filter(
-        (item) => (item as { type?: string }).type === "configuration_update",
+        (item) => isRecord(item) && item.type === "configuration_update",
       ),
     ).toHaveLength(1);
   });

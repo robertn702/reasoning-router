@@ -72,7 +72,7 @@ export function shutdownAppServer(
       clearTimeout(deadline);
       if (
         error &&
-        (error as NodeJS.ErrnoException).code !== "ERR_SERVER_NOT_RUNNING"
+        !("code" in error && error.code === "ERR_SERVER_NOT_RUNNING")
       )
         reject(error);
       else resolve();
@@ -424,9 +424,8 @@ async function handle(
 
       let prepared: PreparedRequest | null;
       try {
-        const body = parsed as Record<string, unknown>;
         const model = resolveModel(parsed);
-        validateRequest(parsed, model, provider);
+        const body = validateRequest(parsed, model, provider);
         const session = correlationId(
           request.headers["x-reasoning-router-session-id"],
           /^ses_[A-Za-z0-9]{1,128}$/,

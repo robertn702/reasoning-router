@@ -1,5 +1,10 @@
 import type { ClassifierState } from "./classifier.js";
-import { type Effort, type ModelProfile, supportsEffort } from "./models.js";
+import {
+  type Effort,
+  isEffort,
+  type ModelProfile,
+  supportsEffort,
+} from "./models.js";
 import {
   isRecord,
   type RewriteOptions,
@@ -47,10 +52,14 @@ function updateEffort(item: unknown): Effort | null {
     item.content.length !== 0 ||
     Object.keys(item).length !== 3 ||
     Object.keys(item.output_config).length !== 1 ||
-    typeof item.output_config.effort !== "string"
+    !isEffort(item.output_config.effort)
   )
     return null;
-  return item.output_config.effort as Effort;
+  return item.output_config.effort;
+}
+
+function messagesOf(body: Record<string, unknown>): unknown[] {
+  return Array.isArray(body.messages) ? body.messages : [];
 }
 
 export function validateAnthropicRequest(
@@ -107,7 +116,7 @@ export function rewriteAnthropicRequest(
       "unsupported reasoning effort or configuration update",
     );
   }
-  const input = record.messages as unknown[];
+  const input = messagesOf(record);
   let user = -1;
   for (let index = 0; index < input.length; index++)
     if (anthropicWire.isUserMessage(input[index])) user = index;
@@ -140,13 +149,11 @@ function text(content: unknown): string {
   if (typeof content === "string") return content;
   if (!Array.isArray(content)) return "";
   return content
-    .filter(
-      (block) =>
-        isRecord(block) &&
-        block.type === "text" &&
-        typeof block.text === "string",
+    .flatMap((block) =>
+      isRecord(block) && block.type === "text" && typeof block.text === "string"
+        ? [block.text]
+        : [],
     )
-    .map((block) => (block as Record<string, unknown>).text as string)
     .join("\n");
 }
 
@@ -211,7 +218,7 @@ export const anthropicWire: WireAdapter = {
   provider: "anthropic",
   path: "messages",
   tailUpdate: false,
-  items: (body) => body.messages as unknown[],
+  items: messagesOf,
   validate: validateAnthropicRequest,
   rewrite: rewriteAnthropicRequest,
   updateEffort,
@@ -243,6 +250,5 @@ export const anthropicWire: WireAdapter = {
       : null,
     body.mcp_servers ?? null,
   ],
-  classifierState: (body) =>
-    buildAnthropicClassifierState(body.messages as unknown[]),
+  classifierState: (body) => buildAnthropicClassifierState(messagesOf(body)),
 };

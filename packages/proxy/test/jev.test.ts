@@ -1,7 +1,7 @@
 import { createJevClassifier as createClassifier } from "@reasoning-router/classifier-jev";
 
 import { findModel } from "@reasoning-router/core";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 function createJevClassifier(
   options: Omit<Parameters<typeof createClassifier>[0], "baseURL" | "model"> &
@@ -26,8 +26,8 @@ function createJevClassifier(
 }
 
 import { once } from "node:events";
-import type { AddressInfo } from "node:net";
 import { createAppServer } from "../src/server.js";
+import { portOf } from "./port.js";
 
 function okResponse(choice: string): Response {
   return new Response(
@@ -83,7 +83,7 @@ describe("Jev classifier", () => {
       await once(stubServer, "listening");
       return stubServer;
     })();
-    const stubPort = (stub.address() as AddressInfo).port;
+    const stubPort = portOf(stub);
 
     const app = createAppServer({
       upstreamBaseUrl: `http://127.0.0.1:${stubPort}/v1`,
@@ -93,7 +93,7 @@ describe("Jev classifier", () => {
     });
     app.listen(0, "127.0.0.1");
     await once(app, "listening");
-    const appPort = (app.address() as AddressInfo).port;
+    const appPort = portOf(app);
 
     const response = await fetch(`http://127.0.0.1:${appPort}/v1/responses`, {
       method: "POST",
@@ -104,13 +104,11 @@ describe("Jev classifier", () => {
     // Wait past the late classification result.
     await new Promise((resolve) => setTimeout(resolve, 200));
     expect(upstreamRequests).toHaveLength(1);
-    const forwarded = JSON.parse(upstreamRequests[0]!) as {
-      input: Array<{ reasoning?: { effort?: string } }>;
-    };
-    expect(
-      forwarded.input.find((item) => item.reasoning?.effort === "medium")
-        ?.reasoning?.effort,
-    ).toBe("medium");
+    expect(JSON.parse(upstreamRequests[0]!)).toMatchObject({
+      input: expect.arrayContaining([
+        expect.objectContaining({ reasoning: { effort: "medium" } }),
+      ]),
+    });
     expect(attempts).toBe(1);
 
     // The late result must not have been stored as a prior effort.
@@ -166,14 +164,14 @@ describe("evidence privacy under inherited debug logging", () => {
         );
       };
     }
-    process.stdout.write = ((chunk: unknown) => {
+    vi.spyOn(process.stdout, "write").mockImplementation((chunk: unknown) => {
       captured.push(String(chunk));
       return true;
-    }) as typeof process.stdout.write;
-    process.stderr.write = ((chunk: unknown) => {
+    });
+    vi.spyOn(process.stderr, "write").mockImplementation((chunk: unknown) => {
       captured.push(String(chunk));
       return true;
-    }) as typeof process.stderr.write;
+    });
   });
 
   afterEach(() => {
@@ -208,7 +206,7 @@ describe("evidence privacy under inherited debug logging", () => {
       await once(server, "listening");
       return server;
     })();
-    const upstreamPort = (upstream.address() as AddressInfo).port;
+    const upstreamPort = portOf(upstream);
 
     const app = createAppServer({
       upstreamBaseUrl: `http://127.0.0.1:${upstreamPort}/v1`,
@@ -219,7 +217,7 @@ describe("evidence privacy under inherited debug logging", () => {
     });
     app.listen(0, "127.0.0.1");
     await once(app, "listening");
-    const appPort = (app.address() as AddressInfo).port;
+    const appPort = portOf(app);
 
     await fetch(`http://127.0.0.1:${appPort}/v1/responses`, {
       method: "POST",

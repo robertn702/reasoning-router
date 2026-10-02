@@ -8,9 +8,13 @@ const options = {
   model: "jev-latest",
   timeoutMs: 5000,
 };
-const args = () => ({
+const args = (extra: Record<string, unknown> = {}) => ({
   model: MODELS[0]!,
-  body: { model: MODELS[0]!.id, input: [{ role: "user", content: "test" }] },
+  body: {
+    model: MODELS[0]!.id,
+    input: [{ role: "user", content: "test" }],
+    ...extra,
+  },
   signal: new AbortController().signal,
 });
 const ok = () =>
@@ -53,8 +57,7 @@ describe("classification policy", () => {
       fetch: async () =>
         ++n === 1 ? ok() : new Response("secret", { status: 401 }),
     });
-    const request = args();
-    request.body = { ...request.body, prompt_cache_key: "same" } as any;
+    const request = args({ prompt_cache_key: "same" });
     await classifier.select(request);
     expect(await classifier.select(request)).toMatchObject({
       effort: "high",

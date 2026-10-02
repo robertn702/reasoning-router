@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import type { ClassifierState } from "../src/classifier.js";
 import { buildClassifierState } from "../src/wire-openai.js";
@@ -19,44 +19,32 @@ const MARKERS = {
 type LogMethod = "log" | "info" | "warn" | "error" | "debug";
 const METHODS: LogMethod[] = ["log", "info", "warn", "error", "debug"];
 
-function captureLogs(fn: () => void): string {
+function captureLogs<T>(fn: () => T): { result: T; logs: string } {
   const chunks: string[] = [];
-  const savedConsole = new Map<LogMethod, unknown>();
-  const savedStdout = process.stdout.write.bind(process.stdout);
-  const savedStderr = process.stderr.write.bind(process.stderr);
-  const swallow =
-    (push: (text: string) => void) =>
-    (chunk: unknown, ...rest: unknown[]): boolean => {
-      if (typeof chunk === "string") {
-        push(chunk);
-      } else if (chunk instanceof Uint8Array) {
-        push(Buffer.from(chunk).toString("utf8"));
-      } else {
-        push(String(chunk));
-      }
-      if (rest.length > 0 && typeof rest[0] === "function") {
-        (rest[0] as () => void)();
-      }
-      return true;
-    };
-  const capture = swallow((text) => chunks.push(text));
-  for (const m of METHODS) {
-    savedConsole.set(m, console[m]);
-    (console as unknown as Record<LogMethod, unknown>)[m] = capture;
-  }
-  process.stdout.write = capture as typeof process.stdout.write;
-  process.stderr.write = capture as typeof process.stderr.write;
-  try {
-    fn();
-  } finally {
-    for (const m of METHODS) {
-      (console as unknown as Record<LogMethod, unknown>)[m] =
-        savedConsole.get(m);
+  const capture = (chunk: unknown, ...rest: unknown[]): boolean => {
+    if (typeof chunk === "string") {
+      chunks.push(chunk);
+    } else if (chunk instanceof Uint8Array) {
+      chunks.push(Buffer.from(chunk).toString("utf8"));
+    } else {
+      chunks.push(String(chunk));
     }
-    process.stdout.write = savedStdout;
-    process.stderr.write = savedStderr;
+    const [callback] = rest;
+    if (typeof callback === "function") {
+      callback();
+    }
+    return true;
+  };
+  const spies = [
+    ...METHODS.map((m) => vi.spyOn(console, m).mockImplementation(capture)),
+    vi.spyOn(process.stdout, "write").mockImplementation(capture),
+    vi.spyOn(process.stderr, "write").mockImplementation(capture),
+  ];
+  try {
+    return { result: fn(), logs: chunks.join("") };
+  } finally {
+    for (const spy of spies) spy.mockRestore();
   }
-  return chunks.join("");
 }
 
 function expectBounded(state: ClassifierState): void {
@@ -85,12 +73,9 @@ describe("bounded state builder on gate-1 request shapes", () => {
         ],
       },
     ];
-    let state: ClassifierState | null = null;
-    const logs = captureLogs(() => {
-      state = buildClassifierState(input);
-    });
-    expect(state).not.toBeNull();
-    const built = state as unknown as ClassifierState;
+    const { result: built, logs } = captureLogs(() =>
+      buildClassifierState(input),
+    );
     expectBounded(built);
     expect(built.recent_user_text).toContain(MARKERS.user);
     expect(JSON.stringify(built)).not.toContain(MARKERS.dev);
@@ -130,11 +115,9 @@ describe("bounded state builder on gate-1 request shapes", () => {
         status: "failed",
       },
     ];
-    let state: ClassifierState | null = null;
-    const logs = captureLogs(() => {
-      state = buildClassifierState(input);
-    });
-    const built = state as unknown as ClassifierState;
+    const { result: built, logs } = captureLogs(() =>
+      buildClassifierState(input),
+    );
     expectBounded(built);
     expect(built.tool_results).toHaveLength(2);
     expect(built.tool_results[0]).toMatchObject({ name: "read", ok: true });
@@ -254,11 +237,9 @@ describe("bounded state builder on gate-1 request shapes", () => {
         output: bigOutput,
       });
     }
-    let state: ClassifierState | null = null;
-    const logs = captureLogs(() => {
-      state = buildClassifierState(input);
-    });
-    const built = state as unknown as ClassifierState;
+    const { result: built, logs } = captureLogs(() =>
+      buildClassifierState(input),
+    );
     expectBounded(built);
     expect(built.tool_results).toHaveLength(MAX_TOOL_RESULTS);
     expect(built.tool_results.map((r) => r.name)).toEqual([
@@ -324,11 +305,9 @@ describe("bounded state builder on gate-1 request shapes", () => {
       },
       { role: "assistant", content: `progress note ${MARKERS.tool}` },
     ];
-    let state: ClassifierState | null = null;
-    const logs = captureLogs(() => {
-      state = buildClassifierState(input);
-    });
-    const built = state as unknown as ClassifierState;
+    const { result: built, logs } = captureLogs(() =>
+      buildClassifierState(input),
+    );
     expectBounded(built);
     const stateJson = JSON.stringify(built);
     expect(stateJson).not.toContain(MARKERS.tooldef);

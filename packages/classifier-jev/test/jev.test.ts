@@ -1,5 +1,5 @@
 import { findModel } from "@reasoning-router/core";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createJevClassifier as createClassifier } from "../src/jev.js";
 
 function createJevClassifier(
@@ -318,14 +318,14 @@ describe("evidence privacy under inherited debug logging", () => {
         );
       };
     }
-    process.stdout.write = ((chunk: unknown) => {
+    vi.spyOn(process.stdout, "write").mockImplementation((chunk: unknown) => {
       captured.push(String(chunk));
       return true;
-    }) as typeof process.stdout.write;
-    process.stderr.write = ((chunk: unknown) => {
+    });
+    vi.spyOn(process.stderr, "write").mockImplementation((chunk: unknown) => {
       captured.push(String(chunk));
       return true;
-    }) as typeof process.stderr.write;
+    });
   });
 
   afterEach(() => {

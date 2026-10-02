@@ -10,11 +10,7 @@ describe("classification policy", () => {
     });
     for (const maxRetries of [-1, 1.5, NaN, 11])
       expect(() => classificationPolicy({ maxRetries })).toThrow();
-    expect(() =>
-      classificationPolicy({ fallbackMode: "bad" as any }),
-    ).toThrow();
-    expect(() =>
-      classificationPolicy({ fallbackEffort: "none" as any }),
-    ).toThrow();
+    expect(() => classificationPolicy({ fallbackMode: "bad" })).toThrow();
+    expect(() => classificationPolicy({ fallbackEffort: "none" })).toThrow();
   });
 });
