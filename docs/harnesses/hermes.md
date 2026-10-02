@@ -152,6 +152,47 @@ them and inserted a `configuration_update` item.
   - Routing them through the proxy would mean overriding that base URL.
   - We did not check whether Hermes allows the override, or whether those
     endpoints would accept the rewritten body.
+  - Separately, the proxy forwards only `Authorization` (plus the Anthropic
+    auth headers) and, in `forward` mode, only to a loopback upstream. So
+    it cannot talk to `chatgpt.com/backend-api/codex` itself.
+- **Proxy chained to a local subscription bridge (source; not run, because
+  it needs an OAuth login):** the chain is Hermes → `reasoning-router` →
+  a local bridge such as CLIProxyAPI or Meridian → the provider. The
+  bridge holds the subscription login, and our proxy forwards Hermes's
+  `api_key` to it as the bridge's own client key. This is allowed: the
+  upstream is loopback, so `forward` mode accepts it.
+  - **[CLIProxyAPI] v8.0.11 (ChatGPT/Codex): likely works.** It serves
+    `POST /v1/responses` ([`server_routes.go#L79`][cpa-routes]).
+    - For GPT-6 models on Codex plans it passes the top-level effort and
+      `configuration_update` items through unchanged
+      ([`apply.go#L243-L285`][cpa-apply]). Its registry flags the same
+      models we support (`gpt-6-sol`, `gpt-6.1-sol`, `gpt-6-astra`,
+      `gpt-6-luna`).
+    - It keeps the client's `prompt_cache_key`
+      ([`codex_executor_request.go#L112-L116`][cpa-cache]).
+    - For any other model it silently strips `configuration_update`
+      ([`configuration_update.go#L48-L76`][cpa-strip]). On those models
+      routing would quietly have no effect.
+  - **[Meridian] v1.79.0 (Claude subscription): runs, but routing has no
+    effect today.**
+    - It reads effort in this order: header, `effort`, `reasoning_effort`,
+      top-level `output_config.effort`, and only then the last system
+      message with `output_config.effort`
+      ([`server.ts#L2305-L2321`][meridian-effort]).
+    - Our Anthropic rewrite pins the top-level `output_config.effort` to
+      the base effort ([`wire-anthropic.ts`](../../packages/core/src/wire-anthropic.ts)).
+      Meridian would therefore always apply the base effort and ignore
+      the routed one.
+    - To fix this, either Meridian would prefer the latest system-message
+      update, or our proxy would omit the top-level effort for this
+      upstream. Either way, Meridian passes effort to the Claude Agent SDK
+      once per query, so the cache effect would need measuring.
+    - Hermes already has a community Meridian provider plugin
+      ([hermes-plugin-claude-via-meridian]).
+  - **Terms of service:** both bridges reuse consumer subscriptions outside
+    the vendors' own clients. Whether that is allowed is up to the vendor's
+    terms; we should not document it as a supported setup without
+    checking.
 
 ### Stability
 
@@ -313,9 +354,13 @@ providers:
 
 ### Limitations
 
-- **Subscription logins:** API-key providers only. Hermes's OAuth
-  providers (ChatGPT/Codex, Nous Portal, Copilot) are unverified behind
-  the proxy and probably unsupported.
+- **Subscription logins:** Hermes's own OAuth providers (ChatGPT/Codex,
+  Nous Portal, Copilot) cannot sit behind the proxy directly.
+  - ChatGPT/Codex subscriptions can likely work by chaining the proxy to a
+    local CLIProxyAPI, for GPT-6 models only (see "Auth").
+  - A Claude subscription through Meridian connects, but the routed effort
+    is ignored until Meridian's effort precedence or our Anthropic rewrite
+    changes.
 - **Wire APIs:** Responses and Messages only. Most Hermes providers default
   to Chat Completions, which the proxy does not serve, and the proxy's
   model registry lists only the GPT-6 and Claude models it supports.
@@ -370,7 +415,14 @@ No new package, and no change to the core's contract.
 4. **Auxiliary traffic.** Should the proxy classify auxiliary calls,
    bypass them by a header or heuristic, or should we tell users to pin
    auxiliary providers?
-5. **Anthropic path.** Is it worth installing the `anthropic` extra in a
+5. **Subscription bridges.** Should we support chaining the proxy to
+   CLIProxyAPI or Meridian?
+   - If so, someone with a subscription needs to test the CLIProxyAPI
+     chain end to end.
+   - For Meridian, should the proxy offer an upstream option that omits
+     the top-level Anthropic effort, or should we ask Meridian to prefer
+     the latest system-message update?
+6. **Anthropic path.** Is it worth installing the `anthropic` extra in a
    throwaway Hermes install to verify `anthropic_messages` through the
    proxy before documenting it?
 
@@ -399,6 +451,14 @@ No new package, and no change to the core's contract.
 [jev-effort-router]: https://github.com/AlphaPerseii3000/jev-effort-router
 [hermes-switchyard]: https://github.com/bgrablin/hermes-switchyard
 [ClawRouter]: https://github.com/BlockRunAI/ClawRouter
+[CLIProxyAPI]: https://github.com/router-for-me/CLIProxyAPI
+[cpa-routes]: https://github.com/router-for-me/CLIProxyAPI/blob/e2bff0107bb307337aaa19018ccddd55f64253d5/internal/api/server_routes.go#L79
+[cpa-apply]: https://github.com/router-for-me/CLIProxyAPI/blob/e2bff0107bb307337aaa19018ccddd55f64253d5/internal/thinking/apply.go#L243-L285
+[cpa-cache]: https://github.com/router-for-me/CLIProxyAPI/blob/e2bff0107bb307337aaa19018ccddd55f64253d5/internal/runtime/executor/codex_executor_request.go#L112-L116
+[cpa-strip]: https://github.com/router-for-me/CLIProxyAPI/blob/e2bff0107bb307337aaa19018ccddd55f64253d5/internal/thinking/configuration_update.go#L48-L76
+[Meridian]: https://github.com/rynfar/meridian
+[meridian-effort]: https://github.com/rynfar/meridian/blob/d57388724a242116f123ff75b88fd2be2846abe3/src/proxy/server.ts#L2305-L2321
+[hermes-plugin-claude-via-meridian]: https://github.com/nnnet/hermes-plugin-claude-via-meridian
 [#12732]: https://github.com/NousResearch/hermes-agent/pull/12732
 [#13663]: https://github.com/NousResearch/hermes-agent/issues/13663
 [#41190]: https://github.com/NousResearch/hermes-agent/issues/41190
