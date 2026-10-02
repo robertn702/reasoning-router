@@ -28,6 +28,12 @@ smoke as a separate job. The plugin smoke needs `openssl` and an existing
 `/tmp/opencode`; set `OPENCODE_V2_BIN` or `OPENCODE_V2_VERSION` to test
 another OpenCode V2.
 
+Orca runs `./scripts/setup.sh` from `orca.yaml` and waits for it to finish
+before starting an agent. The script runs `npm ci`, copies local `.env*` files
+(except `.env.example`) from the main checkout into a new worktree, and creates
+`.env` from `.env.example` if none exists. If present, it links
+`.scratch/shared` and `AGENTS.local.md`. It never overwrites existing files.
+
 ## Layout
 
 - `packages/core` (`@reasoning-router/core`): validation, rewrite, lineage,
