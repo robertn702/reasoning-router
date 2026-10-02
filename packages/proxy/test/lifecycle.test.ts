@@ -1,12 +1,12 @@
 import { once } from "node:events";
 import http from "node:http";
-import type { AddressInfo } from "node:net";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   type AppServerOptions,
   createAppServer,
   shutdownAppServer,
 } from "../src/server.js";
+import { portOf } from "./port.js";
 
 const servers: http.Server[] = [];
 afterEach(async () => {
@@ -22,7 +22,7 @@ async function listen(server: http.Server): Promise<string> {
   servers.push(server);
   server.listen(0, "127.0.0.1");
   await once(server, "listening");
-  return `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+  return `http://127.0.0.1:${portOf(server)}`;
 }
 
 function app(options: Partial<AppServerOptions> = {}): http.Server {

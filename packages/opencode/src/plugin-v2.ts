@@ -11,7 +11,6 @@ import {
   createPluginRuntime,
   type Exchange,
   isRecord,
-  type PluginOptions,
   PluginRequestError,
   SESSION,
   valid,
@@ -43,7 +42,7 @@ const rejection = (cause: unknown): Error =>
       );
 
 function parseWrap(
-  options: Record<string, unknown>,
+  options: Readonly<Record<string, unknown>>,
 ): { group: Provider; providerID: string; modelID: string; ref: string }[] {
   for (const key of [
     "upstreamBaseURL",
@@ -62,7 +61,7 @@ function parseWrap(
     );
   const refs: ReturnType<typeof parseWrap> = [];
   for (const [group, values] of Object.entries(options.wrap)) {
-    if (!(group in PACKAGES))
+    if (group !== "openai" && group !== "anthropic")
       throw new Error(`reasoning-router: unknown wrap group ${group}`);
     if (!Array.isArray(values) || !values.length)
       throw new Error(
@@ -77,15 +76,20 @@ function parseWrap(
         throw new Error(
           `reasoning-router: wrap.${group} requires provider/model refs from another provider`,
         );
-      const [providerID, modelID] = ref.split("/") as [string, string];
-      refs.push({ group: group as Provider, providerID, modelID, ref });
+      const slash = ref.indexOf("/");
+      refs.push({
+        group,
+        providerID: ref.slice(0, slash),
+        modelID: ref.slice(slash + 1),
+        ref,
+      });
     }
   }
   return refs;
 }
 
 export async function setupV2(ctx: Plugin.Context): Promise<() => void> {
-  const options = ctx.options as PluginOptions & Record<string, unknown>;
+  const options: Readonly<Record<string, unknown>> = ctx.options;
   const refs = parseWrap(options);
   const runtime = createPluginRuntime(options);
   const exchanges = new WeakMap<Request, Exchange>();

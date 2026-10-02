@@ -1,5 +1,5 @@
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
-import { createServer } from "node:http";
+import { createServer, type Server } from "node:http";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import type { Plugin } from "@opencode/plugin";
@@ -14,6 +14,27 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import plugin from "../src/plugin.js";
 
 const originalFetch = globalThis.fetch;
+function portOf(server: Server): number {
+  const address = server.address();
+  if (address === null || typeof address === "string")
+    throw new Error("server is not listening on a TCP port");
+  return address.port;
+}
+/** Replaces fetch; the handler sees each call as a Request, the original one when given. */
+function mockFetch(
+  handler: (request: Request) => Response | Promise<Response> = () =>
+    new Response("{}"),
+) {
+  const fetcher = vi.fn<typeof fetch>(async (input, init) =>
+    handler(
+      input instanceof Request && init === undefined
+        ? input
+        : new Request(input, init),
+    ),
+  );
+  globalThis.fetch = fetcher;
+  return fetcher;
+}
 const OPENAI = "@opencode/ai/providers/openai/responses";
 const ANTHROPIC = "@opencode/ai/providers/anthropic";
 const base = {
@@ -33,8 +54,12 @@ const body = {
   stream: true,
   prompt_cache_key: "ses_test",
 };
+type Source = {
+  provider: Record<string, unknown>;
+  models: Map<string, Record<string, unknown>>;
+};
 const sources = () =>
-  new Map([
+  new Map<string, Source>([
     [
       "gw",
       {
@@ -258,7 +283,7 @@ const decisions = async (path: string) => {
     .map((line) => JSON.parse(line));
 };
 const collectGarbage = async () => {
-  const gc = (globalThis as { gc?: () => void }).gc;
+  const gc = globalThis.gc;
   if (!gc) throw new Error("vitest workers must run with --expose-gc");
   gc();
   await new Promise((resolve) => setTimeout(resolve, 10));
@@ -360,7 +385,7 @@ describe("V2 wrap aliases", () => {
   });
 
   it("validates the resolved API model ID and package, not just the source ref", async () => {
-    const source = sources() as any;
+    const source = sources();
     source.get("gw")!.models.set("other", { id: "other", modelID: "other" });
     const unsupported = await host(
       { ...base, wrap: { openai: ["gw/other"] } },
@@ -398,7 +423,7 @@ describe("V2 wrap aliases", () => {
     expect(h.aliases.get("gpt-6-astra")?.package).toBe(
       "@opencode/ai/providers/openai",
     );
-    globalThis.fetch = vi.fn(async () => new Response("{}")) as typeof fetch;
+    mockFetch();
     expect((await h.exchange()).request.url).toBe(
       "https://a.test/v1/responses",
     );
@@ -406,8 +431,7 @@ describe("V2 wrap aliases", () => {
   });
 
   it("rejects primary non-generation routes without forwarding or classifying", async () => {
-    const fetcher = vi.fn();
-    globalThis.fetch = fetcher as typeof fetch;
+    const fetcher = mockFetch();
     const h = await host();
     await expect(
       h.exchange(body, { url: "https://a.test/v1/chat/completions" }),
@@ -417,7 +441,7 @@ describe("V2 wrap aliases", () => {
   });
 
   it("passes a non-generation route through for auxiliary calls", async () => {
-    globalThis.fetch = vi.fn(async () => new Response("{}")) as typeof fetch;
+    mockFetch();
     const h = await host();
     const sent = await h.exchange(body, {
       kind: "title",
@@ -452,7 +476,7 @@ describe("V2 wrap aliases", () => {
   });
 
   it("keeps active aliases during provider-transform reload, then atomically updates them", async () => {
-    globalThis.fetch = vi.fn(async () => new Response("{}")) as typeof fetch;
+    mockFetch();
     const h = await host();
     h.providerPass();
     expect((await h.exchange()).response.status).toBe(200);
@@ -462,15 +486,15 @@ describe("V2 wrap aliases", () => {
   });
 
   it("pins HTTP transport over a source model's top-level websocket preference", async () => {
-    const source = sources() as any;
-    source.get("gw").models.get("gpt-6-astra").transport = "websocket";
+    const source = sources();
+    source.get("gw")!.models.get("gpt-6-astra")!.transport = "websocket";
     const h = await host(base, source);
     expect(h.aliases.get("gpt-6-astra")?.transport).toBe("http");
     h.cleanup();
   });
 
   it("uses a present wire auth header unchanged without resolving an OAuth integration", async () => {
-    globalThis.fetch = vi.fn(async () => new Response("{}")) as typeof fetch;
+    mockFetch();
     const h = await host(base, sources(), {
       gw: { type: "oauth", access: "token" },
     });
@@ -502,12 +526,12 @@ describe("V2 wrap aliases", () => {
     try {
       const path = join(dir, "events.jsonl");
       const bodies: any[] = [];
-      globalThis.fetch = vi.fn(async (request: Request) => {
+      mockFetch(async (request) => {
         bodies.push(await request.json());
         return new Response(JSON.stringify({ status: "completed" }), {
           headers: { "content-type": "application/json" },
         });
-      }) as typeof fetch;
+      });
       const h = await host({ ...base, decisionsLogPath: path });
       const send = async (url: string, authorization: string, data: any) =>
         (
@@ -564,7 +588,7 @@ describe("V2 wrap aliases", () => {
   });
 
   it("injects a stored OpenAI key into an auxiliary title request", async () => {
-    globalThis.fetch = vi.fn(async () => new Response("{}")) as typeof fetch;
+    mockFetch();
     const h = await host(base, sources(), {
       gw: { type: "key", key: "stored" },
     });
@@ -578,7 +602,7 @@ describe("V2 wrap aliases", () => {
   });
 
   it("leaves compaction requests untouched", async () => {
-    globalThis.fetch = vi.fn(async () => new Response("{}")) as typeof fetch;
+    mockFetch();
     const h = await host();
     const compact = await h.exchange(body, {
       kind: "compaction",
@@ -589,7 +613,7 @@ describe("V2 wrap aliases", () => {
   });
 
   it("injects an Anthropic integration key and avoids redirects", async () => {
-    globalThis.fetch = vi.fn(async () => new Response("{}")) as typeof fetch;
+    mockFetch();
     const h = await host(base, sources(), {
       claude: { type: "key", key: "claude-key" },
     });
@@ -642,8 +666,7 @@ describe("V2 wrap aliases", () => {
   ])(
     "rejects unsupported primary input before fetching",
     async (data, message) => {
-      const fetcher = vi.fn();
-      globalThis.fetch = fetcher as typeof fetch;
+      const fetcher = mockFetch();
       const h = await host();
       await expect(h.exchange(data)).rejects.toThrow(message);
       expect(fetcher).not.toHaveBeenCalled();
@@ -662,12 +685,12 @@ describe("V2 wrap aliases", () => {
         cancelled = true;
       },
     });
-    globalThis.fetch = vi.fn(
+    mockFetch(
       async () =>
         new Response(upstream, {
           headers: { "content-type": "text/event-stream" },
         }),
-    ) as typeof fetch;
+    );
     const h = await host();
     const result = await h.exchange();
     const bytes = new TextEncoder().encode("data: chunk\n\n");
@@ -680,8 +703,7 @@ describe("V2 wrap aliases", () => {
   });
 
   it("limits actual request bytes before classification", async () => {
-    const fetcher = vi.fn();
-    globalThis.fetch = fetcher as typeof fetch;
+    const fetcher = mockFetch();
     const h = await host({ ...base, maxRequestBytes: 16 });
     await expect(h.exchange()).rejects.toThrow("request_too_large (413)");
     expect(fetcher).not.toHaveBeenCalled();
@@ -689,8 +711,7 @@ describe("V2 wrap aliases", () => {
   });
 
   it("rejects declared oversize content-length before classification", async () => {
-    const fetcher = vi.fn();
-    globalThis.fetch = fetcher as typeof fetch;
+    const fetcher = mockFetch();
     const h = await host({ ...base, maxRequestBytes: 2 });
     const call = h.event(body, { headers: { "content-length": "999" } });
     await expect(h.hooks.get("http.request")!(call)).rejects.toThrow(
@@ -703,23 +724,20 @@ describe("V2 wrap aliases", () => {
   it("falls back to a validated effort when Jev times out", async () =>
     withLog(async (path) => {
       const upstream: any[] = [];
-      globalThis.fetch = vi.fn(
-        (request: RequestInfo | URL, init?: RequestInit) =>
-          (request instanceof Request ? request.url : String(request)).includes(
-            "api.typesafe.ai",
-          )
-            ? new Promise<Response>((_resolve, reject) =>
-                init?.signal?.addEventListener("abort", () =>
-                  reject(new DOMException("aborted", "AbortError")),
-                ),
-              )
-            : (async () => {
-                upstream.push(await (request as Request).json());
-                return new Response("{}", {
-                  headers: { "content-type": "application/json" },
-                });
-              })(),
-      ) as typeof fetch;
+      mockFetch((request) =>
+        request.url.includes("api.typesafe.ai")
+          ? new Promise<Response>((_resolve, reject) =>
+              request.signal.addEventListener("abort", () =>
+                reject(new DOMException("aborted", "AbortError")),
+              ),
+            )
+          : (async () => {
+              upstream.push(await request.json());
+              return new Response("{}", {
+                headers: { "content-type": "application/json" },
+              });
+            })(),
+      );
       const h = await host({
         classifier: { provider: "jev", apiKey: "jev", timeoutMs: 5 },
         wrap: base.wrap,
@@ -741,19 +759,16 @@ describe("V2 wrap aliases", () => {
     }));
 
   it("session cancellation aborts classification without starting upstream generation", async () => {
-    const upstream = vi.fn();
-    globalThis.fetch = vi.fn(
-      (request: RequestInfo | URL, init?: RequestInit) =>
-        (request instanceof Request ? request.url : String(request)).includes(
-          "api.typesafe.ai",
-        )
-          ? new Promise<Response>((_resolve, reject) =>
-              init?.signal?.addEventListener("abort", () =>
-                reject(new DOMException("aborted", "AbortError")),
-              ),
-            )
-          : upstream(request, init),
-    ) as typeof fetch;
+    const upstream = vi.fn<(request: Request) => Promise<Response>>();
+    mockFetch((request) =>
+      request.url.includes("api.typesafe.ai")
+        ? new Promise<Response>((_resolve, reject) =>
+            request.signal.addEventListener("abort", () =>
+              reject(new DOMException("aborted", "AbortError")),
+            ),
+          )
+        : upstream(request),
+    );
     const h = await host({
       classifier: { provider: "jev", apiKey: "jev" },
       wrap: base.wrap,
@@ -771,21 +786,19 @@ describe("V2 wrap aliases", () => {
     "retains original Request across forced GC during pre-header cancellation (injected=%s)",
     async (inject) =>
       withLog(async (path) => {
-        globalThis.fetch = vi.fn((request: RequestInfo | URL) =>
-          (request instanceof Request ? request.url : String(request)).includes(
-            "api.typesafe.ai",
-          )
+        mockFetch((request) =>
+          request.url.includes("api.typesafe.ai")
             ? Promise.resolve(
                 new Response(
                   JSON.stringify({ answers: { effort: { choice: "high" } } }),
                 ),
               )
             : new Promise<Response>((_resolve, reject) =>
-                (request as Request).signal.addEventListener("abort", () =>
+                request.signal.addEventListener("abort", () =>
                   reject(new DOMException("aborted", "AbortError")),
                 ),
               ),
-        ) as typeof fetch;
+        );
         const h = await host(
           {
             classifier: { provider: "jev", apiKey: "jev" },
@@ -819,15 +832,13 @@ describe("V2 wrap aliases", () => {
           effort: "high",
           outcome: "failed",
         });
-        globalThis.fetch = vi.fn(async (request: RequestInfo | URL) =>
-          (request instanceof Request ? request.url : String(request)).includes(
-            "api.typesafe.ai",
-          )
+        mockFetch(async (request) =>
+          request.url.includes("api.typesafe.ai")
             ? new Response(
                 JSON.stringify({ answers: { effort: { choice: "low" } } }),
               )
             : new Response("{}"),
-        ) as typeof fetch;
+        );
         expect((await h.exchange()).response.status).toBe(200);
         h.cleanup();
       }),
@@ -836,15 +847,15 @@ describe("V2 wrap aliases", () => {
   it("header deadline aborts upstream and records one failure", async () =>
     withLog(async (path) => {
       let aborted = false;
-      globalThis.fetch = vi.fn(
-        (request: Request) =>
+      mockFetch(
+        (request) =>
           new Promise<Response>((_resolve, reject) =>
             request.signal.addEventListener("abort", () => {
               aborted = true;
               reject(new DOMException("aborted", "AbortError"));
             }),
           ),
-      ) as typeof fetch;
+      );
       const h = await host({
         ...base,
         upstreamHeaderTimeoutMs: 5,
@@ -858,10 +869,10 @@ describe("V2 wrap aliases", () => {
 
   it("preserves provider headers but drops internal and hop-by-hop headers", async () => {
     let received: Headers | undefined;
-    globalThis.fetch = vi.fn(async (request: Request) => {
+    mockFetch(async (request) => {
       received = request.headers;
       return new Response("{}");
-    }) as typeof fetch;
+    });
     const h = await host();
     await h.exchange(body, {
       headers: {
@@ -888,13 +899,13 @@ describe("V2 wrap aliases", () => {
   });
 
   it("passes upstream errors with status and body unchanged", async () => {
-    globalThis.fetch = vi.fn(
+    mockFetch(
       async () =>
         new Response('{"error":{"message":"bad"}}', {
           status: 429,
           headers: { "content-type": "application/json", "retry-after": "3" },
         }),
-    ) as typeof fetch;
+    );
     const h = await host();
     const { response } = await h.exchange();
     expect(response.status).toBe(429);
@@ -915,7 +926,7 @@ describe("V2 wrap aliases", () => {
   it("rejects and cancels a late response after the header deadline", async () =>
     withLog(async (path) => {
       let cancelled = false;
-      globalThis.fetch = vi.fn(
+      mockFetch(
         async () =>
           new Response(
             new ReadableStream({
@@ -925,7 +936,7 @@ describe("V2 wrap aliases", () => {
             }),
             { headers: { "content-type": "text/event-stream" } },
           ),
-      ) as typeof fetch;
+      );
       const h = await host({
         ...base,
         upstreamHeaderTimeoutMs: 5,
@@ -948,7 +959,7 @@ describe("V2 wrap aliases", () => {
     withLog(async (path) => {
       const bodies: any[] = [];
       const effort = "high";
-      globalThis.fetch = vi.fn(async (request: Request) => {
+      mockFetch(async (request) => {
         bodies.push(await request.json());
         return new Response(
           new ReadableStream<Uint8Array>({
@@ -962,7 +973,7 @@ describe("V2 wrap aliases", () => {
           }),
           { headers: { "content-type": "text/event-stream" } },
         );
-      }) as typeof fetch;
+      });
       const h = await host({
         ...base,
         fixedEffort: effort,
@@ -1003,7 +1014,7 @@ describe("V2 wrap aliases", () => {
   it("commits Anthropic lineage when consumer cancels after message_stop", async () =>
     withLog(async (path) => {
       const bodies: any[] = [];
-      globalThis.fetch = vi.fn(async (request: Request) => {
+      mockFetch(async (request) => {
         bodies.push(await request.json());
         return new Response(
           new ReadableStream<Uint8Array>({
@@ -1017,7 +1028,7 @@ describe("V2 wrap aliases", () => {
           }),
           { headers: { "content-type": "text/event-stream" } },
         );
-      }) as typeof fetch;
+      });
       const h = await host({ ...base, decisionsLogPath: path });
       const first = { role: "user", content: "first" };
       const send = async (messages: unknown[]) =>
@@ -1049,12 +1060,12 @@ describe("V2 wrap aliases", () => {
   it("cleanup aborts in-flight work, records each once and rejects new work", async () =>
     withLog(async (path) => {
       let aborted = 0;
-      globalThis.fetch = vi.fn(async (request: Request) => {
+      mockFetch(async (request) => {
         request.signal.addEventListener("abort", () => {
           aborted++;
         });
         return new Response(new ReadableStream());
-      }) as typeof fetch;
+      });
       const h = await host({ ...base, decisionsLogPath: path });
       await h.exchange();
       const pending = h.event();
@@ -1076,7 +1087,7 @@ describe("V2 wrap aliases", () => {
 
   it("fixed effort avoids Jev and logs usage only after downstream reads", async () =>
     withLog(async (path) => {
-      globalThis.fetch = vi.fn(async (request: Request) => {
+      mockFetch(async (request) => {
         expect(request.url).not.toContain("api.typesafe.ai");
         expect((await request.json()).reasoning).toEqual({ effort: "medium" });
         return new Response(
@@ -1086,7 +1097,7 @@ describe("V2 wrap aliases", () => {
           }),
           { headers: { "content-type": "application/json" } },
         );
-      }) as typeof fetch;
+      });
       const h = await host({ ...base, decisionsLogPath: path });
       const { response } = await h.exchange();
       expect(await readFile(path, "utf8").catch(() => "")).toBe("");
@@ -1101,7 +1112,7 @@ describe("V2 wrap aliases", () => {
 
   it("isolates Anthropic lineage by key, beta and version", async () =>
     withLog(async (path) => {
-      globalThis.fetch = vi.fn(
+      mockFetch(
         async () =>
           new Response(
             JSON.stringify({
@@ -1111,7 +1122,7 @@ describe("V2 wrap aliases", () => {
             }),
             { headers: { "content-type": "application/json" } },
           ),
-      ) as typeof fetch;
+      );
       const h = await host({ ...base, decisionsLogPath: path });
       const first = { role: "user", content: "first" };
       const send = async (
@@ -1152,10 +1163,10 @@ describe("V2 wrap aliases", () => {
 
   it("normalizes blank Anthropic version and merges beta without rewriting auth", async () => {
     let received: Request | undefined;
-    globalThis.fetch = vi.fn(async (request: Request) => {
+    mockFetch(async (request) => {
       received = request;
       return new Response("{}");
-    }) as typeof fetch;
+    });
     const h = await host();
     await h.exchange(
       { model: "claude-opus-5-5", messages: [{ role: "user", content: "hi" }] },
@@ -1188,7 +1199,7 @@ describe("V2 wrap aliases", () => {
     await new Promise<void>((resolve) =>
       target.listen(0, "127.0.0.1", resolve),
     );
-    const targetURL = `http://127.0.0.1:${(target.address() as { port: number }).port}/v1/messages`;
+    const targetURL = `http://127.0.0.1:${portOf(target)}/v1/messages`;
     const upstream = createServer((_req, res) => {
       res.writeHead(307, { location: targetURL });
       res.end();
@@ -1205,14 +1216,14 @@ describe("V2 wrap aliases", () => {
         },
         {
           model: "claude-opus-5-5",
-          url: `http://127.0.0.1:${(upstream.address() as { port: number }).port}/v1/messages`,
+          url: `http://127.0.0.1:${portOf(upstream)}/v1/messages`,
           headers: { "x-api-key": "secret" },
         },
       );
       expect(anth.request.redirect).toBe("manual");
       expect(anth.response.status).toBe(307);
       expect(leaked).toEqual([]);
-      globalThis.fetch = vi.fn(async () => new Response("{}")) as typeof fetch;
+      mockFetch();
       expect((await h.exchange()).request.redirect).toBe("follow");
     } finally {
       h.cleanup();
@@ -1224,17 +1235,15 @@ describe("V2 wrap aliases", () => {
   it("discards failed attempts before routing a different-effort retry", async () => {
     let effort = "high";
     let attempts = 0;
-    globalThis.fetch = vi.fn(async (request: RequestInfo | URL) =>
-      (request instanceof Request ? request.url : String(request)).includes(
-        "api.typesafe.ai",
-      )
+    mockFetch(async (request) =>
+      request.url.includes("api.typesafe.ai")
         ? new Response(
             JSON.stringify({ answers: { effort: { choice: effort } } }),
           )
         : ++attempts === 1
           ? Promise.reject(new Error("offline"))
           : new Response("{}"),
-    ) as typeof fetch;
+    );
     const h = await host({
       classifier: { provider: "jev", apiKey: "jev" },
       wrap: base.wrap,
@@ -1247,17 +1256,13 @@ describe("V2 wrap aliases", () => {
 
   it("logs one fallback failure without a raw upstream error", async () =>
     withLog(async (path) => {
-      globalThis.fetch = vi.fn(async (request: RequestInfo | URL) => {
-        if (
-          (request instanceof Request ? request.url : String(request)).includes(
-            "api.typesafe.ai",
-          )
-        )
+      mockFetch(async (request) => {
+        if (request.url.includes("api.typesafe.ai"))
           return new Response(
             JSON.stringify({ answers: { effort: { choice: "invalid" } } }),
           );
         throw new Error("secret upstream error");
-      }) as typeof fetch;
+      });
       const h = await host({
         classifier: { provider: "jev", apiKey: "jev" },
         wrap: base.wrap,
@@ -1283,12 +1288,12 @@ describe("V2 wrap aliases", () => {
       const diagnostic = vi
         .spyOn(console, "error")
         .mockImplementation(() => {});
-      globalThis.fetch = vi.fn(
+      mockFetch(
         async () =>
           new Response("{}", {
             headers: { "content-type": "application/json" },
           }),
-      ) as typeof fetch;
+      );
       const h = await host({ ...base, decisionsLogPath: blocked });
       expect(await (await h.exchange()).response.text()).toBe("{}");
       await vi.waitFor(() =>
@@ -1301,7 +1306,7 @@ describe("V2 wrap aliases", () => {
 
   it("records a mid-stream cancellation only once as failed", async () =>
     withLog(async (path) => {
-      globalThis.fetch = vi.fn(
+      mockFetch(
         async () =>
           new Response(
             new ReadableStream<Uint8Array>({
@@ -1311,7 +1316,7 @@ describe("V2 wrap aliases", () => {
             }),
             { headers: { "content-type": "text/event-stream" } },
           ),
-      ) as typeof fetch;
+      );
       const h = await host({ ...base, decisionsLogPath: path });
       const reader = (await h.exchange()).response.body!.getReader();
       await reader.read();
@@ -1331,8 +1336,7 @@ describe("V2 wrap aliases", () => {
     { ...body, model: "gpt-5" },
     { ...body, truncation: "auto" },
   ])("rejects malformed JSON shapes before Jev: %j", async (data) => {
-    const fetcher = vi.fn();
-    globalThis.fetch = fetcher as typeof fetch;
+    const fetcher = mockFetch();
     const h = await host();
     await expect(h.exchange(data)).rejects.toThrow("invalid_request (400)");
     expect(fetcher).not.toHaveBeenCalled();

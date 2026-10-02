@@ -484,7 +484,7 @@ describe("Anthropic Messages wire", () => {
     const outbound: unknown[][] = [];
     for (const messages of [...inputs, inputs.at(-1)!]) {
       const prepared = (await router.prepare(body(messages), request))!;
-      const sent = prepared.body.messages as unknown[];
+      const sent = anthropicWire.items(prepared.body);
       if (outbound.length)
         expect(sent.slice(0, outbound.at(-1)!.length)).toEqual(outbound.at(-1));
       outbound.push(sent);

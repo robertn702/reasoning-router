@@ -4,6 +4,7 @@ import {
   type ClassifierConfig,
   classificationPolicy,
   type Effort,
+  isEffort,
   MODELS,
   supportsEffort,
 } from "@reasoning-router/core";
@@ -92,13 +93,12 @@ function parseTimeout(raw: string | undefined): number {
 
 function parseEffort(raw: string | undefined): Effort | undefined {
   if (raw === undefined) return undefined;
-  const value = raw;
-  if (!MODELS.every((model) => supportsEffort(model, value))) {
+  if (!isEffort(raw) || !MODELS.every((model) => supportsEffort(model, raw))) {
     throw new Error(
       `REASONING_ROUTER_BASE_EFFORT must be one of ${EFFORTS.join(", ")}`,
     );
   }
-  return value as Effort;
+  return raw;
 }
 
 export function loadConfig(env: Record<string, string | undefined>): AppConfig {
@@ -107,9 +107,8 @@ export function loadConfig(env: Record<string, string | undefined>): AppConfig {
       env.REASONING_ROUTER_MAX_RETRIES === undefined
         ? undefined
         : Number(env.REASONING_ROUTER_MAX_RETRIES),
-    fallbackMode:
-      env.REASONING_ROUTER_FALLBACK_MODE as ClassificationPolicyOptions["fallbackMode"],
-    fallbackEffort: env.REASONING_ROUTER_FALLBACK_EFFORT as Effort | undefined,
+    fallbackMode: env.REASONING_ROUTER_FALLBACK_MODE,
+    fallbackEffort: env.REASONING_ROUTER_FALLBACK_EFFORT,
   });
   for (const name of ["UPSTREAM_MODEL", "UPSTREAM_MODELS", "ALLOWED_MODELS"]) {
     if (env[name] !== undefined)

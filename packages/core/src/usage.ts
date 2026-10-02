@@ -1,4 +1,5 @@
 import type { Provider } from "./models.js";
+import { isRecord } from "./wire.js";
 export interface Usage {
   input_tokens: number | null;
   cached_input_tokens: number | null;
@@ -35,9 +36,8 @@ export class UsageObserver {
     private streaming: boolean,
     private provider: Provider = "openai",
   ) {}
-  private mergeAnthropicUsage(value: unknown) {
-    if (!value || typeof value !== "object" || Array.isArray(value)) return;
-    const usage = value as Record<string, unknown>;
+  private mergeAnthropicUsage(usage: unknown) {
+    if (!isRecord(usage)) return;
     for (const key of [
       "input_tokens",
       "cache_read_input_tokens",
@@ -69,16 +69,16 @@ export class UsageObserver {
   }
   private parseAnthropic(text: string) {
     try {
-      const value = JSON.parse(text);
-      if (!value || typeof value !== "object") return;
+      const value: unknown = JSON.parse(text);
+      if (!isRecord(value)) return;
       if (this.streaming) {
         if (value.type === "error") {
           this.completed = false;
           return;
         }
         if (value.type === "message_stop") this.completed = true;
-        if (value.type === "message_start")
-          this.mergeAnthropicUsage(value.message?.usage);
+        if (value.type === "message_start" && isRecord(value.message))
+          this.mergeAnthropicUsage(value.message.usage);
         if (value.type === "message_delta")
           this.mergeAnthropicUsage(value.usage);
       } else if (value.type === "message") {
@@ -95,18 +95,28 @@ export class UsageObserver {
       return;
     }
     try {
-      const value = JSON.parse(text);
+      const value: unknown = JSON.parse(text);
+      if (!isRecord(value)) return;
+      const response = isRecord(value.response) ? value.response : undefined;
       if (
-        value?.type === "response.completed" ||
-        value?.status === "completed" ||
-        value?.response?.status === "completed"
+        value.type === "response.completed" ||
+        value.status === "completed" ||
+        response?.status === "completed"
       )
         this.completed = true;
-      const usage = (value.response ?? value)?.usage;
-      if (!usage || typeof usage !== "object") return;
+      const usage = (
+        value.response === undefined || value.response === null
+          ? value
+          : response
+      )?.usage;
+      if (!isRecord(usage)) return;
       this.usage = {
         input_tokens: count(usage.input_tokens),
-        cached_input_tokens: count(usage.input_tokens_details?.cached_tokens),
+        cached_input_tokens: count(
+          isRecord(usage.input_tokens_details)
+            ? usage.input_tokens_details.cached_tokens
+            : undefined,
+        ),
         output_tokens: count(usage.output_tokens),
       };
     } catch {
