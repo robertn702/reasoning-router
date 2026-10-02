@@ -1,5 +1,5 @@
 {
-  "name": "reasoning-router",
+  "name": "@reasoning-router/proxy",
   "version": "0.0.0",
   "description": "Standalone adaptive reasoning effort proxy for Responses and Messages API clients",
   "type": "module",
@@ -10,7 +10,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/robertn702/reasoning-router.git",
-    "directory": "packages/reasoning-router"
+    "directory": "packages/proxy"
   },
   "keywords": [
     "reasoning-effort",

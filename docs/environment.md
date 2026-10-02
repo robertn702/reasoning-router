@@ -1,6 +1,6 @@
 # Router environment namespace
 
-The standalone proxy (`reasoning-router`) reads only `REASONING_ROUTER_*`
+The standalone proxy (`@reasoning-router/proxy`, command `reasoning-router`) reads only `REASONING_ROUTER_*`
 variables; `.env.example` lists the supported names. The `JEV_ROUTER_*`,
 `JEV_API_KEY`, and `JEV_BASE_URL` names used by `opencode-jev-router` are not
 carried over. `TYPESAFE_API_KEY`, `JEV_ROUTER_API_KEY`, and

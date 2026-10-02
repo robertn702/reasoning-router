@@ -60,7 +60,7 @@ shape, efforts, or failure modes.
 ## Packages
 
 The first port of `opencode-jev-router` creates three packages under the
-`@reasoning-router` scope plus the unscoped proxy, versioned independently:
+`@reasoning-router` scope plus the proxy, versioned independently:
 
 - **`@reasoning-router/core`:** validation, rewriting, cache lineage,
   forwarding, usage observation, decision logging, the model registry, and
@@ -76,16 +76,16 @@ ONNX Runtime and the model download reach only Laya users.
 Naming:
 
 - The core is `@reasoning-router/core`, a common convention (`@babel/core`)
-  that leaves unscoped `reasoning-router` free for a CLI or proxy entry point.
+  that leaves unscoped `reasoning-router` free for a future umbrella CLI.
 - Harness adapters use the bare harness name (`@reasoning-router/opencode`),
   which users type into their harness configuration.
 - Classifiers use a `classifier-` prefix. Names like Jev and Laya do not say
   what kind of package they are, and some names (Hermes, Codex) could mean
   either a harness or a model.
 
-The standalone proxy is part of the first port, as unscoped
-`reasoning-router` (the port of `index.ts`, `config.ts`, and `server.ts`,
-with the `reasoning-router` CLI). It depends on core and classifier-jev and
+The standalone proxy is part of the first port, as
+`@reasoning-router/proxy` (the port of `index.ts`, `config.ts`, and
+`server.ts`, run as the `reasoning-router` command). It depends on core and classifier-jev and
 reads `REASONING_ROUTER_*` variables. Porting it keeps every
 `opencode-jev-router` test, since the proxy tests also cover shared behavior.
 

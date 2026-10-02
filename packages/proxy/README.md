@@ -1,4 +1,4 @@
-# reasoning-router
+# @reasoning-router/proxy
 
 A standalone HTTP proxy that asks a classifier how much reasoning each request
 needs, then applies that effort to the outgoing Responses (`POST
@@ -20,7 +20,7 @@ REASONING_ROUTER_UPSTREAM_API_KEY=your-endpoint-key
 Then start it and point your client at `http://127.0.0.1:4320/v1`:
 
 ```bash
-npx reasoning-router
+npx @reasoning-router/proxy
 curl --fail http://127.0.0.1:4320/ready
 ```
 

@@ -12,7 +12,7 @@ block (`{ provider, apiKey, baseUrl, timeoutMs }`). This package depends on no
 classifier SDK.
 
 Used by [`@reasoning-router/opencode`](../opencode) and the
-[`reasoning-router`](../reasoning-router) proxy. See
+[`@reasoning-router/proxy`](../proxy). See
 [`docs/behavior.md`](../../docs/behavior.md) and
 [`docs/classification-policy.md`](../../docs/classification-policy.md).
 
