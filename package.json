@@ -14,7 +14,7 @@
     "node": ">=24.0.0 <25"
   },
   "scripts": {
-    "build": "npm run build -w @reasoning-router/core -w @reasoning-router/classifier-jev -w @reasoning-router/opencode -w @reasoning-router/proxy",
+    "build": "npm run build -w @reasoning-router/core -w @reasoning-router/classifiers -w @reasoning-router/opencode -w @reasoning-router/proxy",
     "check": "npm run typecheck && npm run lint && npm test",
     "format": "biome check --write .",
     "lint": "biome check .",

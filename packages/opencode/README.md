@@ -2,9 +2,9 @@
 
 An [OpenCode](https://opencode.ai) V2 plugin that asks a classifier how much
 reasoning each step needs, then applies that effort to the outgoing model
-request without breaking the prompt cache. Jev
-([`@reasoning-router/classifier-jev`](../classifier-jev)) is the only
-classifier today.
+request without breaking the prompt cache. Every classifier in
+[`@reasoning-router/classifiers`](../classifiers) (Jev and Cloudflare Clef)
+is available.
 
 Ported from
 [`opencode-jev-router`](https://github.com/robertn702/opencode-jev-router).
@@ -14,7 +14,8 @@ Ported from
 - OpenCode V2 2.0.4 or newer (smoke-tested with 2.0.18).
 - A classifier key. For Jev: a [TypeSafe](https://typesafe.ai/) key, or a
   [Vercel AI Gateway](https://vercel.com/docs/ai-gateway/sdks-and-apis/typesafe)
-  key used with `baseUrl: "https://ai-gateway.vercel.sh/typesafe"`.
+  key used with `baseUrl: "https://ai-gateway.vercel.sh/typesafe"`. For Clef:
+  a Cloudflare Workers AI API token and account ID.
 - A Responses API endpoint serving GPT-6 Astra, Luna, or Sol, or an Anthropic
   Messages endpoint with the mid-conversation output-config beta.
 
@@ -47,9 +48,11 @@ example.
 
 | Option | Default | Purpose |
 | --- | --- | --- |
-| `classifier.provider` | `jev` | Classifier provider. |
+| `classifier.provider` | `REASONING_ROUTER_CLASSIFIER` env, then `jev` | Classifier provider: `jev` or `clef`. |
 | `classifier.apiKey` | `REASONING_ROUTER_CLASSIFIER_API_KEY` env | Classifier key. Required unless `fixedEffort` is set. |
-| `classifier.baseUrl` | `REASONING_ROUTER_CLASSIFIER_BASE_URL` env, then the provider default | Classifier endpoint. |
+| `classifier.baseUrl` | `REASONING_ROUTER_CLASSIFIER_BASE_URL` env, then the provider default | Jev endpoint. |
+| `classifier.accountId` | `REASONING_ROUTER_CLASSIFIER_ACCOUNT_ID` env | Clef: Cloudflare account ID. |
+| `classifier.model` | `REASONING_ROUTER_CLASSIFIER_MODEL` env | Clef: `clef` or `clef-flash` (required). |
 | `classifier.timeoutMs` | `4000` | Total classification budget, including retries. |
 | `wrap` | none | Required nonempty object of `openai`/`anthropic` source refs. |
 | `decisionsLogPath` | off | Absolute path for `ReasoningDecision` JSONL. |

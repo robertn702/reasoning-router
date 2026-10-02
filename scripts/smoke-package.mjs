@@ -30,7 +30,7 @@ async function unusedPort() {
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const required = {
   "@reasoning-router/core": ["dist/index.js", "dist/index.d.ts"],
-  "@reasoning-router/classifier-jev": ["dist/jev.js", "dist/jev.d.ts"],
+  "@reasoning-router/classifiers": ["dist/index.js", "dist/index.d.ts"],
   "@reasoning-router/opencode": [
     "dist/plugin.js",
     "dist/plugin-v2.js",
@@ -99,6 +99,10 @@ try {
       TYPESAFE_API_KEY: undefined,
       JEV_ROUTER_API_KEY: undefined,
       JEV_ROUTER_BASE_URL: undefined,
+      REASONING_ROUTER_CLASSIFIER: undefined,
+      REASONING_ROUTER_CLASSIFIER_BASE_URL: undefined,
+      REASONING_ROUTER_CLASSIFIER_ACCOUNT_ID: undefined,
+      REASONING_ROUTER_CLASSIFIER_MODEL: undefined,
       REASONING_ROUTER_CLASSIFIER_API_KEY: "smoke-test-key",
       REASONING_ROUTER_UPSTREAM_BASE_URL: "http://127.0.0.1:1/v1",
       REASONING_ROUTER_PORT: String(port),

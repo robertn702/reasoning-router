@@ -1,4 +1,4 @@
-import { resolveJevConnection } from "@reasoning-router/classifier-jev";
+import { resolveJevConnection } from "@reasoning-router/classifiers";
 import { expect, it } from "vitest";
 import { loadClassifierConfig, loadConfig } from "../src/config.js";
 

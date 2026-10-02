@@ -1,10 +1,9 @@
 import { createHash } from "node:crypto";
 
-import { jevClassifierProvider } from "@reasoning-router/classifier-jev";
+import { classifierProviders } from "@reasoning-router/classifiers";
 import {
   anthropicVersion,
   buildPluginUpstreamRequestHeaders,
-  type ClassifierProvider,
   classificationPolicySchema,
   createConfiguredSelector,
   createDecisionLogger,
@@ -25,9 +24,6 @@ import {
 } from "@reasoning-router/core";
 import { z } from "zod";
 
-/** Classifiers the plugin can select through `classifier.provider`. */
-const CLASSIFIERS: readonly ClassifierProvider[] = [jevClassifierProvider];
-
 const positiveInteger = (name: string, fallback: number) => {
   const message = `${name} must be a positive integer`;
   return z.int(message).min(1, message).default(fallback);
@@ -38,16 +34,15 @@ const TIMEOUT = "timeoutMs must be a positive integer";
 
 const pluginOptionsSchema = z.object({
   ...classificationPolicySchema.shape,
-  /** `provider` (default `jev`) plus that provider's settings. */
+  /** `provider` (default `REASONING_ROUTER_CLASSIFIER`, then `jev`) plus that provider's settings. */
   classifier: z
     .looseObject(
       {
-        provider: z
-          .string("classifier.provider must be a string")
-          .default("jev"),
+        provider: optionalString("classifier.provider"),
         timeoutMs: z.int(TIMEOUT).min(1, TIMEOUT).optional(),
         apiKey: optionalString("classifier.apiKey"),
         baseUrl: optionalString("classifier.baseUrl"),
+        accountId: optionalString("classifier.accountId"),
         model: optionalString("classifier.model"),
       },
       "classifier must be an object",
@@ -203,10 +198,18 @@ function classifierSelector({
   return createConfiguredSelector(
     {
       ...classifier,
+      provider:
+        classifier.provider ?? (env.REASONING_ROUTER_CLASSIFIER || "jev"),
       apiKey: classifier.apiKey ?? env.REASONING_ROUTER_CLASSIFIER_API_KEY,
       baseUrl: classifier.baseUrl ?? env.REASONING_ROUTER_CLASSIFIER_BASE_URL,
+      accountId:
+        classifier.accountId ??
+        (env.REASONING_ROUTER_CLASSIFIER_ACCOUNT_ID || undefined),
+      model:
+        classifier.model ??
+        (env.REASONING_ROUTER_CLASSIFIER_MODEL || undefined),
     },
-    CLASSIFIERS,
+    classifierProviders,
     { maxRetries, fallbackMode, fallbackEffort },
   );
 }

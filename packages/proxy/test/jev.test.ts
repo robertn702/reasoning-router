@@ -1,4 +1,4 @@
-import { createJevClassifier as createClassifier } from "@reasoning-router/classifier-jev";
+import { createJevClassifier as createClassifier } from "@reasoning-router/classifiers";
 
 import { findModel } from "@reasoning-router/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -150,7 +150,6 @@ describe("evidence privacy under inherited debug logging", () => {
 
   beforeEach(() => {
     captured = [];
-    process.env.TYPESAFE_LOG_LEVEL = "debug";
     for (const name of ["log", "info", "warn", "error", "debug"] as const) {
       console[name] = (...args: unknown[]) => {
         captured.push(
@@ -175,7 +174,6 @@ describe("evidence privacy under inherited debug logging", () => {
   });
 
   afterEach(() => {
-    delete process.env.TYPESAFE_LOG_LEVEL;
     console.log = originals.log;
     console.info = originals.info;
     console.warn = originals.warn;

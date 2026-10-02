@@ -27,8 +27,8 @@ The packages are:
 - [`@reasoning-router/core`](packages/core): the shared, harness- and
   classifier-independent router.
 - [`@reasoning-router/opencode`](packages/opencode): the OpenCode V2 plugin.
-- [`@reasoning-router/classifier-jev`](packages/classifier-jev): the Jev
-  classifier.
+- [`@reasoning-router/classifiers`](packages/classifiers): the
+  classifiers (Jev and Cloudflare Clef), selected by `classifier.provider`.
 - [`@reasoning-router/proxy`](packages/proxy): the standalone
   Responses/Messages proxy (command `reasoning-router`).
 

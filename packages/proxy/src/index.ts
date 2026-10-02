@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { existsSync } from "node:fs";
 import { connect } from "node:net";
-import { jevClassifierProvider } from "@reasoning-router/classifier-jev";
+import { classifierProviders } from "@reasoning-router/classifiers";
 import {
   createConfiguredSelector,
   createDecisionLogger,
@@ -17,10 +17,12 @@ if (process.argv.includes("--help") || process.argv.includes("-h")) {
 Start the local adaptive-reasoning Responses and Messages API proxy.
 
 Environment:
-  REASONING_ROUTER_CLASSIFIER           Classifier provider (default: jev)
+  REASONING_ROUTER_CLASSIFIER           Classifier provider: jev (default) or clef
   REASONING_ROUTER_CLASSIFIER_API_KEY   Required classifier key (separate from upstream/client keys)
-  REASONING_ROUTER_CLASSIFIER_BASE_URL  Classifier API root (jev default: https://api.typesafe.ai)
+  REASONING_ROUTER_CLASSIFIER_BASE_URL  jev API root (default: https://api.typesafe.ai)
                                         Vercel: https://ai-gateway.vercel.sh/typesafe
+  REASONING_ROUTER_CLASSIFIER_ACCOUNT_ID  clef: Cloudflare account ID (required)
+  REASONING_ROUTER_CLASSIFIER_MODEL     clef: clef or clef-flash (required)
   REASONING_ROUTER_PORT     Listening port (default: 4320)
   REASONING_ROUTER_UPSTREAM_BASE_URL  Required Responses API-compatible base URL, e.g. https://api.openai.com/v1
   REASONING_ROUTER_UPSTREAM_AUTH      forward (default, loopback only) or bearer
@@ -63,7 +65,7 @@ try {
       ...loadClassifierConfig(process.env),
       timeoutMs: config.classifierTimeoutMs,
     },
-    [jevClassifierProvider],
+    classifierProviders,
     {
       maxRetries: config.maxRetries,
       fallbackMode: config.fallbackMode,

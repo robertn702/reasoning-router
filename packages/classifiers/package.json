@@ -1,7 +1,7 @@
 {
-  "name": "@reasoning-router/classifier-jev",
+  "name": "@reasoning-router/classifiers",
   "version": "0.0.0",
-  "description": "Jev (TypeSafe) classifier for reasoning-router",
+  "description": "Reasoning-effort classifiers (Jev, Clef) for reasoning-router",
   "type": "module",
   "license": "MIT",
   "engines": {
@@ -10,18 +10,21 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/robertn702/reasoning-router.git",
-    "directory": "packages/classifier-jev"
+    "directory": "packages/classifiers"
   },
   "keywords": [
     "reasoning-effort",
+    "classifier",
     "jev",
-    "typesafe"
+    "typesafe",
+    "clef",
+    "cloudflare"
   ],
   "exports": {
     ".": {
-      "@reasoning-router/source": "./src/jev.ts",
-      "types": "./dist/jev.d.ts",
-      "default": "./dist/jev.js"
+      "@reasoning-router/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     }
   },
   "files": [
@@ -33,7 +36,6 @@
   },
   "dependencies": {
     "@reasoning-router/core": "^0.0.0",
-    "@typesafe-ai/sdk": "^0.6.0",
     "zod": "^4.6.5"
   }
 }

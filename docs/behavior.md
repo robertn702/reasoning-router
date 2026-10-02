@@ -136,14 +136,14 @@ and cache creation; `cached_input_tokens` is cache reads, and
   classified. Opaque typed items, including hosted-tool and computer-use payloads,
   are not copied into classifier state even if they contain `role`, `content`, or `output`.
 - The classifier chooses only among the resolved model's supported efforts;
-  bounded classifier state includes that model's registered ID. The Jev
+  bounded classifier state includes that model's registered ID. Each
   provider asks one choice question.
-- The Jev provider configures `@typesafe-ai/sdk` with `retry: { maxRetries: 0 }` and
-  `logLevel: "off"` explicitly (SDK logging is suppressed even when
-  `TYPESAFE_LOG_LEVEL` is inherited as `debug`).
+- Providers call their endpoint with plain `fetch`: no client-side retries and
+  no logging. Classifier errors carry only a category and an advised retry
+  delay, never a response body or message.
 - One aborting total deadline (`REASONING_ROUTER_CLASSIFICATION_TIMEOUT_MS`, default `4000` ms) covers the
   whole classifier operation, including bounded retries and backoff. The router
-  defaults to one retry for transient failures; provider SDK retries remain disabled.
+  defaults to one retry for transient failures.
 - On timeout (`classifier_timeout`), error (`classifier_error`), or invalid output
   (`classifier_invalid_output`), fallback defaults to fixed high. Optional `previous`
   mode reuses the previous validated effort for the same credential/model/cache
@@ -168,7 +168,7 @@ stdout; when configured, the CLI or plugin also appends a `ReasoningDecision` ev
 - `request_id`, `session`, and `turn_id` for correlation.
 - `model`, `effort`, `classifier` (the deciding provider), `classifier_latency_ms`, `fallback`, `classifier_error_category`, and
   `outcome` for routing. The category is a fixed label for `classifier_error` (HTTP
-  authentication, rate limit, other 4xx/5xx, connection, SDK timeout/abort, or
+  authentication, rate limit, other 4xx/5xx, connection, timeout/abort, or
   unknown); it is null for other decisions. No error messages or response bodies
   are recorded.
 - `input_tokens`, `cached_input_tokens`, and `output_tokens` from upstream usage.

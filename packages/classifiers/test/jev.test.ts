@@ -90,7 +90,7 @@ describe("Jev classifier", () => {
 
   it("returns the validated effort from a successful classification", async () => {
     const seen: FetchArgs[] = [];
-    const { select, client } = createJevClassifier({
+    const { select } = createJevClassifier({
       apiKey: "k",
       baseURL: "https://ai-gateway.vercel.sh/typesafe",
       model: "typesafe-ai/jev",
@@ -113,8 +113,6 @@ describe("Jev classifier", () => {
       classifierAttempts: 1,
       fallback: null,
     });
-    expect(client.retry.maxRetries).toBe(0);
-    expect(client.logLevel).toBe("off");
     expect(seen).toHaveLength(1);
     expect(seen[0]![0]).toBe(
       "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
@@ -178,7 +176,7 @@ describe("Jev classifier", () => {
     expect(otherKey.classifierErrorCategory).toBe("http_5xx");
   });
 
-  it("categorizes SDK HTTP and connection errors without retaining their messages", async () => {
+  it("categorizes HTTP and connection errors without retaining their messages", async () => {
     let response: Response | null = null;
     const { select } = createJevClassifier({
       apiKey: "k",
@@ -213,7 +211,7 @@ describe("Jev classifier", () => {
     }
   });
 
-  it("aborts a hanging classifier at the total deadline with exactly one SDK attempt", async () => {
+  it("aborts a hanging classifier at the total deadline with exactly one attempt", async () => {
     let attempts = 0;
     let aborted = false;
     const { select } = createJevClassifier({
@@ -304,7 +302,6 @@ describe("evidence privacy under inherited debug logging", () => {
 
   beforeEach(() => {
     captured = [];
-    process.env.TYPESAFE_LOG_LEVEL = "debug";
     for (const name of ["log", "info", "warn", "error", "debug"] as const) {
       console[name] = (...args: unknown[]) => {
         captured.push(
@@ -329,7 +326,6 @@ describe("evidence privacy under inherited debug logging", () => {
   });
 
   afterEach(() => {
-    delete process.env.TYPESAFE_LOG_LEVEL;
     console.log = originals.log;
     console.info = originals.info;
     console.warn = originals.warn;
@@ -339,7 +335,7 @@ describe("evidence privacy under inherited debug logging", () => {
     process.stderr.write = originals.stderr;
   });
 
-  it("leaks no prompt, tool, cache-key, credential, or raw error content on SDK success or error", async () => {
+  it("leaks no prompt, tool, cache-key, credential, or raw error content on success or error", async () => {
     const body = {
       prompt_cache_key: `key-${MARKERS[2]}`,
       input: [
