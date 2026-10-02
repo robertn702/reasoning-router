@@ -20,12 +20,15 @@ if (process.argv.includes("--help") || process.argv.includes("-h")) {
 Start the local adaptive-reasoning Responses and Messages API proxy.
 
 Environment:
-  REASONING_ROUTER_CLASSIFIER           Classifier provider: jev (default) or clef
-  REASONING_ROUTER_CLASSIFIER_API_KEY   Required classifier key (separate from upstream/client keys)
+  REASONING_ROUTER_CLASSIFIER           Classifier provider: jev (default), clef, or laya
+  REASONING_ROUTER_CLASSIFIER_API_KEY   Classifier key (separate from upstream/client keys);
+                                        required for jev and clef, optional for laya
   REASONING_ROUTER_CLASSIFIER_BASE_URL  jev API root (default: https://api.typesafe.ai)
                                         Vercel: https://ai-gateway.vercel.sh/typesafe
+                                        laya: your Laya server (default: http://127.0.0.1:8000)
   REASONING_ROUTER_CLASSIFIER_ACCOUNT_ID  clef: Cloudflare account ID (required)
   REASONING_ROUTER_CLASSIFIER_MODEL     clef: clef or clef-flash (required)
+                                        laya: optional checkpoint, e.g. english or multilingual
   REASONING_ROUTER_PORT     Listening port (default: 4320)
   REASONING_ROUTER_UPSTREAM_BASE_URL  Required Responses API-compatible base URL, e.g. https://api.openai.com/v1
   REASONING_ROUTER_UPSTREAM_AUTH      forward (default, loopback only) or bearer

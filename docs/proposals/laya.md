@@ -1,8 +1,9 @@
 # Proposal: Laya classifier preset
 
-Status: proposal for review
-([#9](https://github.com/robertn702/reasoning-router/issues/9)). Nothing here
-is implemented.
+Status: implemented
+([#9](https://github.com/robertn702/reasoning-router/issues/9)) with the
+recommended answers to the open decisions below. "Verified against
+`laya-serve` 0.3.24" records what a running server showed.
 
 [Laya](https://huggingface.co/convaiinnovations/laya) is an open-source,
 Jev-compatible decision model. This proposal adds it as the `laya` preset in
@@ -42,11 +43,19 @@ which I haven't checked against a running server:
   `{ result, success, errors }`). It adds fields such as `routing`,
   `answer_confidence`, and extra `usage` keys, which our parser ignores.
   `LAYA_JEV_STRICT=1` removes them. `answers.effort.choice` is always one of
-  the options we sent.
+  the options we sent. Verified against `laya-serve` 0.3.24: our exact
+  request is answered, and a `choice` question without `instructions` gets
+  422 (we always send it). An unknown `model` value falls back to language
+  routing, as documented. With `LAYA_MAX_CONCURRENT=1`, the excess requests
+  got 503 with `Retry-After: 1`.
 - **Authentication:** none unless `LAYA_API_KEY` is set. With a key set, the
   server requires `Authorization: Bearer <key>` and returns 401 otherwise.
   Version 0.3.20 also returns 401 for a malformed bearer header, so we
   should leave the header out when no key is configured.
+  Verified against `laya-serve` 0.3.24: with no key set, it accepts any
+  `authorization` header, including an empty bearer, so this no longer
+  holds. With a key set, a missing, empty, or wrong key gets 401. Leaving
+  the header out is still correct.
 - **Errors:**
   - 400 for a malformed body.
   - 413 for an oversized request.
@@ -57,7 +66,10 @@ which I haven't checked against a running server:
 - **Concurrency:** one forward pass at a time, on a worker. `GET /health`
   stays responsive while inference runs.
 - **Speed:** they report 193–464 ms per call on CPU and about 33 ms on a GPU
-  with the checkpoints preloaded (`LAYA_PRELOAD=1`). Their Docker CPU guide
+  with the checkpoints preloaded (`LAYA_PRELOAD=1`). Verified against
+  `laya-serve` 0.3.24 on this host's CPU (8 torch threads, English
+  checkpoint preloaded): 405–630 ms per call for our request, and 482–528 ms
+  `classifier_latency_ms` in the proxy's decision log. Their Docker CPU guide
   asks for 8 GB of RAM and 10 GB of disk.
 - **Token window:** the English checkpoint reads 512 tokens (about 320 of
   them state). The multilingual checkpoint reads 1,024, and up to 8,192 when

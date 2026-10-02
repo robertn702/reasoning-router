@@ -1,7 +1,7 @@
 {
   "name": "@reasoning-router/classifiers",
   "version": "0.0.0",
-  "description": "Reasoning-effort classifiers (Jev, Clef) for reasoning-router",
+  "description": "Reasoning-effort classifiers (Jev, Clef, Laya) for reasoning-router",
   "type": "module",
   "license": "MIT",
   "engines": {
@@ -18,7 +18,8 @@
     "jev",
     "typesafe",
     "clef",
-    "cloudflare"
+    "cloudflare",
+    "laya"
   ],
   "exports": {
     ".": {

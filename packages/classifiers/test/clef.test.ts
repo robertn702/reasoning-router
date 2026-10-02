@@ -160,6 +160,7 @@ describe("Clef classifier", () => {
     expect(classifierProviders.map((provider) => provider.name)).toEqual([
       "jev",
       "clef",
+      "laya",
     ]);
     expect(() =>
       createConfiguredSelector(
