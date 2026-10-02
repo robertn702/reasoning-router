@@ -223,7 +223,7 @@ export function fakeAnthropicUpstream(observed) {
 }
 
 // OpenCode's plugin config only permits the production TypeSafe URLs.  This
-// CONNECT proxy terminates TLS for that exact hostname, so the SDK exercises
+// CONNECT proxy terminates TLS for that exact hostname, so the classifier transport exercises
 // its actual wire protocol while every connection remains on loopback. Other
 // hosts OpenCode contacts get canned local answers; anything else is refused
 // and recorded in `observed.blocked`.

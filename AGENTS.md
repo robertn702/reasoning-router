@@ -38,9 +38,8 @@ before starting an agent. The script runs `npm ci`, copies local `.env*` files
 
 - `packages/core` (`@reasoning-router/core`): validation, rewrite, lineage,
   forwarding, logging, model registry, and the classifier interface.
-- `packages/classifier-jev` (`@reasoning-router/classifier-jev`): the Jev
-  classifier; the only package that depends on `@typesafe-ai/sdk`. To be
-  renamed `@reasoning-router/classifiers` (see `docs/architecture.md`).
+- `packages/classifiers` (`@reasoning-router/classifiers`): every
+  classifier (Jev, Clef), as presets selected by `classifier.provider`.
 - `packages/opencode` (`@reasoning-router/opencode`): the OpenCode V2 plugin.
 - `packages/proxy` (`@reasoning-router/proxy`): the standalone proxy, run as
   the `reasoning-router` command.

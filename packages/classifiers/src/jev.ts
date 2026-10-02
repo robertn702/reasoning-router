@@ -2,56 +2,13 @@ import {
   type ClassificationPolicyOptions,
   type Classifier,
   type ClassifierConfig,
-  type ClassifierErrorCategory,
   type ClassifierProvider,
   createClassifierSelector,
-  type Effort,
   type EffortSelector,
   parseConfig,
 } from "@reasoning-router/core";
-import {
-  APIConnectionError,
-  APIError,
-  APITimeoutError,
-  APIUserAbortError,
-  choice,
-  type Fetch,
-  TypeSafeClient,
-} from "@typesafe-ai/sdk";
 import { z } from "zod";
-
-function errorCategory(error: unknown): ClassifierErrorCategory {
-  if (error instanceof APIError) {
-    if (error.status === 401 || error.status === 403) return "http_auth";
-    if (error.status === 429) return "http_rate_limit";
-    if (error.status >= 400 && error.status < 500) return "http_4xx";
-    if (error.status >= 500 && error.status < 600) return "http_5xx";
-    return "http_other";
-  }
-  if (error instanceof APITimeoutError) return "sdk_timeout";
-  if (error instanceof APIConnectionError) return "connection";
-  if (error instanceof APIUserAbortError) return "sdk_abort";
-  return "unknown";
-}
-
-function retryAfterMs(error: unknown): number | undefined {
-  if (!(error instanceof APIError)) return undefined;
-  const retryAfter = error.headers?.get("retry-after");
-  if (!retryAfter) return undefined;
-  const seconds = Number(retryAfter);
-  return Number.isFinite(seconds)
-    ? seconds * 1000
-    : Date.parse(retryAfter) - Date.now();
-}
-
-const DESCRIPTIONS: Record<Effort, string> = {
-  none: "Mechanical work that does not benefit from reasoning.",
-  low: "Simple, mechanical, or well-understood work.",
-  medium: "Routine engineering work needing some reasoning.",
-  high: "Hard problems, debugging, or multi-step reasoning.",
-  xhigh: "Deeply complex or ambiguous work.",
-  max: "The hardest work where extra thinking clearly helps.",
-};
+import { createSystemOneClassifier, type Fetch } from "./systemone.js";
 
 export interface JevConnection {
   apiKey: string;
@@ -107,10 +64,6 @@ const jevConnectionSchema = z
   })
   .transform(({ apiKey, baseUrl }): JevConnection => ({ apiKey, ...baseUrl }));
 
-const systemOneSchema = z.object({
-  answers: z.object({ effort: z.object({ choice: z.unknown() }) }),
-});
-
 /** Validates a Jev key and endpoint, and selects the Jev model that endpoint serves. */
 export function resolveJevConnection(
   config: Readonly<Record<string, unknown>>,
@@ -118,41 +71,17 @@ export function resolveJevConnection(
   return parseConfig(jevConnectionSchema, config);
 }
 
-/** The Jev `system_one` transport: one `effort` choice over the target model's supported efforts. */
+/** The Jev `POST /v1/systemone` transport. */
 export function createJevTransport(
   connection: JevConnection & { fetch?: Fetch },
-): Classifier & { client: TypeSafeClient } {
-  const client = new TypeSafeClient({
-    apiKey: connection.apiKey,
-    baseURL: connection.baseURL,
-    defaultModel: connection.model,
-    retry: { maxRetries: 0 },
-    logLevel: "off",
-    ...(connection.fetch ? { fetch: connection.fetch } : {}),
-  });
-  return {
+): Classifier {
+  return createSystemOneClassifier({
     name: "jev",
-    client,
-    errorCategory,
-    retryAfterMs,
-    async classify({ state, model, signal }) {
-      const questions = {
-        effort: choice(
-          "Select the reasoning effort for the next model call.",
-          Object.fromEntries(
-            model.supportedEfforts.map((effort) => [
-              effort,
-              DESCRIPTIONS[effort],
-            ]),
-          ),
-        ),
-      };
-      const result = systemOneSchema.safeParse(
-        await client.systemOne({ state, questions }, { signal }),
-      );
-      return result.success ? result.data.answers.effort.choice : null;
-    },
-  };
+    url: `${connection.baseURL}/v1/systemone`,
+    apiKey: connection.apiKey,
+    model: connection.model,
+    fetch: connection.fetch,
+  });
 }
 
 export interface JevClassifierOptions
@@ -164,18 +93,14 @@ export interface JevClassifierOptions
   cacheTtlMs?: number;
 }
 
-export interface JevClassifier {
+export function createJevClassifier(options: JevClassifierOptions): {
   select: EffortSelector;
-  client: TypeSafeClient;
-}
-
-export function createJevClassifier(
-  options: JevClassifierOptions,
-): JevClassifier {
-  const classifier = createJevTransport(options);
+} {
   return {
-    select: createClassifierSelector({ ...options, classifier }),
-    client: classifier.client,
+    select: createClassifierSelector({
+      ...options,
+      classifier: createJevTransport(options),
+    }),
   };
 }
 

@@ -5,7 +5,7 @@ The core classifier selector (`@reasoning-router/core`) owns this policy for
 every classifier provider. It retries connection failures, provider timeouts,
 HTTP 429 and HTTP 5xx, as categorized by the provider. Authentication errors,
 other 4xx responses, and invalid classifier output are not retried.
-Provider-level retries (such as the Jev SDK's) remain disabled to avoid
+Providers make no retries of their own, to avoid
 multiplying attempts. Exponential backoff with jitter starts at approximately 200 ms;
 Retry-After is respected within the total classification deadline.
 

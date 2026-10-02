@@ -11,9 +11,11 @@ replacement.
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `REASONING_ROUTER_CLASSIFIER` | `jev` | Classifier provider. `jev` is the only provider today. |
+| `REASONING_ROUTER_CLASSIFIER` | `jev` | Classifier provider: `jev` or `clef`. |
 | `REASONING_ROUTER_CLASSIFIER_API_KEY` | none | Classifier credential. Required. |
-| `REASONING_ROUTER_CLASSIFIER_BASE_URL` | provider default | Classifier endpoint. |
+| `REASONING_ROUTER_CLASSIFIER_BASE_URL` | provider default | Jev endpoint. Ignored by `clef`. |
+| `REASONING_ROUTER_CLASSIFIER_ACCOUNT_ID` | none | Clef: Cloudflare account ID. Required for `clef`. |
+| `REASONING_ROUTER_CLASSIFIER_MODEL` | none | Clef: `clef` or `clef-flash`. Required for `clef`. |
 | `REASONING_ROUTER_CLASSIFICATION_TIMEOUT_MS` | `4000` | Total classification budget, including retries. |
 
 For `jev`, the key is a TypeSafe credential when the base URL is omitted
@@ -21,10 +23,17 @@ For `jev`, the key is a TypeSafe credential when the base URL is omitted
 `REASONING_ROUTER_CLASSIFIER_BASE_URL=https://ai-gateway.vercel.sh/typesafe`.
 No key inspection or automatic endpoint detection occurs.
 
+For `clef`, the key is a Cloudflare API token with Workers AI permissions,
+used with the account ID to call Workers AI
+(`https://api.cloudflare.com/client/v4/accounts/{accountId}/ai/run/@cf/cloudflare/{model}`).
+
 The OpenCode plugin takes the same settings as its `classifier` option
-(`provider`, `apiKey`, `baseUrl`, `timeoutMs`). When `apiKey` or `baseUrl` is
-omitted, the plugin falls back to `REASONING_ROUTER_CLASSIFIER_API_KEY` and
-`REASONING_ROUTER_CLASSIFIER_BASE_URL`.
+(`provider`, `apiKey`, `baseUrl`, `accountId`, `model`, `timeoutMs`). Each
+omitted setting except `timeoutMs` falls back to its environment variable
+above. Empty `REASONING_ROUTER_CLASSIFIER_ACCOUNT_ID` and
+`REASONING_ROUTER_CLASSIFIER_MODEL` values count as unset. `jev` accepts a
+`model` only when it matches its endpoint's model, so unset
+`REASONING_ROUTER_CLASSIFIER_MODEL` when switching from `clef` to `jev`.
 
 ## Anthropic upstream
 

@@ -69,8 +69,8 @@ The first port of `opencode-jev-router` creates three packages under the
   `plugin*.ts`).
 - **`@reasoning-router/classifiers`:** every classifier, as presets selected
   by `classifier.provider`. The first port created it as
-  `@reasoning-router/classifier-jev` (the port of `jev.ts`); it is renamed
-  when Clef is added.
+  `@reasoning-router/classifier-jev` (the port of `jev.ts`); it was renamed
+  when Clef was added.
 
 One package holds every classifier because the decision models share one
 request format but not one endpoint: Jev, Clef, Laya, and others accept the

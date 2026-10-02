@@ -10,7 +10,7 @@ import type {
   SessionHttpResponse,
 } from "@opencode/plugin/promise/session";
 import { MODELS } from "@reasoning-router/core";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import plugin from "../src/plugin.js";
 
 const originalFetch = globalThis.fetch;
@@ -290,9 +290,21 @@ const collectGarbage = async () => {
   gc();
 };
 
+beforeEach(() => {
+  for (const name of [
+    "REASONING_ROUTER_CLASSIFIER",
+    "REASONING_ROUTER_CLASSIFIER_API_KEY",
+    "REASONING_ROUTER_CLASSIFIER_BASE_URL",
+    "REASONING_ROUTER_CLASSIFIER_ACCOUNT_ID",
+    "REASONING_ROUTER_CLASSIFIER_MODEL",
+  ])
+    vi.stubEnv(name, undefined);
+});
+
 afterEach(() => {
   globalThis.fetch = originalFetch;
   vi.restoreAllMocks();
+  vi.unstubAllEnvs();
 });
 
 describe("V2 wrap aliases", () => {
@@ -754,6 +766,47 @@ describe("V2 wrap aliases", () => {
         effort: "low",
         fallback: "classifier_timeout",
         outcome: "completed",
+      });
+      h.cleanup();
+    }));
+
+  it("selects Clef from the classifier environment variables", async () =>
+    withLog(async (path) => {
+      const classifierUrls: string[] = [];
+      globalThis.fetch = vi.fn(
+        async (request: RequestInfo | URL, init?: RequestInit) => {
+          const url =
+            request instanceof Request ? request.url : String(request);
+          if (!url.startsWith("https://api.cloudflare.com/"))
+            return new Response("{}", {
+              headers: { "content-type": "application/json" },
+            });
+          classifierUrls.push(url);
+          expect(JSON.parse(String(init?.body)).model).toBe("clef-flash");
+          return new Response(
+            JSON.stringify({
+              success: true,
+              result: { answers: { effort: { choice: "high" } } },
+            }),
+          );
+        },
+      ) as typeof fetch;
+      vi.stubEnv("REASONING_ROUTER_CLASSIFIER", "clef");
+      vi.stubEnv("REASONING_ROUTER_CLASSIFIER_API_KEY", "cf-token");
+      vi.stubEnv(
+        "REASONING_ROUTER_CLASSIFIER_ACCOUNT_ID",
+        "0123456789abcdef0123456789abcdef",
+      );
+      vi.stubEnv("REASONING_ROUTER_CLASSIFIER_MODEL", "clef-flash");
+      const h = await host({ wrap: base.wrap, decisionsLogPath: path });
+      await (await h.exchange()).response.text();
+      expect(classifierUrls).toEqual([
+        "https://api.cloudflare.com/client/v4/accounts/0123456789abcdef0123456789abcdef/ai/run/@cf/cloudflare/clef-flash",
+      ]);
+      expect((await decisions(path))[0]).toMatchObject({
+        classifier: "clef",
+        effort: "high",
+        fallback: null,
       });
       h.cleanup();
     }));

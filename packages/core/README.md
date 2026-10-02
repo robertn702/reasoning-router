@@ -8,7 +8,7 @@ decision logging.
 
 Classifiers plug in through the `Classifier` and `ClassifierProvider`
 interfaces; `createConfiguredSelector` picks one from a `classifier` config
-block (`{ provider, apiKey, baseUrl, timeoutMs }`). This package depends on no
+block (`provider`, `timeoutMs`, and that provider's fields). This package depends on no
 classifier SDK.
 
 Used by [`@reasoning-router/opencode`](../opencode) and the

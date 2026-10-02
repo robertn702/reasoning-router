@@ -58,7 +58,7 @@ try {
 
   const tarballs = packWorkspaces(
     root,
-    [PLUGIN, "@reasoning-router/core", "@reasoning-router/classifier-jev"],
+    [PLUGIN, "@reasoning-router/core", "@reasoning-router/classifiers"],
     temp,
     process.argv.slice(2),
   );
@@ -288,7 +288,7 @@ try {
     requests.length > 0,
     "the fake Responses upstream received no request",
   );
-  assert.ok(observed.jev, "the fake Jev classifier received no SDK request");
+  assert.ok(observed.jev, "the fake Jev classifier received no request");
   assert.match(observed.jev.requestLine, /^POST /);
   assert.match(
     observed.jev.authorization ?? "",

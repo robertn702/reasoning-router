@@ -51,12 +51,16 @@ const classifierEnvSchema = z
     REASONING_ROUTER_CLASSIFIER: z.string().default("jev"),
     REASONING_ROUTER_CLASSIFIER_API_KEY: z.string().optional(),
     REASONING_ROUTER_CLASSIFIER_BASE_URL: z.string().optional(),
+    REASONING_ROUTER_CLASSIFIER_ACCOUNT_ID: z.string().optional(),
+    REASONING_ROUTER_CLASSIFIER_MODEL: z.string().optional(),
   })
   .transform(
     (env): ClassifierConfig => ({
       provider: env.REASONING_ROUTER_CLASSIFIER,
       apiKey: env.REASONING_ROUTER_CLASSIFIER_API_KEY,
       baseUrl: env.REASONING_ROUTER_CLASSIFIER_BASE_URL,
+      accountId: env.REASONING_ROUTER_CLASSIFIER_ACCOUNT_ID || undefined,
+      model: env.REASONING_ROUTER_CLASSIFIER_MODEL || undefined,
     }),
   );
 
