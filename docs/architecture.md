@@ -116,15 +116,18 @@ that Jev-specific names become provider-neutral.
   names made provider-neutral (`jev_attempts` becomes `classifier_attempts`,
   `jev_timeout` becomes `classifier_timeout`) and the classifier recorded.
 
+## Porting
+
+- Environment variables use the `REASONING_ROUTER_*` prefix; `JEV_ROUTER_*`
+  is not carried over.
+- Once the port reaches parity, `opencode-jev-router` is frozen and its
+  README points to `@reasoning-router/opencode`. It is not kept as a
+  compatibility wrapper for its existing configuration.
+
 ## Open questions
 
 ### Before porting
 
-- Environment variable names: replace `JEV_ROUTER_*` with a neutral prefix
-  such as `REASONING_ROUTER_*`?
-- What happens to `opencode-jev-router` once the port reaches parity: frozen
-  with a pointer to `@reasoning-router/opencode`, or kept as a compatibility
-  wrapper for its existing configuration?
 - Copy files fresh (noting the source commit) or preserve their git history?
 - Since OpenCode installs only the plugin package, does
   `@reasoning-router/opencode` depend on `@reasoning-router/classifier-jev`
