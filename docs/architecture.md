@@ -138,10 +138,10 @@ supported path for that harness?
 
 ### Package naming and boundaries
 
-- Scope is `@reasoning-router`. Recommended core name:
-  `@reasoning-router/core`. It follows a common convention (`@babel/core`),
-  sorts clearly next to adapters, and leaves unscoped `reasoning-router` free
-  for a CLI or proxy entry point. Not yet decided.
+- Scope is `@reasoning-router`. The core is `@reasoning-router/core`
+  (decided): it follows a common convention (`@babel/core`), sorts clearly
+  next to adapters, and leaves unscoped `reasoning-router` free for a CLI or
+  proxy entry point.
 - Adapter naming: bare harness name (`@reasoning-router/opencode`) or a suffix
   matching the extension type (`@reasoning-router/opencode-plugin`)? Does any
   harness's discovery convention require a particular name or keyword?

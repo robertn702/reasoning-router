@@ -23,8 +23,9 @@ proxy).
   not only OpenCode.
 
 The plan is to publish several packages from this
-monorepo under the `@reasoning-router` npm scope, such as a shared core plus
-one adapter per harness. Package names and boundaries are **not decided yet**;
+monorepo under the `@reasoning-router` npm scope: a shared core,
+`@reasoning-router/core`, plus adapters such as one per harness. Other package
+names and the boundaries between packages are **not decided yet**;
 see [docs/architecture.md](docs/architecture.md) for the problem statement and
 the open questions that must be answered first.
 

@@ -35,8 +35,9 @@ pushes to `main` and on pull requests.
   is configuration. Do not make shared code depend on Jev or any single
   decision-model provider; provider-specific code and dependencies stay out
   of the core.
-- Do not create packages under `packages/` until package names and
-  boundaries are decided (see the open questions in `docs/architecture.md`).
+- The core package is named `@reasoning-router/core`. Do not create it or any
+  other package under `packages/` until package boundaries are decided (see
+  the open questions in `docs/architecture.md`).
 - Do not publish to npm. Release tooling (e.g. Changesets) is deferred until
   the first package exists.
 - Do not modify `opencode-jev-router` from here; read it for reference only.
