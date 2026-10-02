@@ -36,3 +36,15 @@ jobs:
       - run: mkdir -p /tmp/opencode
       - name: V2 smoke
         run: npm run smoke:plugin:v2
+
+  pi-smoke:
+    name: Pi smoke (Pi 1.0.0)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm run smoke:pi

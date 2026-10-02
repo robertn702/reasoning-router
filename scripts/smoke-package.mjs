@@ -36,6 +36,7 @@ const required = {
     "dist/plugin-v2.js",
     "dist/plugin-runtime.js",
   ],
+  "@reasoning-router/pi": ["dist/extension.js", "dist/extension.d.ts"],
   "@reasoning-router/proxy": ["dist/index.js"],
 };
 
@@ -80,6 +81,7 @@ try {
     "--prefix",
     temp,
     "--omit=dev",
+    "--omit=peer",
     "--no-audit",
     "--no-fund",
     ...tarballs.values(),

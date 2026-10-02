@@ -226,8 +226,8 @@ export function fakeAnthropicUpstream(observed) {
 // CONNECT proxy terminates TLS for that exact hostname, so the classifier transport exercises
 // its actual wire protocol while every connection remains on loopback. Other
 // hosts OpenCode contacts get canned local answers; anything else is refused
-// and recorded in `observed.blocked`.
-export async function fakeJevProxy(caDir, observed) {
+// and recorded in `observed.blocked`. Jev answers `effort` for every request.
+export async function fakeJevProxy(caDir, observed, effort = "high") {
   const key = join(caDir, "key.pem");
   const cert = join(caDir, "cert.pem");
   run(
@@ -290,7 +290,7 @@ export async function fakeJevProxy(caDir, observed) {
         };
         reply(
           "200 OK",
-          JSON.stringify({ answers: { effort: { choice: "high" } } }),
+          JSON.stringify({ answers: { effort: { choice: effort } } }),
         );
       });
     },

@@ -29,6 +29,8 @@ The packages are:
 - [`@reasoning-router/opencode`](packages/opencode): the OpenCode V2 plugin.
 - [`@reasoning-router/classifiers`](packages/classifiers): the
   classifiers (Jev and Cloudflare Clef), selected by `classifier.provider`.
+- [`@reasoning-router/pi`](packages/pi): the Pi extension (Claude models
+  only, for now).
 - [`@reasoning-router/proxy`](packages/proxy): the standalone
   Responses/Messages proxy (command `reasoning-router`).
 
@@ -77,6 +79,11 @@ These are reversible:
   reports every problem in one error. Request bodies and streamed usage stay on
   `isRecord` narrowing so unknown provider fields pass through unchanged. Zod
   is core's only dependency.
+- **The Pi extension uses Pi's virtual models.** It sets only the thinking
+  level and lets Pi place effort, so it supports only Anthropic models that
+  Pi gives mid-conversation effort. It reads the proxy's `REASONING_ROUTER_*`
+  variables, since Pi extensions have no options, and stores the last
+  classified effort in Pi's session for `previous` fallback.
 
 ## License
 

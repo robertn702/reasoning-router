@@ -1,7 +1,8 @@
 # Pi
 
 Status: findings for [#13](https://github.com/robertn702/reasoning-router/issues/13).
-Research only; nothing here is implemented.
+[`@reasoning-router/pi`](../../packages/pi) implements the virtual-model
+route for Anthropic models; the OpenAI payload rewrite is not implemented.
 
 [Pi](https://pi.dev) is the `pi` coding agent. Its repository moved from
 `badlogic/pi-mono` to [`earendil-works/pi`](https://github.com/earendil-works/pi),

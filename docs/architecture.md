@@ -71,6 +71,10 @@ The first port of `opencode-jev-router` creates three packages under the
   by `classifier.provider`. The first port created it as
   `@reasoning-router/classifier-jev` (the port of `jev.ts`); it was renamed
   when Clef was added.
+- **`@reasoning-router/pi`:** the Pi extension. It registers Pi virtual
+  models that pick each request's thinking level and leave effort placement
+  to Pi, so it does not rewrite payloads. See
+  [`harnesses/pi.md`](harnesses/pi.md).
 
 One package holds every classifier because the decision models share one
 request format but not one endpoint: Jev, Clef, Laya, and others accept the
