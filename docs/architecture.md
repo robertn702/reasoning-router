@@ -67,11 +67,27 @@ The first port of `opencode-jev-router` creates three packages under the
   the classifier interface. It has no classifier SDK dependencies.
 - **`@reasoning-router/opencode`:** the OpenCode V2 plugin (the port of
   `plugin*.ts`).
-- **`@reasoning-router/classifier-jev`:** the Jev classifier (the port of
-  `jev.ts`), the only package that depends on `@typesafe-ai/sdk`.
+- **`@reasoning-router/classifiers`:** every classifier, as presets selected
+  by `classifier.provider`. The first port created it as
+  `@reasoning-router/classifier-jev` (the port of `jev.ts`); it is renamed
+  when Clef is added.
 
-Later, `@reasoning-router/classifier-laya` adds Laya as its own package, so
-ONNX Runtime and the model download reach only Laya users.
+One package holds every classifier because the decision models share one
+request format but not one endpoint: Jev, Clef, Laya, and others accept the
+same System One `state` and `questions` and return the same `answers`, but are
+reached through different URLs, auth, and response envelopes, or run
+in-process. A new compatible model is a preset of a few lines, not a new
+package. Harnesses cannot install extra packages next to a plugin, so
+per-classifier packages would all be dependencies of every harness anyway.
+
+A classifier that needs a heavy runtime is an optional peer dependency of
+`classifiers`, loaded with a dynamic `import()` only when configured, and
+reported with a clear error when it is not installed. Laya is the first:
+`@receptron/laya` depends on `onnxruntime-node`, which is about 300 MB
+unpacked and runs a native `postinstall`, so it must not reach or break
+installs for other classifiers. Split a classifier into its own package only
+if its dependency cannot be loaded lazily or someone else needs to release it
+independently.
 
 Naming:
 
@@ -79,14 +95,15 @@ Naming:
   that leaves unscoped `reasoning-router` free for a future umbrella CLI.
 - Harness adapters use the bare harness name (`@reasoning-router/opencode`),
   which users type into their harness configuration.
-- Classifiers use a `classifier-` prefix. Names like Jev and Laya do not say
-  what kind of package they are, and some names (Hermes, Codex) could mean
-  either a harness or a model.
+- Classifiers live in `@reasoning-router/classifiers`, named for its role
+  rather than for a vendor, API, or transport. Provider names in
+  configuration identify the service, not the model: `clef` is Clef on
+  Workers AI, and a model served elsewhere uses that service's provider.
 
 The standalone proxy is part of the first port, as
 `@reasoning-router/proxy` (the port of `index.ts`, `config.ts`, and
-`server.ts`, run as the `reasoning-router` command). It depends on core and classifier-jev and
-reads `REASONING_ROUTER_*` variables. Porting it keeps every
+`server.ts`, run as the `reasoning-router` command). It depends on core and
+classifiers and reads `REASONING_ROUTER_*` variables. Porting it keeps every
 `opencode-jev-router` test, since the proxy tests also cover shared behavior.
 
 ## Classifiers
@@ -101,21 +118,35 @@ that Jev-specific names become provider-neutral.
   [`@receptron/laya`](https://github.com/receptron/laya) on ONNX Runtime; its
   weights are about 1.7 GB, downloaded on first use, and need about 2 GB of
   RAM.
+- **Clef:** Cloudflare's
+  [Clef and Clef-flash](https://blog.cloudflare.com/clef-decision-models/)
+  ([#1](https://github.com/robertn702/reasoning-router/issues/1)), hosted on
+  Workers AI at `/client/v4/accounts/{accountId}/ai/run/@cf/cloudflare/clef`
+  with the System One request and a `{ result, success, errors }` envelope
+  around the answer. It cannot reuse the Jev endpoint, which is fixed at
+  `{baseUrl}/v1/systemone`. `model` (`clef` or `clef-flash`) is required
+  until effort selection is evaluated. Running Clef locally is out of scope;
+  its backbones need a GPU.
+- **Transport:** hosted presets share one `fetch`-based client that maps HTTP
+  status and `fetch` failures to the error categories and reads
+  `Retry-After`. `@typesafe-ai/sdk` is dropped; it only adds a `choice()`
+  helper, the HTTP call, and typed errors, and its retries are already off.
 - **Contract:** one `system_one` call. The state is the bounded,
   metadata-limited summary `opencode-jev-router` builds (recent user text,
   assistant progress, up to 8 tool results with names and error flags, a
   failure summary, and the target model ID). The single question is a
   `choice` named `effort` whose options are the target model's supported
   efforts. The answer is `answers.effort.choice`, rejected if the model does
-  not support it. Laya accepts the same request and response shape as Jev's
-  `system_one`, so both providers fit this contract.
+  not support it. Laya and Clef accept the same request and response shape
+  as Jev's `system_one`, so every provider fits this contract.
 - **Policy:** as in `opencode-jev-router`'s
   [classification policy](https://github.com/robertn702/opencode-jev-router/blob/main/docs/classification-policy.md):
   a 4000 ms total deadline, one retry for connection errors, timeouts, 429,
   and 5xx, then fallback (`fixed` high by default, or `previous`, or
   `error`). Client cancellation aborts and never falls back.
 - **Configuration:** one `classifier` block selects the provider, for example
-  `classifier: { provider: "jev", apiKey, baseUrl, timeoutMs }`.
+  `classifier: { provider: "jev", apiKey, baseUrl, timeoutMs }` or
+  `classifier: { provider: "clef", accountId, apiKey, model, timeoutMs }`.
 - **Logging:** the same metadata-only decision events, with Jev-specific
   names made provider-neutral (`jev_attempts` becomes `classifier_attempts`,
   `jev_timeout` becomes `classifier_timeout`) and the classifier recorded.
@@ -129,11 +160,12 @@ that Jev-specific names become provider-neutral.
   compatibility wrapper for its existing configuration.
 - Files are copied fresh, with the source commit noted in the port commit
   message; `opencode-jev-router`'s git history is not imported.
-- `@reasoning-router/opencode` depends on `@reasoning-router/classifier-jev`
-  so the plugin works once installed. The classifier is still selected by
-  configuration through the core classifier interface; other classifiers
-  (such as `classifier-laya`) are optional installs. Revisit if OpenCode
-  supports installing extra packages alongside a plugin.
+- `@reasoning-router/opencode` depends on `@reasoning-router/classifiers`
+  so every hosted classifier works once the plugin is installed. The
+  classifier is still selected by configuration through the core classifier
+  interface. Classifiers behind an optional peer dependency (such as Laya)
+  work only where that dependency can be installed; see "Loading optional
+  classifier runtimes".
 
 ## Open questions
 
@@ -182,3 +214,11 @@ supported path for that harness?
   models and their supported reasoning efforts, if one exists. Otherwise,
   maintain the registry as a separate package in this repo so it can be
   released more often than the core.
+
+### Loading optional classifier runtimes
+
+OpenCode cannot install extra packages alongside a plugin, so a classifier
+behind an optional peer dependency (Laya's `@receptron/laya`) cannot be used
+from the plugin unless the user installs that dependency where the plugin
+resolves it. The proxy has no such limit. How should plugin users enable
+these classifiers?
