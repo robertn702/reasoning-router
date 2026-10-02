@@ -52,7 +52,7 @@ const DESCRIPTIONS: Record<Effort, string> = {
 async function postJson(request: {
   fetch: Fetch | undefined;
   url: string;
-  apiKey: string;
+  apiKey: string | undefined;
   body: unknown;
   signal: AbortSignal;
 }): Promise<unknown> {
@@ -62,7 +62,9 @@ async function postJson(request: {
     const response = await (request.fetch ?? globalThis.fetch)(request.url, {
       method: "POST",
       headers: {
-        authorization: `Bearer ${request.apiKey}`,
+        ...(request.apiKey !== undefined && {
+          authorization: `Bearer ${request.apiKey}`,
+        }),
         accept: "application/json",
         "content-type": "application/json",
       },
@@ -99,9 +101,10 @@ async function postJson(request: {
 export function createSystemOneClassifier(options: {
   name: string;
   url: string;
-  apiKey: string;
-  /** The classifier model, sent as the request's `model`. */
-  model: string;
+  /** Sent as a bearer token; no `authorization` header when unset. */
+  apiKey?: string;
+  /** The classifier model, sent as the request's `model` when set. */
+  model?: string;
   fetch?: Fetch;
   /** Extracts the System One response from a provider envelope. */
   unwrap?: (body: unknown) => unknown;

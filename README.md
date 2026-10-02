@@ -28,7 +28,8 @@ The packages are:
   classifier-independent router.
 - [`@reasoning-router/opencode`](packages/opencode): the OpenCode V2 plugin.
 - [`@reasoning-router/classifiers`](packages/classifiers): the
-  classifiers (Jev and Cloudflare Clef), selected by `classifier.provider`.
+  classifiers (Jev, Cloudflare Clef, and Laya), selected by
+  `classifier.provider`.
 - [`@reasoning-router/pi`](packages/pi): the Pi extension (Claude models
   only, for now).
 - [`@reasoning-router/proxy`](packages/proxy): the standalone
@@ -37,6 +38,23 @@ The packages are:
 See [docs/architecture.md](docs/architecture.md) for the problem statement,
 the package plan, and the open questions, and
 [docs/behavior.md](docs/behavior.md) for the router's wire behavior.
+
+## Laya
+
+[Laya](https://huggingface.co/convaiinnovations/laya) is an open-source,
+Jev-compatible decision model that you run yourself. The router only calls
+it over HTTP; it never installs or loads the model. Start Laya's
+`laya-serve`, then point the router at it:
+
+```bash
+pip install "laya[serve]"
+LAYA_HOST=127.0.0.1 LAYA_PRELOAD=1 laya-serve   # http://127.0.0.1:8000
+REASONING_ROUTER_CLASSIFIER=laya reasoning-router
+```
+
+The default base URL is `http://127.0.0.1:8000`. See
+[docs/environment.md](docs/environment.md) for a remote server, a key, or a
+checkpoint.
 
 ## Development
 
@@ -84,6 +102,10 @@ These are reversible:
   Pi gives mid-conversation effort. It reads the proxy's `REASONING_ROUTER_*`
   variables, since Pi extensions have no options, and stores the last
   classified effort in Pi's session for `previous` fallback.
+- **Laya `baseUrl` is HTTPS, or plain HTTP to loopback only**, so the
+  conversation summary never crosses a network unencrypted. The default is
+  `laya-serve`'s `http://127.0.0.1:8000`, and the router doesn't send
+  `max_len`.
 
 ## License
 

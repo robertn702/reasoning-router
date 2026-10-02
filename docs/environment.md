@@ -11,11 +11,11 @@ replacement.
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `REASONING_ROUTER_CLASSIFIER` | `jev` | Classifier provider: `jev` or `clef`. |
-| `REASONING_ROUTER_CLASSIFIER_API_KEY` | none | Classifier credential. Required. |
-| `REASONING_ROUTER_CLASSIFIER_BASE_URL` | provider default | Jev endpoint. Ignored by `clef`. |
+| `REASONING_ROUTER_CLASSIFIER` | `jev` | Classifier provider: `jev`, `clef`, or `laya`. |
+| `REASONING_ROUTER_CLASSIFIER_API_KEY` | none | Classifier credential. Required for `jev` and `clef`; optional for `laya`. |
+| `REASONING_ROUTER_CLASSIFIER_BASE_URL` | provider default | Jev endpoint, or the Laya server (default `http://127.0.0.1:8000`). Ignored by `clef`. |
 | `REASONING_ROUTER_CLASSIFIER_ACCOUNT_ID` | none | Clef: Cloudflare account ID. Required for `clef`. |
-| `REASONING_ROUTER_CLASSIFIER_MODEL` | none | Clef: `clef` or `clef-flash`. Required for `clef`. |
+| `REASONING_ROUTER_CLASSIFIER_MODEL` | none | Clef: `clef` or `clef-flash`. Required for `clef`. Laya: optional checkpoint. |
 | `REASONING_ROUTER_CLASSIFICATION_TIMEOUT_MS` | `4000` | Total classification budget, including retries. |
 
 For `jev`, the key is a TypeSafe credential when the base URL is omitted
@@ -26,6 +26,14 @@ No key inspection or automatic endpoint detection occurs.
 For `clef`, the key is a Cloudflare API token with Workers AI permissions,
 used with the account ID to call Workers AI
 (`https://api.cloudflare.com/client/v4/accounts/{accountId}/ai/run/@cf/cloudflare/{model}`).
+
+For `laya`, the router calls a Laya server that you run, such as `laya-serve`,
+at `{baseUrl}/v1/systemone`. The base URL must be HTTPS, or plain HTTP to a
+loopback host (`localhost`, `127.0.0.0/8`, `[::1]`). Set the key only when
+the server sets `LAYA_API_KEY`; it is sent as a bearer token, and a blank key
+counts as unset. `model` selects a checkpoint (`english`, `multilingual`,
+`typed-decisions`); when unset, the server chooses by the language of the
+state.
 
 The OpenCode plugin takes the same settings as its `classifier` option
 (`provider`, `apiKey`, `baseUrl`, `accountId`, `model`, `timeoutMs`). Each

@@ -1,6 +1,7 @@
 import type { ClassifierProvider } from "@reasoning-router/core";
 import { clefClassifierProvider } from "./clef.js";
 import { jevClassifierProvider } from "./jev.js";
+import { layaClassifierProvider } from "./laya.js";
 
 export {
   type ClefConnection,
@@ -17,10 +18,17 @@ export {
   jevClassifierProvider,
   resolveJevConnection,
 } from "./jev.js";
+export {
+  createLayaTransport,
+  type LayaConnection,
+  layaClassifierProvider,
+  resolveLayaConnection,
+} from "./laya.js";
 export { ClassifierRequestError, type Fetch } from "./systemone.js";
 
 /** Every bundled classifier, for `createConfiguredSelector`. */
 export const classifierProviders: readonly ClassifierProvider[] = [
   jevClassifierProvider,
   clefClassifierProvider,
+  layaClassifierProvider,
 ];
