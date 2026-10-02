@@ -39,7 +39,8 @@ before starting an agent. The script runs `npm ci`, copies local `.env*` files
 - `packages/core` (`@reasoning-router/core`): validation, rewrite, lineage,
   forwarding, logging, model registry, and the classifier interface.
 - `packages/classifier-jev` (`@reasoning-router/classifier-jev`): the Jev
-  classifier; the only package that depends on `@typesafe-ai/sdk`.
+  classifier; the only package that depends on `@typesafe-ai/sdk`. To be
+  renamed `@reasoning-router/classifiers` (see `docs/architecture.md`).
 - `packages/opencode` (`@reasoning-router/opencode`): the OpenCode V2 plugin.
 - `packages/proxy` (`@reasoning-router/proxy`): the standalone proxy, run as
   the `reasoning-router` command.
@@ -61,10 +62,11 @@ before starting an agent. The script runs `npm ci`, copies local `.env*` files
   the core.
 - Create only the packages listed under "Packages" in `docs/architecture.md`:
   `@reasoning-router/core`, `@reasoning-router/opencode`,
-  `@reasoning-router/classifier-jev`, and `@reasoning-router/proxy`. Harness
-  adapters use the bare harness name; classifiers use a `classifier-` prefix.
-  Follow the "Porting" decisions in `docs/architecture.md` when porting code
-  into them.
+  `@reasoning-router/classifiers`, and `@reasoning-router/proxy`. Harness
+  adapters use the bare harness name. Add a classifier as a preset in
+  `classifiers`, not as a new package; a heavy runtime it needs is an
+  optional peer dependency loaded with a dynamic `import()`. Follow the
+  "Porting" decisions in `docs/architecture.md` when porting code into them.
 - Each test lives in the package whose code it covers.
 - Do not publish to npm. Changesets is configured for versioning only; there
   is no publish workflow. Do not add changesets until the packages are first
