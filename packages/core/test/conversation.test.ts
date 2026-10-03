@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import { type Classifier, createStateSelector } from "../src/classifier.js";
 import { buildConversationClassifierState } from "../src/conversation.js";
 import { modelsFor } from "../src/models.js";
+import { anthropicWire } from "../src/wire-anthropic.js";
+import { openaiWire } from "../src/wire-openai.js";
 
 describe("buildConversationClassifierState", () => {
   it("keeps the latest text and the last eight tool results, bounded", () => {
@@ -26,6 +28,78 @@ describe("buildConversationClassifierState", () => {
     );
     expect(state.failure_state.failed_count).toBe(1);
     expect(state.failure_state.last_failure_excerpt.length).toBeLessThan(5000);
+  });
+});
+
+describe("classifier state parity", () => {
+  const long = "a".repeat(3000);
+  const output = "x".repeat(5000);
+  const forms: [string, () => unknown][] = [
+    [
+      "OpenAI",
+      () =>
+        openaiWire.classifierState({
+          input: [
+            { type: "message", role: "user", content: "fix the test" },
+            {
+              type: "message",
+              role: "assistant",
+              content: [{ type: "output_text", text: "Running it." }],
+            },
+            {
+              type: "function_call",
+              call_id: "call_1",
+              name: "bash",
+              arguments: "{}",
+            },
+            { type: "function_call_output", call_id: "call_1", output },
+            {
+              type: "message",
+              role: "assistant",
+              content: [{ type: "output_text", text: long }],
+            },
+          ],
+        }),
+    ],
+    [
+      "Anthropic",
+      () =>
+        anthropicWire.classifierState({
+          messages: [
+            { role: "user", content: "fix the test" },
+            {
+              role: "assistant",
+              content: [
+                { type: "text", text: "Running it." },
+                { type: "tool_use", id: "call_1", name: "bash", input: {} },
+              ],
+            },
+            {
+              role: "user",
+              content: [
+                {
+                  type: "tool_result",
+                  tool_use_id: "call_1",
+                  content: output,
+                  is_error: false,
+                },
+              ],
+            },
+            { role: "assistant", content: [{ type: "text", text: long }] },
+          ],
+        }),
+    ],
+  ];
+
+  it.each(forms)("%s wire matches the neutral builder", (_name, build) => {
+    expect(build()).toEqual(
+      buildConversationClassifierState([
+        { role: "user", text: "fix the test" },
+        { role: "assistant", text: "Running it." },
+        { role: "tool", name: "bash", ok: true, text: output },
+        { role: "assistant", text: long },
+      ]),
+    );
   });
 });
 

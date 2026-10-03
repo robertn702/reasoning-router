@@ -8,41 +8,29 @@ import {
 import { loadConfig } from "./config.js";
 import { createReasoningRouter } from "./router.js";
 
-export { loadConfig, type PiConfig } from "./config.js";
-export {
-  createReasoningRouter,
-  PiRouteError,
-  PROVIDER,
-  type RouterOptions,
-  type RouterState,
-} from "./router.js";
-
-/** The Pi extension: configured from `REASONING_ROUTER_*` environment variables. */
+/**
+ * The Pi extension: configured from `REASONING_ROUTER_*` environment variables.
+ * The virtual models register at load; the configuration is read on the first
+ * route, so a configuration error fails that request instead of Pi's startup.
+ */
 export default function reasoningRouter(pi: ExtensionAPI): void {
-  let config: ReturnType<typeof loadConfig>;
-  let selectEffort: ReturnType<typeof createConfiguredStateSelector>;
-  try {
-    config = loadConfig(process.env);
-    selectEffort = createConfiguredStateSelector(
-      config.classifier,
-      classifierProviders,
-      {
-        maxRetries: config.maxRetries,
-        fallbackMode: config.fallbackMode,
-        fallbackEffort: config.fallbackEffort,
-      },
-    );
-  } catch (error) {
-    throw new Error(
-      `reasoning-router: ${error instanceof Error ? error.message : String(error)}`,
-    );
-  }
-  createReasoningRouter(pi, {
-    selectEffort,
-    baseEffort: config.baseEffort,
-    onEvidence:
-      config.decisionsLogPath === undefined
-        ? undefined
-        : createDecisionLogger(config.decisionsLogPath),
+  createReasoningRouter(pi, () => {
+    const config = loadConfig(process.env);
+    return {
+      selectEffort: createConfiguredStateSelector(
+        config.classifier,
+        classifierProviders,
+        {
+          maxRetries: config.maxRetries,
+          fallbackMode: config.fallbackMode,
+          fallbackEffort: config.fallbackEffort,
+        },
+      ),
+      baseEffort: config.baseEffort,
+      onEvidence:
+        config.decisionsLogPath === undefined
+          ? undefined
+          : createDecisionLogger(config.decisionsLogPath),
+    };
   });
 }

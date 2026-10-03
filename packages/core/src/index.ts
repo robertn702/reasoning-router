@@ -1,5 +1,17 @@
 export * from "./classification-policy.js";
-export * from "./classifier.js";
+export {
+  ClassificationCancelledError,
+  type Classifier,
+  type ClassifierConfig,
+  type ClassifierErrorCategory,
+  type ClassifierProvider,
+  type ClassifierSelectorOptions,
+  type ClassifierState,
+  createClassifierSelector,
+  createConfiguredSelector,
+  createConfiguredStateSelector,
+  type StateEffortSelector,
+} from "./classifier.js";
 export * from "./config.js";
 export * from "./conversation.js";
 export * from "./decision-log.js";

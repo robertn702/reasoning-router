@@ -16,8 +16,10 @@ import {
 } from "./smoke-helpers.mjs";
 
 // Runs the packed extension in a real Pi against loopback fakes. Set PI_BIN to
-// test another Pi; it defaults to the pinned devDependency.
-const VERSION = "1.0.0";
+// test another Pi, and PI_VERSION to the version it reports; both default to
+// the pinned devDependency.
+const VERSION = process.env.PI_VERSION ?? "1.0.0";
+const PI_TIMEOUT_MS = 120_000;
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const PACKAGE = "@reasoning-router/pi";
 const pi =
@@ -58,20 +60,25 @@ try {
   );
   assert.ok(tarballs.has(PACKAGE), `${PACKAGE} was not packed`);
   // Pi provides its own packages to extensions, so peers are not installed.
-  run(
-    "npm",
-    [
-      "install",
-      "--prefix",
-      dirs.install,
-      "--omit=dev",
-      "--omit=peer",
-      "--no-audit",
-      "--no-fund",
-      ...tarballs.values(),
-    ],
-    { stdio: "ignore" },
-  );
+  try {
+    run(
+      "npm",
+      [
+        "install",
+        "--prefix",
+        dirs.install,
+        "--omit=dev",
+        "--omit=peer",
+        "--no-audit",
+        "--no-fund",
+        ...tarballs.values(),
+      ],
+      { stdio: "pipe" },
+    );
+  } catch (error) {
+    console.error(`npm install failed:\n${error.stdout}\n${error.stderr}`);
+    throw error;
+  }
   const installed = join(dirs.install, "node_modules", PACKAGE);
 
   anthropic = fakeAnthropicUpstream(observed);
@@ -121,8 +128,16 @@ try {
     child.stderr.on("data", (chunk) => {
       output += chunk;
     });
-    const exit = await new Promise((resolve) => child.once("exit", resolve));
-    assert.equal(exit, 0, `pi ${args.join(" ")} failed:\n${output}`);
+    const timer = setTimeout(() => child.kill("SIGKILL"), PI_TIMEOUT_MS);
+    const [exit, signal] = await new Promise((resolve) =>
+      child.once("exit", (code, signal) => resolve([code, signal])),
+    );
+    clearTimeout(timer);
+    assert.equal(
+      exit,
+      0,
+      `pi ${args.join(" ")} failed (${signal === "SIGKILL" ? `timed out after ${PI_TIMEOUT_MS}ms` : (signal ?? `exit ${exit}`)}):\n${output}`,
+    );
     return output;
   };
 

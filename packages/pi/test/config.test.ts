@@ -1,6 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-import reasoningRouter, { loadConfig } from "../src/extension.js";
+import { loadConfig } from "../src/config.js";
+import reasoningRouter from "../src/extension.js";
 import { toEffort, toThinkingLevel } from "../src/messages.js";
 
 describe("loadConfig", () => {
@@ -74,18 +75,53 @@ describe("loadConfig", () => {
 });
 
 describe("extension", () => {
-  it("fails to load with a prefixed error when the classifier is not configured", () => {
-    const saved = process.env.REASONING_ROUTER_CLASSIFIER_API_KEY;
-    delete process.env.REASONING_ROUTER_CLASSIFIER_API_KEY;
-    const pi: any = {};
-    try {
-      expect(() => reasoningRouter(pi)).toThrow(
-        "reasoning-router: classifier.apiKey is required for Jev classification",
-      );
-    } finally {
-      if (saved !== undefined)
-        process.env.REASONING_ROUTER_CLASSIFIER_API_KEY = saved;
-    }
+  afterEach(() => vi.unstubAllEnvs());
+
+  /** Loads the extension into a fake Pi and routes one request through the first virtual model. */
+  async function routeFirst() {
+    const definitions: any[] = [];
+    const pi: any = {
+      registerVirtualModel: (definition: any) => definitions.push(definition),
+      on: () => () => {},
+    };
+    reasoningRouter(pi);
+    expect(definitions.length).toBeGreaterThan(0);
+    const [definition] = definitions;
+    return definition.route(
+      {
+        model: { provider: definition.provider, id: definition.id },
+        thinkingLevel: "off",
+        reason: "user",
+        messages: [],
+      },
+      {
+        modelRegistry: {
+          find: (provider: string, id: string) => ({
+            provider,
+            id,
+            api: "anthropic-messages",
+            compat: { supportsMidConvoEffort: true },
+          }),
+        },
+        sessionManager: { getSessionId: () => "session-1" },
+      },
+    );
+  }
+
+  it("loads without the classifier configured and fails the route instead", async () => {
+    vi.stubEnv("REASONING_ROUTER_CLASSIFIER_API_KEY", undefined);
+    vi.stubEnv("TYPESAFE_API_KEY", undefined);
+    await expect(routeFirst()).rejects.toThrow(
+      "reasoning-router invalid_config: classifier.apiKey is required for Jev classification",
+    );
+  });
+
+  it("loads with a legacy variable set and fails the route instead", async () => {
+    vi.stubEnv("REASONING_ROUTER_CLASSIFIER_API_KEY", "key");
+    vi.stubEnv("TYPESAFE_API_KEY", "old");
+    await expect(routeFirst()).rejects.toThrow(
+      "reasoning-router invalid_config: TYPESAFE_API_KEY is unsupported",
+    );
   });
 });
 

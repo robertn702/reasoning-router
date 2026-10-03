@@ -1,7 +1,10 @@
-import { resolveJevConnection } from "@reasoning-router/classifiers";
+import {
+  loadClassifierConfig,
+  resolveJevConnection,
+} from "@reasoning-router/classifiers";
 import { upstreamHostname } from "@reasoning-router/core";
 import { describe, expect, it } from "vitest";
-import { loadClassifierConfig, loadConfig } from "../src/config.js";
+import { loadConfig } from "../src/config.js";
 
 const loadJevConnection = (env: Record<string, string | undefined>) =>
   resolveJevConnection(loadClassifierConfig(env));
@@ -80,34 +83,6 @@ describe("Jev connection", () => {
       expect(message).not.toBe("");
       expect(message).not.toMatch(/secret|password/);
     }
-  });
-});
-
-describe("classifier configuration", () => {
-  it("passes the Clef settings through and treats empty ones as unset", () => {
-    expect(
-      loadClassifierConfig({
-        REASONING_ROUTER_CLASSIFIER: "clef",
-        REASONING_ROUTER_CLASSIFIER_API_KEY: "token",
-        REASONING_ROUTER_CLASSIFIER_ACCOUNT_ID: "account",
-        REASONING_ROUTER_CLASSIFIER_MODEL: "clef-flash",
-      }),
-    ).toMatchObject({
-      provider: "clef",
-      apiKey: "token",
-      accountId: "account",
-      model: "clef-flash",
-    });
-    expect(
-      loadClassifierConfig({
-        REASONING_ROUTER_CLASSIFIER_ACCOUNT_ID: "",
-        REASONING_ROUTER_CLASSIFIER_MODEL: "",
-      }),
-    ).toMatchObject({
-      provider: "jev",
-      accountId: undefined,
-      model: undefined,
-    });
   });
 });
 

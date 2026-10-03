@@ -28,7 +28,8 @@ CI (`.github/workflows/ci.yml`) runs install, typecheck, lint, test, and
 and Pi smokes as separate jobs. The plugin smoke needs `openssl` and an
 existing `/tmp/opencode`; set `OPENCODE_V2_BIN` or `OPENCODE_V2_VERSION` to
 test another OpenCode V2. The Pi smoke needs `openssl` and runs the pinned
-Pi devDependency; set `PI_BIN` to test another Pi.
+Pi devDependency; set `PI_BIN` (and `PI_VERSION`, the version it reports) to
+test another Pi.
 
 Orca runs `./scripts/setup.sh` from `orca.yaml` and waits for it to finish
 before starting an agent. The script runs `npm ci`, copies local `.env*` files
