@@ -47,8 +47,11 @@ model_provider = "reasoning-router"
 name = "reasoning-router"
 base_url = "http://127.0.0.1:4320/v1"
 wire_api = "responses"
-env_key = "OPENAI_API_KEY"   # forwarded upstream in REASONING_ROUTER_UPSTREAM_AUTH=forward mode
 ```
+
+Codex sends no credential here, and the proxy adds its own in
+`REASONING_ROUTER_UPSTREAM_AUTH=bearer` mode (verified). `forward` mode
+requires a loopback upstream, so it does not apply to `api.openai.com`.
 
 Codex posts to `{base_url}/responses`
 ([`codex-api/src/endpoint/responses.rs`](https://github.com/openai/codex/blob/rust-v0.159.0/codex-rs/codex-api/src/endpoint/responses.rs)),
@@ -174,9 +177,10 @@ upstreams, but matters for the ChatGPT backend.
 ### Auth
 
 - **API key (works today):**
-  - The provider names the key in `env_key`, and Codex sends
-    `Authorization: Bearer`. The proxy forwards it in `forward` mode or
-    replaces it in `bearer` mode.
+  - In `bearer` mode the proxy adds its own key, so the provider needs no
+    `env_key`. If the provider sets `env_key`, Codex sends
+    `Authorization: Bearer`, which the proxy replaces in `bearer` mode or
+    forwards to a loopback upstream in `forward` mode.
   - Verified end to end through the proxy against a fake upstream, with
     `gpt-6.1-sol` (standard shape) and `gpt-6-astra` (Responses Lite).
 - **ChatGPT login (source only, not verified):**
@@ -353,9 +357,10 @@ Limitations:
 
 Smallest first slice, API keys only:
 
-1. **Setup docs:** a Codex section in the proxy README with the provider
-   block above, `stream_idle_timeout_ms` guidance, and a note that the
-   Codex-selected effort is ignored.
+1. **Setup docs:** done in the "Codex CLI" section of
+   [`packages/proxy/README.md`](../../packages/proxy/README.md). Codex's own
+   stream idle timeout defaults to 300 s, so the proxy's 60 s
+   `REASONING_ROUTER_UPSTREAM_IDLE_TIMEOUT_MS` is the limit to raise.
 2. **Regression fixtures:** captured Codex 0.159.0 requests (standard and
    Responses Lite, plus a tool-call continuation) as proxy tests. Codex
    changes its body shape most weeks, and this is where codex-lb broke.

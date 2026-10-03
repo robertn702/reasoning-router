@@ -30,6 +30,37 @@ Run `reasoning-router --help` for every variable. See
 and [`docs/behavior.md`](../../docs/behavior.md) for probes, shutdown, limits,
 and forwarding.
 
+## Codex CLI
+
+Start the proxy as above, then add a custom provider to
+`~/.codex/config.toml`:
+
+```toml
+model = "gpt-6.1-sol"
+model_provider = "reasoning-router"
+
+[model_providers.reasoning-router]
+name = "reasoning-router"
+base_url = "http://127.0.0.1:4320/v1"
+wire_api = "responses"
+```
+
+Codex sends no credential; the proxy adds
+`REASONING_ROUTER_UPSTREAM_API_KEY` (`REASONING_ROUTER_UPSTREAM_AUTH=bearer`).
+Leave `supports_websockets` unset, since the proxy serves HTTP only.
+
+- Only OpenAI API keys work. ChatGPT-subscription login is not supported.
+- Use `gpt-6-astra`, `gpt-6-luna`, `gpt-6-sol`, or `gpt-6.1-sol`. Other models
+  get a local `400`.
+- The classifier picks the effort. Codex's `model_reasoning_effort` and
+  `/model` effort are ignored, though Codex still displays them.
+- Codex 0.159.0 does not know `gpt-6.1-sol` and runs it with generic metadata
+  unless you supply `model_catalog_json`.
+- The proxy closes an upstream stream after 60 seconds without data. Raise
+  `REASONING_ROUTER_UPSTREAM_IDLE_TIMEOUT_MS` if long turns are cut off.
+
+See [`docs/harnesses/codex.md`](../../docs/harnesses/codex.md) for details.
+
 ## License
 
 [MIT](LICENSE)
