@@ -104,7 +104,7 @@ requests on their own.
   `medium`, `high`, `xhigh`, and `max`. The core's `none` is Pi's `off`.
   Pi has no core equivalent of `minimal`.
 - **Reject with a user-visible error:** only from `route()`. **Verified:** a
-  `route()` that throws `reasoning-router unsupported_model (400): …` makes no
+  `route()` that throws `reasoning-router unsupported_model: …` makes no
   network request. The assistant message ends with `stopReason: "error"` and
   that message, and `pi -p` exits 1. A throw in `before_provider_request` is
   caught. Pi reports it as an extension error and sends the **unmodified**

@@ -1,8 +1,8 @@
+import { loadClassifierConfig } from "@reasoning-router/classifiers";
 import {
   type ClassificationPolicy,
   type ClassifierConfig,
   type Effort,
-  loadClassifierConfig,
   parseConfig,
   routingEnvShape,
 } from "@reasoning-router/core";

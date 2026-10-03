@@ -1,14 +1,17 @@
 #!/usr/bin/env node
 import { existsSync } from "node:fs";
 import { connect } from "node:net";
-import { classifierProviders } from "@reasoning-router/classifiers";
+import {
+  classifierProviders,
+  loadClassifierConfig,
+} from "@reasoning-router/classifiers";
 import {
   createConfiguredSelector,
   createDecisionLogger,
   formatEvidence,
   upstreamHostname,
 } from "@reasoning-router/core";
-import { loadClassifierConfig, loadConfig } from "./config.js";
+import { loadConfig } from "./config.js";
 import { createAppServer, shutdownAppServer } from "./server.js";
 
 if (process.argv.includes("--help") || process.argv.includes("-h")) {

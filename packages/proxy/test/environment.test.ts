@@ -1,6 +1,9 @@
-import { resolveJevConnection } from "@reasoning-router/classifiers";
+import {
+  loadClassifierConfig,
+  resolveJevConnection,
+} from "@reasoning-router/classifiers";
 import { expect, it } from "vitest";
-import { loadClassifierConfig, loadConfig } from "../src/config.js";
+import { loadConfig } from "../src/config.js";
 
 const loadJevConnection = (env: Record<string, string | undefined>) =>
   resolveJevConnection(loadClassifierConfig(env));

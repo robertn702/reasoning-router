@@ -8,6 +8,7 @@ export {
   createClefTransport,
   resolveClefConnection,
 } from "./clef.js";
+export { loadClassifierConfig } from "./env.js";
 export {
   createJevClassifier,
   createJevTransport,

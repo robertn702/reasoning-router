@@ -35,14 +35,17 @@ export interface RouterState {
   effort: Effort;
 }
 
-/** A rejection Pi shows to the user as the failed request's error. */
+/**
+ * A rejection Pi shows to the user as the failed request's error. The message
+ * carries no HTTP status or transport wording: Pi retries errors that match
+ * its provider-error pattern, which would reclassify the request.
+ */
 export class PiRouteError extends Error {
   constructor(
     readonly code: string,
-    readonly status: number,
     detail: string,
   ) {
-    super(`reasoning-router ${code} (${status}): ${detail}`);
+    super(`reasoning-router ${code}: ${detail}`);
     this.name = "PiRouteError";
   }
 }
@@ -80,8 +83,22 @@ function supportsMidConvoEffort(model: Model<Api>): boolean {
 /** Registers one virtual model per wrapped Anthropic model, such as `reasoning-router/claude-opus-5-5`. */
 export function createReasoningRouter(
   pi: ExtensionAPI,
-  options: RouterOptions,
+  loadOptions: () => RouterOptions,
 ): void {
+  let resolved: RouterOptions | undefined;
+  /** Builds the options on the first route and caches them; a failure is shown at route time and retried on the next. */
+  function resolve(): RouterOptions {
+    if (resolved) return resolved;
+    try {
+      resolved = loadOptions();
+    } catch (error) {
+      throw new PiRouteError(
+        "invalid_config",
+        error instanceof Error ? error.message : String(error),
+      );
+    }
+    return resolved;
+  }
   const pending = new Map<string, Pending>();
   const emit = (
     { model, decision, previousEffort }: Pending,
@@ -89,7 +106,7 @@ export function createReasoningRouter(
     outcome: string,
     usage?: Usage,
   ) =>
-    options.onEvidence?.(
+    resolved?.onEvidence?.(
       buildEvidence({
         requestId: randomUUID(),
         session,
@@ -108,6 +125,7 @@ export function createReasoningRouter(
     );
 
   async function decide(
+    options: RouterOptions,
     request: ModelRouteRequest<RouterState>,
     model: ModelProfile,
     previousEffort: Effort | undefined,
@@ -124,7 +142,7 @@ export function createReasoningRouter(
       return fixed(retried);
     const signal = request.signal ?? new AbortController().signal;
     if (signal.aborted)
-      throw new PiRouteError("cancelled", 499, "request cancelled");
+      throw new PiRouteError("cancelled", "request cancelled");
     try {
       return await options.selectEffort({
         model,
@@ -135,7 +153,7 @@ export function createReasoningRouter(
       });
     } catch (error) {
       if (signal.aborted || error instanceof ClassificationCancelledError)
-        throw new PiRouteError("cancelled", 499, "request cancelled");
+        throw new PiRouteError("cancelled", "request cancelled");
       if (error instanceof ClassificationFailedError) {
         options.onEvidence?.(
           buildEvidence({
@@ -151,8 +169,7 @@ export function createReasoningRouter(
         );
         throw new PiRouteError(
           "classification_failed",
-          502,
-          "classification_failed",
+          "the classifier did not return an effort",
         );
       }
       throw error;
@@ -172,13 +189,13 @@ export function createReasoningRouter(
         if (!physical || !supportsMidConvoEffort(physical))
           throw new PiRouteError(
             "unsupported_model",
-            400,
             `${PHYSICAL_PROVIDER}/${model.id} is not an Anthropic Messages model with mid-conversation effort in this Pi`,
           );
+        const options = resolve();
         const previousEffort = storedEffort(request.state, model);
-        const decision = await decide(request, model, previousEffort);
+        const decision = await decide(options, request, model, previousEffort);
         if (request.signal?.aborted)
-          throw new PiRouteError("cancelled", 499, "request cancelled");
+          throw new PiRouteError("cancelled", "request cancelled");
         if (request.reason !== "direct") {
           const session = ctx.sessionManager.getSessionId();
           const stale = pending.get(session);

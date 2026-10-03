@@ -1,6 +1,7 @@
+import { isRetryableAssistantError } from "@earendil-works/pi-ai";
 import {
   type Classifier,
-  createStateSelector,
+  createConfiguredStateSelector,
   type EffortDecision,
   type Evidence,
   modelsFor,
@@ -10,6 +11,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   createReasoningRouter,
+  PiRouteError,
   PROVIDER,
   type RouterOptions,
 } from "../src/router.js";
@@ -89,13 +91,17 @@ function host(
   };
   const calls: Parameters<StateEffortSelector>[0][] = [];
   const evidence: Evidence[] = [];
-  createReasoningRouter(pi, {
-    selectEffort: async (args) => {
-      calls.push(args);
-      return classified("low");
-    },
-    onEvidence: (event) => evidence.push(event),
-    ...options,
+  let loads = 0;
+  createReasoningRouter(pi, () => {
+    loads++;
+    return {
+      selectEffort: async (args) => {
+        calls.push(args);
+        return classified("low");
+      },
+      onEvidence: (event) => evidence.push(event),
+      ...options,
+    };
   });
   const ctx: any = {
     modelRegistry: {
@@ -132,7 +138,7 @@ function host(
       },
       ctx,
     );
-  return { definitions, calls, evidence, route, end };
+  return { definitions, calls, evidence, route, end, loads: () => loads };
 }
 
 /** A real core selector around a scripted classifier. */
@@ -152,7 +158,11 @@ function policySelector(
     },
     errorCategory: () => "http_4xx",
   };
-  return createStateSelector({ classifier, timeoutMs: 1_000, ...policy });
+  return createConfiguredStateSelector(
+    { provider: "fake", timeoutMs: 1_000 },
+    [{ name: "fake", create: () => classifier }],
+    policy,
+  );
 }
 
 describe("registration", () => {
@@ -257,9 +267,60 @@ describe("route", () => {
       "claude-sonnet-5-5",
     ])
       await expect(route({}, id)).rejects.toThrow(
-        `reasoning-router unsupported_model (400): anthropic/${id}`,
+        `reasoning-router unsupported_model: anthropic/${id}`,
       );
     expect(calls).toHaveLength(0);
+  });
+});
+
+describe("lazy options", () => {
+  it("loads the options once, on the first route", async () => {
+    const { route, loads } = host();
+    expect(loads()).toBe(0);
+    await route();
+    await route();
+    expect(loads()).toBe(1);
+  });
+});
+
+describe("error messages", () => {
+  it("never match Pi's retryable provider error pattern", async () => {
+    const failing = host({
+      selectEffort: policySelector("error", {
+        fallbackMode: "error",
+        maxRetries: 0,
+      }),
+    });
+    const controller = new AbortController();
+    controller.abort();
+    const messages: string[] = [];
+    for (const attempt of [
+      failing.route(),
+      failing.route({ signal: controller.signal }),
+      failing.route({}, "claude-mythos-5-1"),
+      host({}, {}).route({}, "claude-opus-5-5"),
+    ]) {
+      try {
+        await attempt;
+      } catch (error) {
+        messages.push(error instanceof Error ? error.message : String(error));
+      }
+    }
+    expect(messages.map((message) => message.split(":")[0])).toEqual([
+      "reasoning-router classification_failed",
+      "reasoning-router cancelled",
+      "reasoning-router unsupported_model",
+      "reasoning-router unsupported_model",
+    ]);
+    messages.push(new PiRouteError("invalid_config", "bad value").message);
+    for (const message of messages) {
+      const retryable = isRetryableAssistantError({
+        ...conversation[2],
+        stopReason: "error",
+        errorMessage: message,
+      });
+      expect(retryable, message).toBe(false);
+    }
   });
 });
 
@@ -301,7 +362,7 @@ describe("fallback", () => {
     expect(result.state).toBeUndefined();
   });
 
-  it("throws a visible error in error mode and logs classification_failed", async () => {
+  it("throws a visible error in error mode and emits a classification_failed event", async () => {
     const { route, evidence } = host({
       selectEffort: policySelector("error", {
         fallbackMode: "error",
@@ -309,7 +370,7 @@ describe("fallback", () => {
       }),
     });
     await expect(route()).rejects.toThrow(
-      "reasoning-router classification_failed (502): classification_failed",
+      "reasoning-router classification_failed: the classifier did not return an effort",
     );
     expect(evidence).toMatchObject([
       {
@@ -330,7 +391,7 @@ describe("abort", () => {
     const routed = route({ signal: controller.signal });
     controller.abort();
     await expect(routed).rejects.toThrow(
-      "reasoning-router cancelled (499): request cancelled",
+      "reasoning-router cancelled: request cancelled",
     );
     expect(evidence).toEqual([]);
   });
@@ -340,7 +401,7 @@ describe("abort", () => {
     const controller = new AbortController();
     controller.abort();
     await expect(route({ signal: controller.signal })).rejects.toThrow(
-      "cancelled (499)",
+      "reasoning-router cancelled",
     );
     expect(calls).toHaveLength(0);
   });

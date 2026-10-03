@@ -6,8 +6,6 @@ import {
 } from "@reasoning-router/core";
 import { z } from "zod";
 
-export { loadClassifierConfig } from "@reasoning-router/core";
-
 export interface AppConfig extends ClassificationPolicy {
   port: number;
   upstreamBaseUrl: string;
