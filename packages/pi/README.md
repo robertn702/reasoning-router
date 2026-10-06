@@ -54,11 +54,11 @@ running, and the next request reads the variables again until they are valid.
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `REASONING_ROUTER_CLASSIFIER` | `jev` | Classifier provider: `jev` or `clef`. |
-| `REASONING_ROUTER_CLASSIFIER_API_KEY` | none | Classifier credential. Required. |
-| `REASONING_ROUTER_CLASSIFIER_BASE_URL` | provider default | Jev endpoint. Ignored by `clef`. |
+| `REASONING_ROUTER_CLASSIFIER` | `jev` | Classifier provider: `jev`, `clef`, or `laya`. |
+| `REASONING_ROUTER_CLASSIFIER_API_KEY` | none | Classifier credential. Required for `jev` and `clef`; optional for `laya`. |
+| `REASONING_ROUTER_CLASSIFIER_BASE_URL` | provider default | Jev endpoint, or the Laya server (default `http://127.0.0.1:8000`). Ignored by `clef`. |
 | `REASONING_ROUTER_CLASSIFIER_ACCOUNT_ID` | none | Clef: Cloudflare account ID. Required for `clef`. |
-| `REASONING_ROUTER_CLASSIFIER_MODEL` | none | Clef: `clef` or `clef-flash`. Required for `clef`. |
+| `REASONING_ROUTER_CLASSIFIER_MODEL` | none | Clef: `clef` or `clef-flash`. Required for `clef`. Laya: optional checkpoint. |
 | `REASONING_ROUTER_CLASSIFICATION_TIMEOUT_MS` | `4000` | Total classification budget, including retries. |
 | `REASONING_ROUTER_MAX_RETRIES` | `1` | Classifier retries after a retryable error (0–10). |
 | `REASONING_ROUTER_FALLBACK_MODE` | `fixed` | On failure: `fixed`, `previous` (last classified effort, else fixed), or `error`. |
