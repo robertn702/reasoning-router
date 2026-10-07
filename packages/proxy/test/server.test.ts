@@ -86,6 +86,131 @@ describe("local shape validation", () => {
   });
 });
 
+describe("Host validation", () => {
+  const body = JSON.stringify({
+    model: "gpt-6-astra",
+    input: [{ role: "user", content: "hi" }],
+  });
+
+  async function rawStatus(
+    app: string,
+    requestLine: string,
+    headers: string[],
+  ): Promise<number> {
+    const socket = new Socket();
+    socket.connect(Number(new URL(app).port), "127.0.0.1");
+    await once(socket, "connect");
+    socket.write(
+      [
+        requestLine,
+        ...headers,
+        "content-type: application/json",
+        `content-length: ${Buffer.byteLength(body)}`,
+        "",
+        body,
+      ].join("\r\n"),
+    );
+    let text = "";
+    socket.on("data", (chunk: Buffer) => {
+      text += chunk.toString("utf8");
+    });
+    await once(socket, "close");
+    return Number(text.split(" ")[1]);
+  }
+
+  async function startCounted() {
+    let selected = 0;
+    const upstream = await startUpstream((_request, response) =>
+      response.end("{}"),
+    );
+    const app = await startApp(
+      upstream.url,
+      async () => {
+        selected += 1;
+        return { effort: "high", classifierLatencyMs: 0, fallback: null };
+      },
+      { policy: "bearer", apiKey: "upstream-key" },
+    );
+    return { app, upstream, selected: () => selected };
+  }
+
+  it("forwards requests addressed to the listener's loopback name and port", async () => {
+    const { app, upstream, selected } = await startCounted();
+    const port = new URL(app).port;
+    for (const host of [
+      `127.0.0.1:${port}`,
+      `localhost:${port}`,
+      `LOCALHOST:${port}`,
+    ]) {
+      expect(
+        await rawStatus(app, "POST /v1/responses HTTP/1.1", [
+          `host: ${host}`,
+          "connection: close",
+        ]),
+      ).toBe(200);
+    }
+    const viaFetch = await fetch(`${app}/v1/responses`, {
+      method: "POST",
+      body,
+    });
+    expect(viaFetch.status).toBe(200);
+    expect(selected()).toBe(4);
+    expect(upstream.requests).toHaveLength(4);
+    expect(upstream.requests[0]!.headers.authorization).toBe(
+      "Bearer upstream-key",
+    );
+  });
+
+  it("rejects spoofed, malformed, ambiguous, and missing Host before classification or forwarding", async () => {
+    const { app, upstream, selected } = await startCounted();
+    const port = Number(new URL(app).port);
+    const cases: Array<[string, string[]]> = [
+      ["HTTP/1.1", [`host: attacker.example:${port}`]],
+      ["HTTP/1.1", [`host: 127.0.0.1.nip.io:${port}`]],
+      ["HTTP/1.1", [`host: localhost.:${port}`]],
+      ["HTTP/1.1", [`host: 0.0.0.0:${port}`]],
+      ["HTTP/1.1", [`host: [::1]:${port}`]],
+      ["HTTP/1.1", [`host: user@127.0.0.1:${port}`]],
+      ["HTTP/1.1", [`host: 127.0.0.1:${port + 1}`]],
+      ["HTTP/1.1", [`host: 127.0.0.1:0${port}`]],
+      ["HTTP/1.1", ["host:"]],
+      ["HTTP/1.1", ["host: 127.0.0.1"]],
+      ["HTTP/1.1", [`host: 127.0.0.1:${port}`, "host: attacker.example"]],
+      ["HTTP/1.1", [`host: attacker.example`, `host: 127.0.0.1:${port}`]],
+      ["HTTP/1.0", []],
+    ];
+    for (const [version, hosts] of cases) {
+      const status = await rawStatus(app, `POST /v1/responses ${version}`, [
+        ...hosts,
+        "connection: close",
+      ]);
+      expect([hosts, status]).toEqual([hosts, 400]);
+    }
+    expect(
+      await rawStatus(
+        app,
+        `POST http://attacker.example:${port}/v1/responses HTTP/1.1`,
+        [`host: 127.0.0.1:${port}`, "connection: close"],
+      ),
+    ).toBe(404);
+    expect(selected()).toBe(0);
+    expect(upstream.requests).toHaveLength(0);
+  });
+
+  it("rejects a non-local Host on health and model routes", async () => {
+    const { app, upstream } = await startCounted();
+    for (const path of ["/health", "/ready", "/v1/models"]) {
+      expect(
+        await rawStatus(app, `GET ${path} HTTP/1.1`, [
+          "host: attacker.example",
+          "connection: close",
+        ]),
+      ).toBe(400);
+    }
+    expect(upstream.requests).toHaveLength(0);
+  });
+});
+
 async function listen(server: http.Server): Promise<string> {
   server.listen(0, "127.0.0.1");
   await once(server, "listening");

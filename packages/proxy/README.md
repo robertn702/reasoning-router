@@ -5,6 +5,25 @@ needs, then applies that effort to the outgoing Responses (`POST
 /v1/responses`) or Anthropic Messages (`POST /v1/messages`) request without
 breaking the prompt cache. Requires Node.js 24.x.
 
+> **Alpha.** This package is not published to npm yet. Install it from a
+> checkout as shown below.
+
+## Install
+
+From a checkout of this repository, pack the proxy with the two packages it
+depends on, then install the tarballs together into one directory:
+
+```bash
+npm ci && npm run build
+npm pack --pack-destination /tmp/reasoning-router \
+  -w @reasoning-router/core -w @reasoning-router/classifiers -w @reasoning-router/proxy
+npm install --prefix ~/.local/share/reasoning-router /tmp/reasoning-router/*.tgz
+export PATH="$HOME/.local/share/reasoning-router/node_modules/.bin:$PATH"
+```
+
+After the first npm release, `npx @reasoning-router/proxy` will replace these
+steps.
+
 ## Usage
 
 Create a `.env` in the directory you run from (or export the variables):
@@ -20,7 +39,7 @@ REASONING_ROUTER_UPSTREAM_API_KEY=your-endpoint-key
 Then start it and point your client at `http://127.0.0.1:4320/v1`:
 
 ```bash
-npx @reasoning-router/proxy
+reasoning-router
 curl --fail http://127.0.0.1:4320/ready
 ```
 
@@ -29,6 +48,21 @@ Run `reasoning-router --help` for every variable. See
 [`docs/environment.md`](../../docs/environment.md) for the classifier settings,
 and [`docs/behavior.md`](../../docs/behavior.md) for probes, shutdown, limits,
 and forwarding.
+
+## Trust model
+
+The proxy is for a single trusted machine. It listens only on `127.0.0.1`
+and has no caller authentication: any local process that can reach the port
+can send requests, and with `REASONING_ROUTER_UPSTREAM_AUTH=bearer` those
+requests use your configured upstream key.
+
+Every request must carry a `Host` of `127.0.0.1:<port>` or `localhost:<port>`
+for the port the proxy listens on; anything else gets a `400` before the body
+is read, classified, or forwarded. This blocks DNS-rebinding attacks from web
+pages. It is not authentication, and it does not stop a web page from sending
+requests to `http://127.0.0.1:<port>` directly. Do not expose the port
+through a tunnel or reverse proxy; a forward or container mapping to a
+different port also gets `400 invalid_host`.
 
 ## Codex CLI
 

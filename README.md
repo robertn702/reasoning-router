@@ -2,8 +2,28 @@
 
 Harness-agnostic adaptive reasoning effort for coding agents.
 
-> **Status: pre-alpha.** The packages below are a port of
-> `opencode-jev-router`. Nothing is published to npm yet.
+> **Status: alpha.** The packages below are a port of
+> `opencode-jev-router`. Nothing is published to npm yet; install from a
+> checkout as described in each package README.
+
+## Alpha limitations
+
+- **Tested with:** Node.js 24.x, OpenCode V2 2.0.18, Pi 1.0.0, and Codex CLI
+  0.159.0 (through the proxy). Other versions may work but are untested.
+- **Models:** GPT-6 Astra, Luna, Sol, and 6.1 Sol on Responses APIs, and the
+  Claude models listed in [docs/behavior.md](docs/behavior.md) on Anthropic
+  Messages. Other models are rejected locally. Pi routes Claude models only.
+- **Install:** the [proxy README](packages/proxy/README.md#install) packs and
+  installs the proxy from a checkout, and the [Pi README](packages/pi/README.md)
+  installs the extension from a local path. The OpenCode plugin needs a
+  registry, so it is usable only after the first npm release.
+- **Classifiers:** the router asks the configured classifier and applies its
+  answer; it makes no claim about how well any classifier picks effort for
+  your workload.
+- **Proxy:** for trusted local use only; see its
+  [trust model](packages/proxy/README.md#trust-model).
+
+Report vulnerabilities as described in [SECURITY.md](SECURITY.md).
 
 ## Intent
 
