@@ -105,8 +105,10 @@ These are reversible:
 - **Source condition.** Package `exports` map the custom
   `@reasoning-router/source` condition to `src/*.ts`, so typecheck and tests
   run against source without a build; published consumers get `dist/`.
-- **Changesets** with independent versions and no publish workflow. No
-  changesets are recorded until the packages are first released.
+- **Changesets** with independent versions. Add a changeset to each PR
+  that changes a package's published behavior. The release workflow opens a
+  "Version Packages" PR, and merging it publishes to npm with provenance
+  (trusted publishing, or an `NPM_TOKEN` secret until that is configured).
 - **The standalone proxy is its own package** (`@reasoning-router/proxy`,
   command `reasoning-router`), since it needs a classifier and core must not
   depend on one. The unscoped `reasoning-router` name stays free for a future
