@@ -11,11 +11,11 @@ replacement.
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `REASONING_ROUTER_CLASSIFIER` | `jev` | Classifier provider: `jev`, `clef`, or `laya`. |
-| `REASONING_ROUTER_CLASSIFIER_API_KEY` | none | Classifier credential. Required for `jev` and `clef`; optional for `laya`. |
-| `REASONING_ROUTER_CLASSIFIER_BASE_URL` | provider default | Jev endpoint, or the Laya server (default `http://127.0.0.1:8000`). Ignored by `clef`. |
+| `REASONING_ROUTER_CLASSIFIER` | `jev` | Classifier provider: `jev`, `clef`, `laya`, or `kev`. |
+| `REASONING_ROUTER_CLASSIFIER_API_KEY` | none | Classifier credential. Required for `jev` and `clef`; optional for `laya` and `kev`. |
+| `REASONING_ROUTER_CLASSIFIER_BASE_URL` | provider default | Jev endpoint, the Laya server (default `http://127.0.0.1:8000`), or the Kev server (default `http://127.0.0.1:8008`). Ignored by `clef`. |
 | `REASONING_ROUTER_CLASSIFIER_ACCOUNT_ID` | none | Clef: Cloudflare account ID. Required for `clef`. |
-| `REASONING_ROUTER_CLASSIFIER_MODEL` | none | Clef: `clef` or `clef-flash`. Required for `clef`. Laya: optional checkpoint. |
+| `REASONING_ROUTER_CLASSIFIER_MODEL` | none | Clef: `clef` or `clef-flash`. Required for `clef`. Laya: optional checkpoint. Kev: optional, echoed only. |
 | `REASONING_ROUTER_CLASSIFICATION_TIMEOUT_MS` | `4000` | Total classification budget, including retries. |
 
 For `jev`, the key is a TypeSafe credential when the base URL is omitted
@@ -34,6 +34,12 @@ the server sets `LAYA_API_KEY`; it is sent as a bearer token, and a blank key
 counts as unset. `model` selects a checkpoint (`english`, `multilingual`,
 `typed-decisions`); when unset, the server chooses by the language of the
 state.
+
+For `kev`, the router calls a `kev.serve` server that you run, at
+`{baseUrl}/v1/systemone`, with the same base URL and key rules as `laya`.
+Set the key only when the server sets `KEV_API_KEY`. The checkpoint is
+chosen when the server starts (`--run`); `model` is only echoed back. See
+[proposals/kev.md](proposals/kev.md).
 
 The OpenCode plugin takes the same settings as its `classifier` option
 (`provider`, `apiKey`, `baseUrl`, `accountId`, `model`, `timeoutMs`). Each
