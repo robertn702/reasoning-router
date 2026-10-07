@@ -8,8 +8,8 @@ impact; remove API keys, prompts, and other private data from examples.
 Do not open a public issue for an unpatched vulnerability. Maintainers will
 coordinate disclosure and a fix through the security advisory.
 
-reasoning-router is alpha software and is not published to npm yet. Only the
-latest commit on `main` is supported.
+reasoning-router is alpha software. Only the latest published version of each
+package and the latest commit on `main` are supported.
 
 ## Scope
 

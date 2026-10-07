@@ -80,7 +80,10 @@ before starting an agent. The script runs `npm ci`, copies local `.env*` files
   (`npx changeset`) to any PR that changes a package's published behavior.
   On `main`, the workflow opens a "Version Packages" PR that applies
   pending changesets; merging it publishes the new versions to npm with
-  provenance.
+  provenance through npm trusted publishing, so no npm token is stored. If
+  npm stages a release instead of publishing it, a maintainer approves it
+  with `npm stage approve`. A new package has no trusted publisher, so its
+  first version is published manually by a maintainer.
 - Do not modify `opencode-jev-router` from here; read it for reference only.
 - Make the smallest change that works. Add no speculative abstractions and no
   configuration without a current requirement.

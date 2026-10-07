@@ -29,7 +29,4 @@ jobs:
           version-script: npm run version-packages
           publish-script: npm run release
         env:
-          # Only needed until trusted publishing is configured for every
-          # package; npm prefers OIDC when it is.
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: 'true'

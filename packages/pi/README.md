@@ -4,13 +4,9 @@ A [Pi](https://pi.dev) extension that asks a classifier how much reasoning
 each Claude request needs and lets Pi place that effort without breaking the
 prompt cache. Requires Pi 1.0.0 or later and Node.js 24.x.
 
-This package is not published yet. Build it from a checkout and install it
-from the local path:
-
 ```bash
-npm ci && npm run build
 export REASONING_ROUTER_CLASSIFIER_API_KEY=your-jev-key
-pi install /path/to/reasoning-router/packages/pi
+pi install npm:@reasoning-router/pi
 pi --model reasoning-router/claude-opus-5-5
 ```
 
