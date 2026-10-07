@@ -75,9 +75,12 @@ before starting an agent. The script runs `npm ci`, copies local `.env*` files
   or start a model, its weights, or its runtime from these packages, and add
   no model runtime dependency.
 - Each test lives in the package whose code it covers.
-- Do not publish to npm. Changesets is configured for versioning only; there
-  is no publish workflow. Do not add changesets until the packages are first
-  released.
+- Never run `npm publish` or `changeset publish` locally; releases go
+  through `.github/workflows/release.yml`. Add a changeset
+  (`npx changeset`) to any PR that changes a package's published behavior.
+  On `main`, the workflow opens a "Version Packages" PR that applies
+  pending changesets; merging it publishes the new versions to npm with
+  provenance.
 - Do not modify `opencode-jev-router` from here; read it for reference only.
 - Make the smallest change that works. Add no speculative abstractions and no
   configuration without a current requirement.

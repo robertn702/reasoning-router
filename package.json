@@ -18,6 +18,7 @@
     "check": "npm run typecheck && npm run lint && npm test",
     "format": "biome check --write .",
     "lint": "biome check .",
+    "release": "changeset publish",
     "smoke:package": "node scripts/smoke-package.mjs",
     "smoke:pi": "node scripts/smoke-pi.mjs",
     "smoke:plugin:v2": "node scripts/plugin-smoke-v2.mjs",
