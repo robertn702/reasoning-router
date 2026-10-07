@@ -3,8 +3,8 @@
 Harness-agnostic adaptive reasoning effort for coding agents.
 
 > **Status: alpha.** The packages below are a port of
-> `opencode-jev-router`. Nothing is published to npm yet; install from a
-> checkout as described in each package README.
+> `opencode-jev-router`. Install them from npm as described in each package
+> README.
 
 ## Alpha limitations
 
@@ -13,10 +13,6 @@ Harness-agnostic adaptive reasoning effort for coding agents.
 - **Models:** GPT-6 Astra, Luna, Sol, and 6.1 Sol on Responses APIs, and the
   Claude models listed in [docs/behavior.md](docs/behavior.md) on Anthropic
   Messages. Other models are rejected locally. Pi routes Claude models only.
-- **Install:** the [proxy README](packages/proxy/README.md#install) packs and
-  installs the proxy from a checkout, and the [Pi README](packages/pi/README.md)
-  installs the extension from a local path. The OpenCode plugin needs a
-  registry, so it is usable only after the first npm release.
 - **Classifiers:** the router asks the configured classifier and applies its
   answer; it makes no claim about how well any classifier picks effort for
   your workload.
@@ -108,7 +104,7 @@ These are reversible:
 - **Changesets** with independent versions. Add a changeset to each PR
   that changes a package's published behavior. The release workflow opens a
   "Version Packages" PR, and merging it publishes to npm with provenance
-  (trusted publishing, or an `NPM_TOKEN` secret until that is configured).
+  through npm trusted publishing (no npm token is stored).
 - **The standalone proxy is its own package** (`@reasoning-router/proxy`,
   command `reasoning-router`), since it needs a classifier and core must not
   depend on one. The unscoped `reasoning-router` name stays free for a future

@@ -6,10 +6,8 @@ request without breaking the prompt cache. Every classifier in
 [`@reasoning-router/classifiers`](../classifiers) (Jev, Cloudflare Clef,
 and Laya) is available.
 
-> **Alpha.** This package is not published to npm yet, and OpenCode installs
-> plugins by package name from a registry. The configuration below works
-> after the first release. Until then, `npm run smoke:plugin:v2` installs the
-> packed plugin into OpenCode 2.0.18 from a local test registry.
+> **Alpha.** OpenCode installs the plugin from npm by package name; list it
+> under `plugins` as shown below.
 
 Ported from
 [`opencode-jev-router`](https://github.com/robertn702/opencode-jev-router).

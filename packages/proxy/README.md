@@ -5,24 +5,16 @@ needs, then applies that effort to the outgoing Responses (`POST
 /v1/responses`) or Anthropic Messages (`POST /v1/messages`) request without
 breaking the prompt cache. Requires Node.js 24.x.
 
-> **Alpha.** This package is not published to npm yet. Install it from a
-> checkout as shown below.
+> **Alpha.** For trusted local use only; read the
+> [trust model](#trust-model) first.
 
 ## Install
 
-From a checkout of this repository, pack the proxy with the two packages it
-depends on, then install the tarballs together into one directory:
-
 ```bash
-npm ci && npm run build
-npm pack --pack-destination /tmp/reasoning-router \
-  -w @reasoning-router/core -w @reasoning-router/classifiers -w @reasoning-router/proxy
-npm install --prefix ~/.local/share/reasoning-router /tmp/reasoning-router/*.tgz
-export PATH="$HOME/.local/share/reasoning-router/node_modules/.bin:$PATH"
+npm install -g @reasoning-router/proxy   # installs the reasoning-router command
 ```
 
-After the first npm release, `npx @reasoning-router/proxy` will replace these
-steps.
+Or run it without installing: `npx @reasoning-router/proxy`.
 
 ## Usage
 
