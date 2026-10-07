@@ -264,6 +264,14 @@ See [docs/behavior.md](docs/behavior.md) and
 lives in
 [`packages/core/src/models.ts`](packages/core/src/models.ts).
 
+[CLM](https://github.com/Contrastive-LM/CLM)'s `clm-serve` uses the same
+API, so the `laya` preset can call it with
+`REASONING_ROUTER_CLASSIFIER_BASE_URL=http://127.0.0.1:8700` and
+`REASONING_ROUTER_CLASSIFIER_MODEL=clm-latest`. The
+[CLM findings](docs/classifiers/clm.md) cover the pinned version, the
+pooling backend you must run, and the 2,048-token truncation. Only API
+compatibility has been verified. Effort-decision quality has not.
+
 ## Development
 
 Requires Node.js 24.x.

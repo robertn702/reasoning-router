@@ -35,6 +35,10 @@ counts as unset. `model` selects a checkpoint (`english`, `multilingual`,
 `typed-decisions`); when unset, the server chooses by the language of the
 state.
 
+CLM's `clm-serve` also works through `laya`. Set the base URL to its server
+(for example `http://127.0.0.1:8700`) and `model` to `clm-latest`. The key
+matches the server's `CLM_API_KEY`. See [CLM findings](classifiers/clm.md).
+
 For `kev`, the router calls a `kev.serve` server that you run, at
 `{baseUrl}/v1/systemone`, with the same base URL and key rules as `laya`.
 Set the key only when the server sets `KEV_API_KEY`. The checkpoint is
