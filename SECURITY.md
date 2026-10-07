@@ -1,12 +1,15 @@
 # Security policy
 
-reasoning-router is alpha software, and nothing is published to npm yet.
-Only the latest commit on `main` is supported.
+Please report suspected vulnerabilities privately using GitHub's
+[Report a vulnerability](https://github.com/robertn702/reasoning-router/security/advisories/new)
+form. Include a minimal reproduction, affected versions, and the potential
+impact; remove API keys, prompts, and other private data from examples.
 
-## Reporting a vulnerability
+Do not open a public issue for an unpatched vulnerability. Maintainers will
+coordinate disclosure and a fix through the security advisory.
 
-Do not open a public issue. A private reporting route has not been set up yet
-and will be listed here before the first public release.
+reasoning-router is alpha software and is not published to npm yet. Only the
+latest commit on `main` is supported.
 
 ## Scope
 
