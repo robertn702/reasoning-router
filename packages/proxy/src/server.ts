@@ -132,6 +132,17 @@ function readBody(request: IncomingMessage, maxBytes: number): Promise<string> {
   });
 }
 
+const loopbackAuthority = /^(?:127\.0\.0\.1|localhost)(?::(\d{1,5}))?$/i;
+
+function hasLoopbackHost(request: IncomingMessage): boolean {
+  const values = request.headersDistinct.host;
+  if (values?.length !== 1) return false;
+  const match = loopbackAuthority.exec(values[0]!);
+  return (
+    match !== null && (match[1] ?? "80") === String(request.socket.localPort)
+  );
+}
+
 function upstreamUrl(base: string, path: string): URL {
   const normalizedBase = base.endsWith("/") ? base : `${base}/`;
   return new URL(path.replace(/^\//, ""), normalizedBase);
@@ -218,6 +229,12 @@ export function createAppServer(options: AppServerOptions): Server {
   });
 
   const server = createServer((request, response) => {
+    if (!hasLoopbackHost(request)) {
+      request.pause();
+      response.setHeader("connection", "close");
+      writeJson(response, 400, { error: "invalid_host" });
+      return;
+    }
     if (
       state.draining &&
       request.url !== "/health" &&

@@ -29,13 +29,28 @@ on Workers AI.
 | `model` | none | `clef` or `clef-flash`. Required. |
 | `timeoutMs` | `4000` | Total classification budget, including retries. |
 
+## Laya (`provider: "laya"`)
+
+[Laya](https://huggingface.co/convaiinnovations/laya), an open-source
+Jev-compatible model served by a Laya server that you run. This package only
+calls it over HTTP.
+
+| Field | Default | Purpose |
+| --- | --- | --- |
+| `baseUrl` | `http://127.0.0.1:8000` | Laya server. HTTPS, or plain HTTP to a loopback host only. |
+| `apiKey` | none | Optional; set only when the server sets `LAYA_API_KEY`. |
+| `model` | server's choice | Optional checkpoint, e.g. `english` or `multilingual`. |
+| `timeoutMs` | `4000` | Total classification budget, including retries. |
+
 ## Exports
 
 - `classifierProviders`: every classifier, for `createConfiguredSelector` in
   [`@reasoning-router/core`](../core).
-- `jevClassifierProvider`, `clefClassifierProvider`: each provider.
+- `jevClassifierProvider`, `clefClassifierProvider`, `layaClassifierProvider`:
+  each provider.
 - `createJevClassifier`, `createJevTransport`, `createClefTransport`,
-  `resolveJevConnection`, `resolveClefConnection`: lower-level helpers.
+  `createLayaTransport`, `resolveJevConnection`, `resolveClefConnection`,
+  `resolveLayaConnection`: lower-level helpers.
 - `ClassifierRequestError` and the `Fetch` type, used by the transports.
 
 ## License
