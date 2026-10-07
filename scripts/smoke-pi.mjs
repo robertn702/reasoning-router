@@ -18,7 +18,7 @@ import {
 // Runs the packed extension in a real Pi against loopback fakes. Set PI_BIN to
 // test another Pi, and PI_VERSION to the version it reports; both default to
 // the pinned devDependency.
-const VERSION = process.env.PI_VERSION ?? "1.0.0";
+const VERSION = process.env.PI_VERSION ?? "1.0.4";
 const PI_TIMEOUT_MS = 120_000;
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const PACKAGE = "@reasoning-router/pi";

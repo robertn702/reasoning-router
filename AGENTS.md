@@ -21,7 +21,7 @@ Use Node.js 24.x from the repo root.
 | Build every package to `dist/`, in dependency order | `npm run build` |
 | Pack, install, and run the packages | `npm run smoke:package` |
 | Install the packed plugin in OpenCode 2.0.18 | `npm run smoke:plugin:v2` |
-| Install the packed extension in Pi 1.0.0 | `npm run smoke:pi` |
+| Install the packed extension in Pi 1.0.4 | `npm run smoke:pi` |
 
 CI (`.github/workflows/ci.yml`) runs install, typecheck, lint, test, and
 `smoke:package` on pushes to `main` and on pull requests, plus the plugin

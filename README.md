@@ -8,7 +8,7 @@ Harness-agnostic adaptive reasoning effort for coding agents.
 
 ## Alpha limitations
 
-- **Tested with:** Node.js 24.x, OpenCode V2 2.0.18, Pi 1.0.0, and Codex CLI
+- **Tested with:** Node.js 24.x, OpenCode V2 2.0.18, Pi 1.0.4, and Codex CLI
   0.159.0 (through the proxy). Other versions may work but are untested.
 - **Models:** GPT-6 Astra, Luna, Sol, and 6.1 Sol on Responses APIs, and the
   Claude models listed in [docs/behavior.md](docs/behavior.md) on Anthropic
