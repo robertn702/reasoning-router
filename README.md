@@ -52,7 +52,7 @@ The packages are:
   classifier-independent router.
 - [`@reasoning-router/opencode`](packages/opencode): the OpenCode V2 plugin.
 - [`@reasoning-router/classifiers`](packages/classifiers): the
-  classifiers (Jev, Cloudflare Clef, and Laya), selected by
+  classifiers (Jev, Cloudflare Clef, Laya, and Kev), selected by
   `classifier.provider`.
 - [`@reasoning-router/pi`](packages/pi): the Pi extension (Claude models
   only, for now).
@@ -149,6 +149,20 @@ See [docs/behavior.md](docs/behavior.md) and
 lives in
 [`packages/core/src/models.ts`](packages/core/src/models.ts).
 
+## Kev
+
+[Kev](https://github.com/jaredpalmer/kev) is an open-source, Jev-compatible
+family of decision models that you run yourself with its `kev.serve`. The
+router only calls it over HTTP:
+
+```bash
+uv run --extra serve python -m kev.serve --run jaredpalmer/kev-4b@v1.0   # http://127.0.0.1:8008
+REASONING_ROUTER_CLASSIFIER=kev reasoning-router
+```
+
+See [docs/proposals/kev.md](docs/proposals/kev.md) for the pinned version,
+the confirmed HTTP contract, auth, limits, and what is not yet verified.
+
 ## Development
 
 Requires Node.js 24.x.
@@ -199,6 +213,9 @@ These are reversible:
   conversation summary never crosses a network unencrypted. The default is
   `laya-serve`'s `http://127.0.0.1:8000`, and the router doesn't send
   `max_len`.
+- **Kev is its own `kev` preset** with Laya's connection rules, so decision
+  logs name the right service. Its default base URL is `kev.serve`'s
+  `http://127.0.0.1:8008`.
 
 ## License
 
