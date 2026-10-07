@@ -32,7 +32,7 @@ system message, so changing effort keeps the cached prefix.
 - The last classified effort is stored in the session, per virtual model, so
   `previous` fallback survives a restart.
 - A model that Pi lacks, or that Pi cannot give mid-conversation effort, is
-  rejected with `reasoning-router unsupported_model: ...`. In Pi 1.0.0 that
+  rejected with `reasoning-router unsupported_model: ...`. In Pi 1.0.0 and 1.0.4 that
   includes `claude-mythos-5-1`.
 - A classification failure in `error` fallback mode rejects the request with
   `reasoning-router classification_failed: ...`. Cancelling a request never

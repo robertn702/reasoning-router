@@ -38,7 +38,7 @@ jobs:
         run: npm run smoke:plugin:v2
 
   pi-smoke:
-    name: Pi smoke (Pi 1.0.0)
+    name: Pi smoke (Pi 1.0.4)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
