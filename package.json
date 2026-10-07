@@ -23,7 +23,8 @@
     "smoke:pi": "node scripts/smoke-pi.mjs",
     "smoke:plugin:v2": "node scripts/plugin-smoke-v2.mjs",
     "test": "vitest run --passWithNoTests",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "version-packages": "changeset version && npm install --package-lock-only"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.15",

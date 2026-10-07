@@ -26,6 +26,7 @@ jobs:
       - run: npm ci
       - uses: changesets/action@v2
         with:
+          version-script: npm run version-packages
           publish-script: npm run release
         env:
           # Only needed until trusted publishing is configured for every
