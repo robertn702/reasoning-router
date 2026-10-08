@@ -18,6 +18,7 @@ import {
   type Exchange,
   PluginRequestError,
   SESSION,
+  TURN,
   valid,
 } from "./plugin-runtime.js";
 
@@ -273,7 +274,13 @@ export async function setupV2(ctx: Host): Promise<() => void> {
     try {
       exchange = await runtime.start(
         incoming,
-        { session: valid(event.sessionID, SESSION), turnId: randomUUID() },
+        {
+          session: valid(event.sessionID, SESSION),
+          turnId:
+            valid(incoming.headers.get("x-reasoning-router-turn-id"), TURN) ??
+            valid(incoming.headers.get("x-opencode-turn-id"), TURN) ??
+            randomUUID(),
+        },
         alias.group,
       );
     } catch (cause) {

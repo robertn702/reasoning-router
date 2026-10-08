@@ -190,7 +190,9 @@ When OpenCode supplies `x-reasoning-router-session-id` and `x-reasoning-router-t
 IDs appear as `session` and `turn_id` in the event. A turn can contain multiple
 router requests; requests without these headers have null IDs. These headers
 are not forwarded to the upstream. The V2 plugin instead takes `session` from the
-native HTTP hook's session ID and assigns each request a new `turn_id`.
+native HTTP hook's session ID. It takes `turn_id` from a valid
+`x-reasoning-router-turn-id` header, then `x-opencode-turn-id`, and otherwise
+assigns the request a new random `turn_id`.
 Local request-size, overload, and upstream deadline failures use the fixed
 `request_too_large`, `overloaded`, and `upstream_timeout` outcome codes.
 
