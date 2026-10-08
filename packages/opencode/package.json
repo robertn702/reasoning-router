@@ -1,6 +1,6 @@
 {
   "name": "@reasoning-router/opencode",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Adaptive per-step reasoning effort for OpenCode V2",
   "type": "module",
   "license": "MIT",

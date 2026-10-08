@@ -1,5 +1,11 @@
 # @reasoning-router/opencode
 
+## 0.1.1
+
+### Patch Changes
+
+- 538a874: Log the caller's `x-reasoning-router-turn-id` (or `x-opencode-turn-id`) header as `turn_id` on primary requests, falling back to a random UUID only when the header is missing or not a UUID.
+
 ## 0.1.0
 
 ### Minor Changes
