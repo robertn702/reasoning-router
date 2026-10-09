@@ -62,7 +62,7 @@ npx @reasoning-router/proxy
 
 ## 무엇이 어디로 전송되는가
 
-- **분류기로:** 최근 사용자 및 어시스턴트 텍스트의 발췌문(길이 제한 있음), 최대 8개의 최근 도구 결과(도구 이름과 오류 플래그 포함), 짧은 실패 요약, 그리고 모델 ID. 호스팅 도구와 컴퓨터 사용(computer-use) 페이로드는 전송되지 않습니다. Laya, Kev, CLM은 사용자의 서버에서 실행됩니다.
+- **분류기로:** 최근 사용자 및 어시스턴트 텍스트의 발췌문(길이 제한 있음), 최대 8개의 최근 도구 결과(도구 이름과 오류 플래그 포함), 짧은 실패 요약, 그리고 모델 ID. 호스팅 도구와 컴퓨터 사용(computer-use) 페이로드는 전송되지 않습니다. Laya, Kev, SemIf, CLM은 사용자의 서버에서 실행됩니다.
 - **사용자의 엔드포인트로:** 추론 수준 업데이트가 추가된 전체 요청.
 - **로그에 기록되는 것:** 메타데이터(ID, 모델, 추론 수준, 지연 시간, 토큰 수)만 기록되며, 기록 위치도 프록시의 stdout 또는 사용자가 활성화한 결정 로그뿐입니다. 프롬프트, 도구 출력, 자격 증명, 원시 오류는 절대 기록되지 않습니다.
 
@@ -96,7 +96,7 @@ npx @reasoning-router/proxy
 
 - [`@reasoning-router/core`](packages/core/README_KO.md): 하네스와 분류기에 독립적인 공유 라우터.
 - [`@reasoning-router/opencode`](packages/opencode/README_KO.md): OpenCode V2 플러그인.
-- [`@reasoning-router/classifiers`](packages/classifiers/README_KO.md): 분류기(Jev, Cloudflare Clef, Laya, Kev, OpenAI Decisions, CLM). `classifier.provider`로 선택합니다.
+- [`@reasoning-router/classifiers`](packages/classifiers/README_KO.md): 분류기(Jev, Cloudflare Clef, Laya, Kev, SemIf, OpenAI Decisions, CLM). `classifier.provider`로 선택합니다.
 - [`@reasoning-router/pi`](packages/pi/README_KO.md): Pi 확장 프로그램(현재는 Claude 모델만 지원).
 - [`@reasoning-router/proxy`](packages/proxy/README_KO.md): 독립 실행형 Responses/Messages 프록시(명령어 `reasoning-router`).
 
@@ -157,6 +157,21 @@ REASONING_ROUTER_CLASSIFIER=kev reasoning-router
 ```
 
 고정된 버전, 확인된 HTTP 계약, 인증, 제한 사항, 아직 검증되지 않은 사항은 [docs/proposals/kev.md](docs/proposals/kev.md)를 참조하세요.
+
+### SemIf
+
+[SemIf](https://github.com/TheoLeeCJ/SemIf-OpenJev)(이전 이름 OpenJev)는 직접 실행하는 고정(frozen) 오픈 모델의 다음 토큰 logits에서 각 선택지의 확률을 읽어 냅니다. 라우터는 HTTP로 호출만 합니다. 업스트림은 아직 서버를 릴리스하지 않았습니다. `semif-serve`는 [PR #27](https://github.com/TheoLeeCJ/SemIf-OpenJev/pull/27)에만 있으므로 해당 PR의 브랜치에서 실행하세요. 이는 릴리스되지 않은 코드이며 계약이 바뀔 수 있습니다.
+
+```bash
+SEMIF_BACKEND=torch SEMIF_MODEL=Qwen/Qwen3.5-4B \
+SEMIF_REVISION=851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a \
+SEMIF_MAX_INPUT_TOKENS=8192 semif-serve   # http://127.0.0.1:8471
+REASONING_ROUTER_CLASSIFIER=semif reasoning-router
+```
+
+`SEMIF_BACKEND`는 `torch`(CUDA), `mlx`(Apple Silicon), `llamacpp`(CPU, `SEMIF_GGUF` 필요) 중 하나입니다. 기본 base URL은 `http://127.0.0.1:8471`입니다. 원격 서버는 HTTPS를 사용해야 합니다. `REASONING_ROUTER_CLASSIFIER_API_KEY`는 서버에서 `SEMIF_API_KEY`를 설정한 경우에만 설정하세요. 서버가 `model`을 필수로 요구하므로 라우터는 항상 `model`을 전송합니다. 기본값은 `semif-latest`이며, `REASONING_ROUTER_CLASSIFIER_MODEL`을 서버가 제공하는 모델 ID나 Jev 별칭으로 설정할 수도 있습니다.
+
+라우터의 제한된 상태 요약은 최대 약 18.4k자에 이를 수 있어 서버의 기본 `SEMIF_MAX_INPUT_TOKENS`(4096)를 넘길 수 있습니다. 예산을 초과한 프롬프트는 실패하며(서버는 절대 잘라내지 않습니다) 라우터는 폴백하므로 이 값을 높이세요. 8192는 측정되지 않았습니다. 이 프리셋은 모킹된 `fetch`로만 테스트되었고, SemIf가 추론 수준을 얼마나 잘 고르는지에 대한 근거도 아직 없습니다. [docs/proposals/semif.md](docs/proposals/semif.md)를 참조하세요.
 
 ### OpenAI Decisions
 
@@ -232,6 +247,7 @@ npm run check   # typecheck + lint + test
 - **Pi 확장 프로그램은 Pi의 가상 모델을 사용합니다.** 사고(thinking) 수준만 설정하고 추론 수준의 배치는 Pi에 맡기므로, Pi가 대화 도중 추론 수준 변경을 지원하는 Anthropic 모델만 지원합니다. Pi 확장 프로그램에는 옵션이 없으므로 프록시의 `REASONING_ROUTER_*` 변수를 읽고, 마지막으로 분류된 추론 수준을 `previous` 폴백용으로 Pi의 세션에 저장합니다.
 - **Laya `baseUrl`은 HTTPS이거나, 루프백에 대한 평문 HTTP만 허용합니다.** 그래서 대화 요약이 암호화되지 않은 채 네트워크를 가로지르는 일이 없습니다. 기본값은 `laya-serve`의 `http://127.0.0.1:8000`이며, 라우터는 `max_len`을 전송하지 않습니다.
 - **Kev는 별도의 `kev` 프리셋입니다.** 연결 규칙은 Laya와 동일하며, 결정 로그에 올바른 서비스 이름이 남습니다. 기본 base URL은 `kev.serve`의 `http://127.0.0.1:8008`입니다.
+- **SemIf는 별도의 `semif` 프리셋입니다.** 연결 규칙은 Laya와 동일합니다. 기본 base URL은 `semif-serve`의 `http://127.0.0.1:8471`이며, 이 서버는 `model`을 필수로 요구하므로 프리셋은 항상 `model`을 전송합니다(기본값은 `semif-latest`).
 - **CLM도 별도의 `clm` 프리셋입니다.** 연결 규칙은 Laya와 동일합니다. 기본 base URL은 `clm-serve`의 `http://127.0.0.1:8700`입니다.
 - **OpenAI Decisions base URL은 허용 목록 방식입니다**(글로벌, `us.`, `eu.` OpenAI API 루트). 따라서 다른 분류기에서 남아 있던 base URL이 OpenAI 키를 받을 수 없습니다. `model`은 OpenAI가 모델을 추가하기 전까지 `gpt-6-luna`만 허용합니다.
 

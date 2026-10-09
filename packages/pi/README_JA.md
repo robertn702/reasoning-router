@@ -28,11 +28,11 @@ OpenAI モデルはまだルーティングされません。
 
 | 変数 | デフォルト | 用途 |
 | --- | --- | --- |
-| `REASONING_ROUTER_CLASSIFIER` | `jev` | 分類器プロバイダー: `jev`、`clef`、`laya`、`kev`、`openai-decisions`、または `clm`。 |
-| `REASONING_ROUTER_CLASSIFIER_API_KEY` | なし | 分類器の認証情報。`jev`、`clef`、`openai-decisions` では必須。`laya`、`kev`、`clm` では省略可。 |
-| `REASONING_ROUTER_CLASSIFIER_BASE_URL` | プロバイダーのデフォルト | Jev のエンドポイント、Laya サーバー（デフォルトは `http://127.0.0.1:8000`）、Kev サーバー（デフォルトは `http://127.0.0.1:8008`）、OpenAI のリージョナルエンドポイント、または CLM サーバー（デフォルトは `http://127.0.0.1:8700`）。`clef` では無視されます。 |
+| `REASONING_ROUTER_CLASSIFIER` | `jev` | 分類器プロバイダー: `jev`、`clef`、`laya`、`kev`、`semif`、`openai-decisions`、または `clm`。 |
+| `REASONING_ROUTER_CLASSIFIER_API_KEY` | なし | 分類器の認証情報。`jev`、`clef`、`openai-decisions` では必須。`laya`、`kev`、`semif`、`clm` では省略可。 |
+| `REASONING_ROUTER_CLASSIFIER_BASE_URL` | プロバイダーのデフォルト | Jev のエンドポイント、Laya サーバー（デフォルトは `http://127.0.0.1:8000`）、Kev サーバー（デフォルトは `http://127.0.0.1:8008`）、SemIf サーバー（デフォルトは `http://127.0.0.1:8471`）、OpenAI のリージョナルエンドポイント、または CLM サーバー（デフォルトは `http://127.0.0.1:8700`）。`clef` では無視されます。 |
 | `REASONING_ROUTER_CLASSIFIER_ACCOUNT_ID` | なし | Clef: Cloudflare アカウント ID。`clef` では必須。 |
-| `REASONING_ROUTER_CLASSIFIER_MODEL` | なし | Clef: `clef` または `clef-flash`。`clef` では必須。Laya: 省略可のチェックポイント。Kev: 省略可、エコーバックのみ。OpenAI Decisions: `gpt-6-luna`。CLM: 省略可のヘッド。サーバーのデフォルトは `clm-latest`。 |
+| `REASONING_ROUTER_CLASSIFIER_MODEL` | なし | Clef: `clef` または `clef-flash`。`clef` では必須。Laya: 省略可のチェックポイント。Kev: 省略可、エコーバックのみ。SemIf: 省略可のモデル ID またはエイリアス、デフォルトは `semif-latest`。OpenAI Decisions: `gpt-6-luna`。CLM: 省略可のヘッド。サーバーのデフォルトは `clm-latest`。 |
 | `REASONING_ROUTER_CLASSIFICATION_TIMEOUT_MS` | `4000` | リトライを含む、分類全体の時間予算。 |
 | `REASONING_ROUTER_MAX_RETRIES` | `1` | リトライ可能なエラーの後の分類器のリトライ回数（0–10）。 |
 | `REASONING_ROUTER_FALLBACK_MODE` | `fixed` | 失敗時の動作: `fixed`、`previous`（最後に分類された推論強度、なければ fixed）、または `error`。 |

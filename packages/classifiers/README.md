@@ -57,6 +57,29 @@ package only calls it over HTTP.
 | `model` | none | Optional. Only echoed back; the server picks the checkpoint at startup (`--run`). |
 | `timeoutMs` | `4000` | Total classification budget, including retries. |
 
+## SemIf (`provider: "semif"`)
+
+[SemIf](https://github.com/TheoLeeCJ/SemIf-OpenJev) (formerly OpenJev) reads
+each option's probability from a frozen open model's next-token logits, served
+by a `semif-serve` server that you run. This package only calls it over
+HTTP. Upstream has not released that server: it exists only in
+[PR #27](https://github.com/TheoLeeCJ/SemIf-OpenJev/pull/27), so run
+`semif-serve` from that PR's branch. The preset follows that PR's unreleased
+contract and was verified only against a fake `fetch`.
+
+| Field | Default | Purpose |
+| --- | --- | --- |
+| `baseUrl` | `http://127.0.0.1:8471` | SemIf server. HTTPS, or plain HTTP to a loopback host only. |
+| `apiKey` | none | Optional; set only when the server sets `SEMIF_API_KEY`. |
+| `model` | `semif-latest` | The server requires a model, so one is always sent: the served model ID, `semif-latest`, or a Jev alias. |
+| `timeoutMs` | `4000` | Total classification budget, including retries. |
+
+The server rejects a prompt over `SEMIF_MAX_INPUT_TOKENS` (default 4096) with a
+500 instead of truncating it, and the router's bounded state can reach about
+18.4k characters, so raise it (8192 is unmeasured). There is no evidence yet
+of how well SemIf picks efforts. See
+[docs/proposals/semif.md](../../docs/proposals/semif.md).
+
 ## OpenAI Decisions (`provider: "openai-decisions"`)
 
 Calls OpenAI's Decisions API. Users bring an OpenAI API key with Decisions
@@ -123,15 +146,15 @@ effort-decision quality.
 - `classifierProviders`: every classifier, for `createConfiguredSelector` in
   [`@reasoning-router/core`](../core).
 - `jevClassifierProvider`, `clefClassifierProvider`, `layaClassifierProvider`,
-  `kevClassifierProvider`: each provider.
+  `kevClassifierProvider`, `semifClassifierProvider`: each provider.
 - `openAIDecisionsClassifierProvider`, `createOpenAIDecisionsTransport`,
   `resolveOpenAIDecisionsConnection`, and the `OpenAIDecisionsConnection` type.
 - `clmClassifierProvider`, `createClmTransport`, `resolveClmConnection`, and
   the `ClmConnection` type.
 - `createJevClassifier`, `createJevTransport`, `createClefTransport`,
-  `createLayaTransport`, `createKevTransport`, `resolveJevConnection`,
-  `resolveClefConnection`, `resolveLayaConnection`, `resolveKevConnection`:
-  lower-level helpers.
+  `createLayaTransport`, `createKevTransport`, `createSemifTransport`,
+  `resolveJevConnection`, `resolveClefConnection`, `resolveLayaConnection`,
+  `resolveKevConnection`, `resolveSemifConnection`: lower-level helpers.
 - `ClassifierRequestError` and the `Fetch` type, used by the transports.
 
 ## License

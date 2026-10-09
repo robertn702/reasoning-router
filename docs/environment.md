@@ -11,11 +11,11 @@ replacement.
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `REASONING_ROUTER_CLASSIFIER` | `jev` | Classifier provider: `jev`, `clef`, `laya`, `kev`, `openai-decisions`, or `clm`. |
-| `REASONING_ROUTER_CLASSIFIER_API_KEY` | none | Classifier credential. Required for `jev`, `clef`, and `openai-decisions`; optional for `laya`, `kev`, and `clm`. |
-| `REASONING_ROUTER_CLASSIFIER_BASE_URL` | provider default | Jev endpoint, the Laya server (default `http://127.0.0.1:8000`), the Kev server (default `http://127.0.0.1:8008`), an OpenAI regional endpoint, or the CLM server (default `http://127.0.0.1:8700`). Ignored by `clef`. |
+| `REASONING_ROUTER_CLASSIFIER` | `jev` | Classifier provider: `jev`, `clef`, `laya`, `kev`, `semif`, `openai-decisions`, or `clm`. |
+| `REASONING_ROUTER_CLASSIFIER_API_KEY` | none | Classifier credential. Required for `jev`, `clef`, and `openai-decisions`; optional for `laya`, `kev`, `semif`, and `clm`. |
+| `REASONING_ROUTER_CLASSIFIER_BASE_URL` | provider default | Jev endpoint, the Laya server (default `http://127.0.0.1:8000`), the Kev server (default `http://127.0.0.1:8008`), the SemIf server (default `http://127.0.0.1:8471`), an OpenAI regional endpoint, or the CLM server (default `http://127.0.0.1:8700`). Ignored by `clef`. |
 | `REASONING_ROUTER_CLASSIFIER_ACCOUNT_ID` | none | Clef: Cloudflare account ID. Required for `clef`. |
-| `REASONING_ROUTER_CLASSIFIER_MODEL` | none | Clef: `clef` or `clef-flash`. Required for `clef`. Laya: optional checkpoint. Kev: optional, echoed only. OpenAI Decisions: `gpt-6-luna`. CLM: optional head, server default `clm-latest`. |
+| `REASONING_ROUTER_CLASSIFIER_MODEL` | none | Clef: `clef` or `clef-flash`. Required for `clef`. Laya: optional checkpoint. Kev: optional, echoed only. SemIf: optional model ID or alias, default `semif-latest`. OpenAI Decisions: `gpt-6-luna`. CLM: optional head, server default `clm-latest`. |
 | `REASONING_ROUTER_CLASSIFICATION_TIMEOUT_MS` | `4000` | Total classification budget, including retries. |
 
 For `jev`, the key is a TypeSafe credential when the base URL is omitted
@@ -40,6 +40,16 @@ For `kev`, the router calls a `kev.serve` server that you run, at
 Set the key only when the server sets `KEV_API_KEY`. The checkpoint is
 chosen when the server starts (`--run`); `model` is only echoed back. See
 [proposals/kev.md](proposals/kev.md).
+
+For `semif`, the router calls a `semif-serve` server that you run, at
+`{baseUrl}/v1/systemone`, with the same base URL and key rules as `laya`.
+Upstream has not released that server yet; see
+[proposals/semif.md](proposals/semif.md). Set the key only when the server
+sets `SEMIF_API_KEY`. The server requires a `model`, so the router always
+sends one: `semif-latest` unless you set `REASONING_ROUTER_CLASSIFIER_MODEL`
+to the served model ID or a Jev alias. The router's state can exceed the
+server's default `SEMIF_MAX_INPUT_TOKENS` of 4096, and an over-budget prompt
+is an error, not truncated, so raise it.
 
 For `openai-decisions`, the key is an OpenAI API key with Decisions access,
 used at `{baseUrl}/decisions`. The base URL defaults to

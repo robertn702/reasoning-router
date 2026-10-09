@@ -162,6 +162,7 @@ describe("Clef classifier", () => {
       "clef",
       "laya",
       "kev",
+      "semif",
       "openai-decisions",
       "clm",
     ]);

@@ -82,7 +82,7 @@ For each primary request, the router:
 - **To the classifier:** bounded excerpts of recent user and assistant text, up
   to 8 recent tool results (with tool names and error flags), a short failure
   summary, and the model ID. Hosted-tool and computer-use payloads are not
-  sent. Laya, Kev, and CLM run on your own server.
+  sent. Laya, Kev, SemIf, and CLM run on your own server.
 - **To your endpoint:** the full request, with the effort update added.
 - **Logged:** metadata only (IDs, model, effort, latency, token counts), and
   only to the proxy's stdout or a decision log you enable. Prompts, tool
@@ -137,7 +137,7 @@ The packages are:
   classifier-independent router.
 - [`@reasoning-router/opencode`](packages/opencode): the OpenCode V2 plugin.
 - [`@reasoning-router/classifiers`](packages/classifiers): the
-  classifiers (Jev, Cloudflare Clef, Laya, Kev, OpenAI Decisions, and CLM),
+  classifiers (Jev, Cloudflare Clef, Laya, Kev, SemIf, OpenAI Decisions, and CLM),
   selected by `classifier.provider`.
 - [`@reasoning-router/pi`](packages/pi): the Pi extension (Claude models
   only, for now).
@@ -220,6 +220,36 @@ REASONING_ROUTER_CLASSIFIER=kev reasoning-router
 
 See [docs/proposals/kev.md](docs/proposals/kev.md) for the pinned version,
 the confirmed HTTP contract, auth, limits, and what is not yet verified.
+
+### SemIf
+
+[SemIf](https://github.com/TheoLeeCJ/SemIf-OpenJev) (formerly OpenJev) reads
+each option's probability from a frozen open model that you run yourself. The
+router only calls it over HTTP. Upstream has not released its server yet:
+`semif-serve` exists only in
+[PR #27](https://github.com/TheoLeeCJ/SemIf-OpenJev/pull/27), so run it from
+that PR's branch. That is unreleased code, and the contract may change:
+
+```bash
+SEMIF_BACKEND=torch SEMIF_MODEL=Qwen/Qwen3.5-4B \
+SEMIF_REVISION=851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a \
+SEMIF_MAX_INPUT_TOKENS=8192 semif-serve   # http://127.0.0.1:8471
+REASONING_ROUTER_CLASSIFIER=semif reasoning-router
+```
+
+`SEMIF_BACKEND` is `torch` (CUDA), `mlx` (Apple Silicon), or `llamacpp`
+(CPU, with `SEMIF_GGUF`). The default base URL is `http://127.0.0.1:8471`. A remote server must use HTTPS. Set
+`REASONING_ROUTER_CLASSIFIER_API_KEY` only if the server sets
+`SEMIF_API_KEY`. The server requires a `model`, so the router always sends
+one: `semif-latest` unless you set `REASONING_ROUTER_CLASSIFIER_MODEL` to the
+served model ID or a Jev alias.
+
+The router's bounded state can reach about 18.4k characters, which can exceed
+the server's default `SEMIF_MAX_INPUT_TOKENS` of 4096. An over-budget prompt
+fails (the server never truncates), and the router falls back, so raise it;
+8192 is unmeasured. The preset is tested against a fake `fetch` only, and
+there is no evidence yet of how well SemIf picks efforts. See
+[docs/proposals/semif.md](docs/proposals/semif.md).
 
 ### OpenAI Decisions
 
@@ -337,6 +367,10 @@ These are reversible:
 - **Kev is its own `kev` preset** with Laya's connection rules, so decision
   logs name the right service. Its default base URL is `kev.serve`'s
   `http://127.0.0.1:8008`.
+- **SemIf is its own `semif` preset** with Laya's connection rules. Its
+  default base URL is `semif-serve`'s `http://127.0.0.1:8471`, and because
+  that server requires a `model`, the preset always sends one
+  (`semif-latest` by default).
 - **CLM is likewise its own `clm` preset** with Laya's connection rules. Its
   default base URL is `clm-serve`'s `http://127.0.0.1:8700`.
 - **OpenAI Decisions base URLs are an allowlist** (the global, `us.`, and

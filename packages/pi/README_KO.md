@@ -28,11 +28,11 @@ OpenAI 모델은 아직 라우팅되지 않습니다.
 
 | 변수 | 기본값 | 용도 |
 | --- | --- | --- |
-| `REASONING_ROUTER_CLASSIFIER` | `jev` | 분류기 제공자: `jev`, `clef`, `laya`, `kev`, `openai-decisions` 또는 `clm`. |
-| `REASONING_ROUTER_CLASSIFIER_API_KEY` | 없음 | 분류기 자격 증명. `jev`, `clef`, `openai-decisions`에서 필수이며, `laya`, `kev`, `clm`에서는 선택 사항. |
-| `REASONING_ROUTER_CLASSIFIER_BASE_URL` | 제공자 기본값 | Jev 엔드포인트, Laya 서버(기본값 `http://127.0.0.1:8000`), Kev 서버(기본값 `http://127.0.0.1:8008`), OpenAI 리전 엔드포인트 또는 CLM 서버(기본값 `http://127.0.0.1:8700`). `clef`에서는 무시됨. |
+| `REASONING_ROUTER_CLASSIFIER` | `jev` | 분류기 제공자: `jev`, `clef`, `laya`, `kev`, `semif`, `openai-decisions` 또는 `clm`. |
+| `REASONING_ROUTER_CLASSIFIER_API_KEY` | 없음 | 분류기 자격 증명. `jev`, `clef`, `openai-decisions`에서 필수이며, `laya`, `kev`, `semif`, `clm`에서는 선택 사항. |
+| `REASONING_ROUTER_CLASSIFIER_BASE_URL` | 제공자 기본값 | Jev 엔드포인트, Laya 서버(기본값 `http://127.0.0.1:8000`), Kev 서버(기본값 `http://127.0.0.1:8008`), SemIf 서버(기본값 `http://127.0.0.1:8471`), OpenAI 리전 엔드포인트 또는 CLM 서버(기본값 `http://127.0.0.1:8700`). `clef`에서는 무시됨. |
 | `REASONING_ROUTER_CLASSIFIER_ACCOUNT_ID` | 없음 | Clef: Cloudflare 계정 ID. `clef`에서 필수. |
-| `REASONING_ROUTER_CLASSIFIER_MODEL` | 없음 | Clef: `clef` 또는 `clef-flash`. `clef`에서 필수. Laya: 선택적 체크포인트. Kev: 선택 사항이며 그대로 되돌려 보내기만 함. OpenAI Decisions: `gpt-6-luna`. CLM: 선택적 헤드이며 서버 기본값은 `clm-latest`. |
+| `REASONING_ROUTER_CLASSIFIER_MODEL` | 없음 | Clef: `clef` 또는 `clef-flash`. `clef`에서 필수. Laya: 선택적 체크포인트. Kev: 선택 사항이며 그대로 되돌려 보내기만 함. SemIf: 선택적 모델 ID 또는 별칭, 기본값 `semif-latest`. OpenAI Decisions: `gpt-6-luna`. CLM: 선택적 헤드이며 서버 기본값은 `clm-latest`. |
 | `REASONING_ROUTER_CLASSIFICATION_TIMEOUT_MS` | `4000` | 재시도를 포함한 전체 분류 시간 예산. |
 | `REASONING_ROUTER_MAX_RETRIES` | `1` | 재시도 가능한 오류 후의 분류기 재시도 횟수(0–10). |
 | `REASONING_ROUTER_FALLBACK_MODE` | `fixed` | 실패 시: `fixed`, `previous`(마지막으로 분류된 추론 수준, 없으면 fixed) 또는 `error`. |
