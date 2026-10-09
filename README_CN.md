@@ -82,7 +82,7 @@ npx @reasoning-router/proxy
 
 同一个模型在低强度和最高强度下的差异，可以像不同模型档位之间的差异一样大，无论是能力还是价格。
 
-你可以把编码会话中较简单的步骤路由到更便宜的模型，但切换模型会使提示词缓存失效。
+你可以把编码会话中较简单的步骤路由到更便宜的模型，但切换模型会使提示缓存失效。
 在较长的会话中，重建上下文的开销可能超过更便宜模型所节省的费用。
 
 允许在对话中途调整推理强度的模型可以保留缓存，因此整个会话可以一直使用同一个强大的模型。
@@ -103,7 +103,7 @@ npx @reasoning-router/proxy
 
 ## 设计意图
 
-`reasoning-router` 会向分类器询问智能体会话中的每一步需要多少推理强度，然后在不破坏提示词缓存的前提下，
+`reasoning-router` 会向分类器询问智能体会话中的每一步需要多少推理强度，然后在不破坏提示缓存的前提下，
 将该强度应用到发出的模型请求上。
 
 - **任意分类器。** [Jev](https://typesafe.ai/) 只是可用于判断某一步需要多少推理的若干决策模型之一，
@@ -149,7 +149,7 @@ reasoning-router
 ### Cloudflare Clef
 
 [Clef](https://developers.cloudflare.com/workers-ai/models/clef/) 运行在 Cloudflare Workers AI 上。
-创建一个具有 Workers AI 权限的 Cloudflare API 令牌，然后：
+创建一个具有 Workers AI 权限的 Cloudflare API token，然后：
 
 ```bash
 REASONING_ROUTER_CLASSIFIER=clef \
@@ -253,7 +253,7 @@ npm run check   # typecheck + lint + test
   因此类型检查和测试无需构建即可针对源码运行；已发布软件包的使用者获得的是 `dist/`。
 - **Changesets**，采用独立版本。每个更改软件包已发布行为的 PR 都要添加一个 changeset。
   发布工作流会创建一个 "Version Packages" PR，合并后会通过 npm 可信发布（trusted publishing）
-  带来源证明（provenance）地发布到 npm（不存储 npm 令牌）。
+  带来源证明（provenance）地发布到 npm（不存储 npm token）。
 - **独立代理是单独的软件包**（`@reasoning-router/proxy`，命令 `reasoning-router`），因为它需要一个分类器，
   而 core 不得依赖分类器。不带作用域的 `reasoning-router` 名称保持空闲，留给未来的统一 CLI。
 - **Zod 仅用于配置。** 插件选项、代理环境变量和分类器设置都是 Zod schema，其选项类型由这些 schema 推导而来。

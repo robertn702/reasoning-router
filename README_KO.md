@@ -6,11 +6,11 @@
 [![npm](https://img.shields.io/npm/v/%40reasoning-router%2Fproxy?label=%40reasoning-router%2Fproxy)](https://www.npmjs.com/package/@reasoning-router/proxy)
 [![MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-**품질은 그대로, 추론 비용은 줄입니다.** `reasoning-router`는 코딩 세션의 각 단계에 얼마나 많은 추론이 필요한지 분류기에 물어봅니다. 덕분에 추론 강도(effort)를 직접 바꾸지 않아도 하나의 강력한 모델로 빠른 수정과 어려운 디버깅을 모두 처리할 수 있습니다. OpenCode, Pi, Codex CLI, 그리고 로컬 프록시와 통신할 수 있는 모든 클라이언트에서 동작하며, 분류기는 원하는 것을 선택할 수 있습니다.
+**품질은 그대로, 추론 비용은 줄입니다.** `reasoning-router`는 코딩 세션의 각 단계에 얼마나 많은 추론이 필요한지 분류기에 물어봅니다. 덕분에 추론 수준(effort)을 직접 바꾸지 않아도 하나의 강력한 모델로 빠른 수정과 어려운 디버깅을 모두 처리할 수 있습니다. OpenCode, Pi, Codex CLI, 그리고 로컬 프록시와 통신할 수 있는 모든 클라이언트에서 동작하며, 분류기는 원하는 것을 선택할 수 있습니다.
 
 ![핵심 비교: 두 arm 모두 44건 중 44건을 해결했으며, Jev는 고정 high 대비 평균 입력이 20.2%, 출력이 14.3%, 시간이 8.7% 더 적습니다.](eval/results/router-core-comparison.svg)
 
-테스트한 GPT-6 Astra 작업 구성에서, Jev로 라우팅한 추론 강도와 고정 `high` 강도는 모두 **44/44회 시도**를 해결했으며, Jev는 평균적으로 출력 토큰을 **14% 적게** 사용했고(추론 포함) **9% 더 빨리** 끝났습니다. 다른 워크로드, 모델, 분류기에서는 결과가 다를 수 있습니다.
+테스트한 GPT-6 Astra 작업 구성에서, Jev로 라우팅한 추론 수준과 고정 `high` 추론 수준은 모두 **44/44회 시도**를 해결했으며, Jev는 평균적으로 출력 토큰을 **14% 적게** 사용했고(추론 포함) **9% 더 빨리** 끝났습니다. 다른 워크로드, 모델, 분류기에서는 결과가 다를 수 있습니다.
 [평가 보기](eval/results/router-consolidated-2026-09-25.md).
 
 > **상태: alpha.** 아래 패키지는 각 패키지 README의 설명에 따라 npm에서 설치하세요.
@@ -50,44 +50,44 @@ REASONING_ROUTER_UPSTREAM_API_KEY=<openai-key> \
 npx @reasoning-router/proxy
 ```
 
-분류기가 느리거나 사용할 수 없는 경우에도 요청은 폴백 강도(기본값은 `high`)로 실행됩니다.
+분류기가 느리거나 사용할 수 없는 경우에도 요청은 폴백 추론 수준(기본값은 `high`)으로 실행됩니다.
 
 ## 동작 방식
 
 라우터는 각 기본(primary) 요청마다 다음을 수행합니다.
 
-1. 최근 대화의 요약(길이 제한 있음)을 분류기에 보내면, 분류기가 추론 강도를 선택합니다(예: 이름 변경에는 `low`, 실패하는 테스트에는 `high`).
-2. 그 강도를 OpenAI의 `configuration_update` 항목 또는 Anthropic의 강도 전용 시스템 메시지로 요청에 추가합니다. 이전 업데이트는 그대로 유지되므로 프롬프트 프리픽스는 캐시 가능한 상태로 남습니다.
+1. 최근 대화의 요약(길이 제한 있음)을 분류기에 보내면, 분류기가 추론 수준을 선택합니다(예: 이름 변경에는 `low`, 실패하는 테스트에는 `high`).
+2. 그 추론 수준을 OpenAI의 `configuration_update` 항목 또는 Anthropic의 추론 수준 전용 시스템 메시지로 요청에 추가합니다. 이전 업데이트는 그대로 유지되므로 프롬프트 프리픽스는 캐시 가능한 상태로 남습니다.
 3. 요청을 모델 엔드포인트로 보내고, 응답은 변경 없이 그대로 스트리밍하여 돌려줍니다.
 
 ## 무엇이 어디로 전송되는가
 
 - **분류기로:** 최근 사용자 및 어시스턴트 텍스트의 발췌문(길이 제한 있음), 최대 8개의 최근 도구 결과(도구 이름과 오류 플래그 포함), 짧은 실패 요약, 그리고 모델 ID. 호스팅 도구와 컴퓨터 사용(computer-use) 페이로드는 전송되지 않습니다. Laya와 Kev는 사용자의 서버에서 실행됩니다.
-- **사용자의 엔드포인트로:** 강도 업데이트가 추가된 전체 요청.
-- **로그에 기록되는 것:** 메타데이터(ID, 모델, 강도, 지연 시간, 토큰 수)만 기록되며, 기록 위치도 프록시의 stdout 또는 사용자가 활성화한 결정 로그뿐입니다. 프롬프트, 도구 출력, 자격 증명, 원시 오류는 절대 기록되지 않습니다.
+- **사용자의 엔드포인트로:** 추론 수준 업데이트가 추가된 전체 요청.
+- **로그에 기록되는 것:** 메타데이터(ID, 모델, 추론 수준, 지연 시간, 토큰 수)만 기록되며, 기록 위치도 프록시의 stdout 또는 사용자가 활성화한 결정 로그뿐입니다. 프롬프트, 도구 출력, 자격 증명, 원시 오류는 절대 기록되지 않습니다.
 
 자세한 내용은 [docs/behavior.md](docs/behavior.md)를 참조하세요.
 
 ## 왜 필요한가
 
-하나의 모델이라도 낮은 강도와 최대 강도에서는 능력과 가격 모두 서로 다른 모델 등급만큼 차이가 날 수 있습니다.
+하나의 모델이라도 낮은 추론 수준과 최대 추론 수준에서는 능력과 가격 모두 서로 다른 모델 등급만큼 차이가 날 수 있습니다.
 
 코딩 세션의 쉬운 단계를 더 저렴한 모델로 라우팅할 수도 있지만, 모델을 바꾸면 프롬프트 캐시가 무효화됩니다. 긴 세션에서는 그 컨텍스트를 다시 구축하는 비용이 저렴한 모델로 절약하는 비용보다 클 수 있습니다.
 
-대화 도중에 추론 강도를 바꿀 수 있는 모델은 캐시를 유지하므로, 세션 전체를 하나의 강력한 모델로 진행할 수 있습니다. 단순한 수정과 도구 호출에는 낮은 강도를 쓰고, 높은 강도나 최대 강도는 아키텍처 설계와 어려운 디버깅을 위해 아껴둘 수 있습니다. `reasoning-router`가 각 단계의 강도를 선택합니다.
+대화 도중에 추론 수준을 바꿀 수 있는 모델은 캐시를 유지하므로, 세션 전체를 하나의 강력한 모델로 진행할 수 있습니다. 단순한 수정과 도구 호출에는 낮은 추론 수준을 쓰고, 높은 추론 수준이나 최대 추론 수준은 아키텍처 설계와 어려운 디버깅을 위해 아껴둘 수 있습니다. `reasoning-router`가 각 단계의 추론 수준을 선택합니다.
 
 ## alpha 제한 사항
 
 - **테스트 환경:** Node.js 24.x, OpenCode V2 2.0.18, Pi 1.0.4, Codex CLI 0.159.0(프록시 경유). 다른 버전도 동작할 수 있지만 테스트되지 않았습니다.
 - **모델:** [지원 모델](#supported-models)에 나열된 모델만 지원합니다. 그 외 모델은 로컬에서 거부됩니다. Pi는 Claude 모델만 라우팅합니다.
-- **분류기:** 라우터는 설정된 분류기에 물어보고 그 답을 적용할 뿐이며, 사용자의 워크로드에서 분류기가 강도를 얼마나 잘 선택하는지에 대해서는 어떠한 보장도 하지 않습니다.
+- **분류기:** 라우터는 설정된 분류기에 물어보고 그 답을 적용할 뿐이며, 사용자의 워크로드에서 분류기가 추론 수준을 얼마나 잘 선택하는지에 대해서는 어떠한 보장도 하지 않습니다.
 - **프록시:** 신뢰할 수 있는 로컬 환경에서만 사용해야 합니다. 자세한 내용은 [신뢰 모델](packages/proxy/README_KO.md#trust-model)을 참조하세요.
 
 취약점은 [SECURITY.md](SECURITY.md)에 설명된 방법으로 신고해 주세요.
 
 ## 의도
 
-`reasoning-router`는 에이전트 세션의 각 단계에 얼마나 많은 추론이 필요한지 분류기에 물어본 뒤, 프롬프트 캐시를 깨뜨리지 않고 그 강도를 나가는 모델 요청에 적용합니다.
+`reasoning-router`는 에이전트 세션의 각 단계에 얼마나 많은 추론이 필요한지 분류기에 물어본 뒤, 프롬프트 캐시를 깨뜨리지 않고 그 추론 수준을 나가는 모델 요청에 적용합니다.
 
 - **모든 분류기.** [Jev](https://typesafe.ai/)는 어떤 단계에 얼마나 많은 추론이 필요한지 분류할 수 있는 여러 결정 모델 중 하나이며, 앞으로 더 많은 모델이 공개될 예정입니다. 어떤 분류기를 쓸지는 의존성이 아니라 설정입니다. `reasoning-router`는 Jev나 어느 하나의 제공자에 의존해서는 안 됩니다.
 - **모든 하네스.** 동일한 라우팅이 OpenCode, Pi, 또는 독립 실행형 프록시와 통신할 수 있는 모든 클라이언트 안에서 동작합니다.
@@ -168,7 +168,7 @@ REASONING_ROUTER_CLASSIFIER_API_KEY="$OPENAI_API_KEY" \
 reasoning-router
 ```
 
-모킹된 응답에 대해서만 테스트되었으며, 실제 환경에서의 호환성과 강도 선택 품질은 검증되지 않았습니다. 개인정보 경계, 리전 엔드포인트, 비용은
+모킹된 응답에 대해서만 테스트되었으며, 실제 환경에서의 호환성과 추론 수준 선택 품질은 검증되지 않았습니다. 개인정보 경계, 리전 엔드포인트, 비용은
 [packages/classifiers](packages/classifiers/README_KO.md#openai-decisions-provider-openai-decisions)를
 참조하세요.
 
@@ -178,7 +178,7 @@ reasoning-router
 
 라우터는 이 목록에 없는 모델을 로컬에서 거부합니다. 사용자의 업스트림 계정에서 해당 모델을 사용할 수 있는지는 별개의 문제입니다.
 
-| 모델 | ID | API | 강도 | 기본 강도 | Pi |
+| 모델 | ID | API | 추론 수준 | 기본 추론 수준 | Pi |
 | --- | --- | --- | --- | --- | --- |
 | GPT-6 Astra | `gpt-6-astra` | Responses | low–max | medium | 미지원 |
 | GPT-6 Luna | `gpt-6-luna` | Responses | none–max | medium | 미지원 |
@@ -190,7 +190,7 @@ reasoning-router
 | Claude Opus 5 | `claude-opus-5` | Messages | low–max | high | 지원 |
 | Claude Sonnet 5.5 | `claude-sonnet-5-5` | Messages | low–max | medium | 지원 |
 
-강도는 none, low, medium, high, xhigh, max 순서입니다. 기본 강도는 모델의 기본 요청 수준 강도이며, `REASONING_ROUTER_BASE_EFFORT`로 덮어쓸 수 있습니다. 분류에 실패하면 라우터는 폴백 강도를 사용하며, 이는 모든 모델에서 기본값이 `high`이고 `REASONING_ROUTER_FALLBACK_EFFORT` 또는 플러그인의 `fallbackEffort` 옵션으로 설정할 수 있습니다. [docs/behavior.md](docs/behavior.md)와 [docs/classification-policy.md](docs/classification-policy.md)를 참조하세요. 레지스트리는
+추론 수준은 none, low, medium, high, xhigh, max 순서입니다. 기본 추론 수준은 모델의 기본 요청 단위 추론 수준이며, `REASONING_ROUTER_BASE_EFFORT`로 덮어쓸 수 있습니다. 분류에 실패하면 라우터는 폴백 추론 수준을 사용하며, 이는 모든 모델에서 기본값이 `high`이고 `REASONING_ROUTER_FALLBACK_EFFORT` 또는 플러그인의 `fallbackEffort` 옵션으로 설정할 수 있습니다. [docs/behavior.md](docs/behavior.md)와 [docs/classification-policy.md](docs/classification-policy.md)를 참조하세요. 레지스트리는
 [`packages/core/src/models.ts`](packages/core/src/models.ts)에
 있습니다.
 
@@ -217,7 +217,7 @@ npm run check   # typecheck + lint + test
 - **Changesets**를 사용하며 버전은 독립적입니다. 패키지의 게시되는 동작을 변경하는 PR마다 changeset을 추가하세요. 릴리스 워크플로가 "Version Packages" PR을 열고, 이를 머지하면 npm trusted publishing을 통해 provenance와 함께 npm에 게시됩니다(npm 토큰은 저장되지 않습니다).
 - **독립 실행형 프록시는 별도의 패키지입니다**(`@reasoning-router/proxy`, 명령어 `reasoning-router`). 분류기가 필요한 반면 core는 분류기에 의존해서는 안 되기 때문입니다. 스코프 없는 `reasoning-router` 이름은 향후 통합 CLI를 위해 비워 둡니다.
 - **Zod는 설정에만 사용합니다.** 플러그인 옵션, 프록시 환경 변수, 분류기 설정은 Zod 스키마이며, 옵션 타입은 이 스키마에서 추론됩니다. core는 공유 스키마와, 모든 문제를 하나의 오류로 보고하는 `parseConfig`를 내보냅니다. 요청 본문과 스트리밍되는 사용량은 `isRecord` 좁히기를 그대로 사용하여 알 수 없는 제공자 필드가 변경 없이 통과하도록 합니다. Zod는 core의 유일한 의존성입니다.
-- **Pi 확장 프로그램은 Pi의 가상 모델을 사용합니다.** 사고(thinking) 수준만 설정하고 강도의 배치는 Pi에 맡기므로, Pi가 대화 도중 강도 변경을 지원하는 Anthropic 모델만 지원합니다. Pi 확장 프로그램에는 옵션이 없으므로 프록시의 `REASONING_ROUTER_*` 변수를 읽고, 마지막으로 분류된 강도를 `previous` 폴백용으로 Pi의 세션에 저장합니다.
+- **Pi 확장 프로그램은 Pi의 가상 모델을 사용합니다.** 사고(thinking) 수준만 설정하고 추론 수준의 배치는 Pi에 맡기므로, Pi가 대화 도중 추론 수준 변경을 지원하는 Anthropic 모델만 지원합니다. Pi 확장 프로그램에는 옵션이 없으므로 프록시의 `REASONING_ROUTER_*` 변수를 읽고, 마지막으로 분류된 추론 수준을 `previous` 폴백용으로 Pi의 세션에 저장합니다.
 - **Laya `baseUrl`은 HTTPS이거나, 루프백에 대한 평문 HTTP만 허용합니다.** 그래서 대화 요약이 암호화되지 않은 채 네트워크를 가로지르는 일이 없습니다. 기본값은 `laya-serve`의 `http://127.0.0.1:8000`이며, 라우터는 `max_len`을 전송하지 않습니다.
 - **Kev는 별도의 `kev` 프리셋입니다.** 연결 규칙은 Laya와 동일하며, 결정 로그에 올바른 서비스 이름이 남습니다. 기본 base URL은 `kev.serve`의 `http://127.0.0.1:8008`입니다.
 - **OpenAI Decisions base URL은 허용 목록 방식입니다**(글로벌, `us.`, `eu.` OpenAI API 루트). 따라서 다른 분류기에서 남아 있던 base URL이 OpenAI 키를 받을 수 없습니다. `model`은 OpenAI가 모델을 추가하기 전까지 `gpt-6-luna`만 허용합니다.

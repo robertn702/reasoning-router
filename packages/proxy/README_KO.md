@@ -2,7 +2,7 @@
 
 [English](README.md) | [简体中文](README_CN.md) | [日本語](README_JA.md) | 한국어
 
-각 요청에 얼마나 많은 추론이 필요한지 분류기에 물어본 뒤, 프롬프트 캐시를 깨뜨리지 않고 그 강도를 나가는 Responses(`POST /v1/responses`) 또는 Anthropic Messages(`POST /v1/messages`) 요청에 적용하는 독립 실행형 HTTP 프록시입니다. Node.js 24.x가 필요합니다.
+각 요청에 얼마나 많은 추론이 필요한지 분류기에 물어본 뒤, 프롬프트 캐시를 깨뜨리지 않고 그 추론 수준을 나가는 Responses(`POST /v1/responses`) 또는 Anthropic Messages(`POST /v1/messages`) 요청에 적용하는 독립 실행형 HTTP 프록시입니다. Node.js 24.x가 필요합니다.
 
 > **Alpha.** 신뢰할 수 있는 로컬 환경에서만 사용하세요. 먼저 [신뢰 모델](#trust-model)을 읽어 보세요.
 
@@ -61,7 +61,7 @@ Codex는 자격 증명을 보내지 않으며, 프록시가 `REASONING_ROUTER_UP
 
 - OpenAI API 키만 동작합니다. ChatGPT 구독 로그인은 지원되지 않습니다.
 - `gpt-6-astra`, `gpt-6-luna`, `gpt-6-sol`, `gpt-6.1-sol`을 사용하세요. 다른 모델은 로컬에서 `400`을 받습니다.
-- 강도는 분류기가 선택합니다. Codex의 `model_reasoning_effort`와 `/model` 강도는 Codex가 계속 표시하더라도 무시됩니다.
+- 추론 수준은 분류기가 선택합니다. Codex의 `model_reasoning_effort`와 `/model` 추론 수준은 Codex가 계속 표시하더라도 무시됩니다.
 - Codex 0.159.0은 `gpt-6.1-sol`을 알지 못하므로, `model_catalog_json`을 제공하지 않으면 일반 메타데이터로 실행합니다.
 - 프록시는 60초 동안 데이터가 없으면 업스트림 스트림을 닫습니다. 긴 턴이 중간에 끊기면 `REASONING_ROUTER_UPSTREAM_IDLE_TIMEOUT_MS`를 늘리세요.
 

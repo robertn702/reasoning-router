@@ -2,7 +2,7 @@
 
 [English](README.md) | [简体中文](README_CN.md) | 日本語 | [한국어](README_KO.md)
 
-各ステップにどれだけの推論が必要かを分類器に尋ね、そのエフォートを、プロンプトキャッシュを壊すことなく送信するモデルリクエストに適用する [OpenCode](https://opencode.ai) V2 プラグインです。[`@reasoning-router/classifiers`](../classifiers/README_JA.md) のすべての分類器（Jev、Cloudflare Clef、Laya、Kev、OpenAI Decisions）を利用できます。
+各ステップにどれだけの推論が必要かを分類器に尋ね、その推論強度を、プロンプトキャッシュを壊すことなく送信するモデルリクエストに適用する [OpenCode](https://opencode.ai) V2 プラグインです。[`@reasoning-router/classifiers`](../classifiers/README_JA.md) のすべての分類器（Jev、Cloudflare Clef、Laya、Kev、OpenAI Decisions）を利用できます。
 
 > **Alpha。** OpenCode はパッケージ名を指定して npm からプラグインをインストールします。以下に示すように `plugins` に記載してください。
 
@@ -28,7 +28,7 @@
 }
 ```
 
-プラグインは、`wrap` に列挙したソースモデル（`provider/model` 形式の参照を並べた `openai` および/または `anthropic` 配列）に対してのみ、`reasoning-router/<profile>` エイリアスを登録します。ソースモデル自体には手を加えません。エイリアスへのプライマリリクエストごとに分類が 1 回行われ、分類器が失敗した場合は、フォールバックエフォート（デフォルトは `high`）でリクエストが続行されます。`decisionsLogPath` を設定すると、ルーティングされた各リクエストについて、判断を下した `classifier` を記録するメタデータのみの `ReasoningDecision` イベントが追記されます。
+プラグインは、`wrap` に列挙したソースモデル（`provider/model` 形式の参照を並べた `openai` および/または `anthropic` 配列）に対してのみ、`reasoning-router/<profile>` エイリアスを登録します。ソースモデル自体には手を加えません。エイリアスへのプライマリリクエストごとに分類が 1 回行われ、分類器が失敗した場合は、フォールバックの推論強度（デフォルトは `high`）でリクエストが続行されます。`decisionsLogPath` を設定すると、ルーティングされた各リクエストについて、判断を下した `classifier` を記録するメタデータのみの `ReasoningDecision` イベントが追記されます。
 
 OpenAI Decisions（パブリックベータ）を使う場合は、`classifier` ブロックを次のように置き換えます。
 
@@ -50,11 +50,11 @@ OpenAI Decisions（パブリックベータ）を使う場合は、`classifier` 
 | `classifier.timeoutMs` | `4000` | リトライを含む、分類全体の時間予算。 |
 | `wrap` | なし | `openai`/`anthropic` のソース参照を持つ、空でないオブジェクト。必須。 |
 | `decisionsLogPath` | オフ | `ReasoningDecision` の JSONL を書き出す絶対パス。 |
-| `baseEffort` | プロファイルのデフォルト | レスポンスで報告される、リクエストレベルのエフォート。 |
-| `fixedEffort` | なし | 分類器をスキップし、常にこのエフォートを使用します。 |
+| `baseEffort` | プロファイルのデフォルト | レスポンスで報告される、リクエストレベルの推論強度。 |
+| `fixedEffort` | なし | 分類器をスキップし、常にこの推論強度を使用します。 |
 | `maxRetries` | `1` | 一時的な分類器エラーの後の追加試行回数。 |
 | `fallbackMode` | `fixed` | `fixed`、`previous`、または `error`。 |
-| `fallbackEffort` | `high` | 分類に失敗したときに使用するエフォート。 |
+| `fallbackEffort` | `high` | 分類に失敗したときに使用する推論強度。 |
 | `maxRequestBytes` | `1048576` | リクエストボディの最大サイズ。 |
 | `maxInFlight` | `32` | 同時リクエスト数。 |
 | `upstreamHeaderTimeoutMs` | `10000` | エンドポイントのレスポンスヘッダーを待つ時間。 |
