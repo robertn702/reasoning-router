@@ -1,5 +1,11 @@
 # @reasoning-router/opencode
 
+## 0.1.6
+
+### Patch Changes
+
+- ebb839b: Raise the default request-body limit (`maxRequestBytes` and `REASONING_ROUTER_MAX_REQUEST_BYTES`) from 1 MiB to 32 MiB. Agent sessions that read several images exceeded 1 MiB and failed with `413 request_too_large` before reaching the provider.
+
 ## 0.1.5
 
 ### Patch Changes
