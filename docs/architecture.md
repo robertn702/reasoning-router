@@ -132,8 +132,8 @@ that Jev-specific names become provider-neutral.
   `{baseUrl}/v1/systemone`. `model` (`clef` or `clef-flash`) is required
   until effort selection is evaluated. Running Clef locally is out of scope;
   its backbones need a GPU.
-- **OpenAI Decisions:** OpenAI's public-beta `POST /v1/decisions`
-  ([#33](https://github.com/robertn702/reasoning-router/issues/33)), with
+- **OpenAI Decisions:** OpenAI's public-beta
+  [`POST /v1/decisions`](https://developers.openai.com/api/docs/guides/decisions), with
   classifier model `gpt-6-luna`. It is not System One: it takes text `input`
   and a `questions` array, and returns an `answers` array. The
   `openai-decisions` preset sends the state as JSON text and one `effort`
