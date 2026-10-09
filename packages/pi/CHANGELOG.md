@@ -1,5 +1,12 @@
 # @reasoning-router/pi
 
+## 0.1.4
+
+### Patch Changes
+
+- Updated dependencies [42f6f60]
+  - @reasoning-router/classifiers@0.4.0
+
 ## 0.1.3
 
 ### Patch Changes

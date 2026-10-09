@@ -1,5 +1,13 @@
 # @reasoning-router/proxy
 
+## 0.1.4
+
+### Patch Changes
+
+- 42f6f60: Add the CLM classifier (`provider: "clm"`), which calls a `clm-serve` server you run at `{baseUrl}/v1/systemone` (default `http://127.0.0.1:8700`), with Laya's connection rules. The optional `model` selects the CLM head (`clm-latest` by default). The proxy's `--help` text lists it.
+- Updated dependencies [42f6f60]
+  - @reasoning-router/classifiers@0.4.0
+
 ## 0.1.3
 
 ### Patch Changes
