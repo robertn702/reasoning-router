@@ -1,0 +1,16 @@
+{
+  "tasks": [
+    {
+      "id": "django__django-15957",
+      "repo": "https://github.com/django/django.git",
+      "commit": "f387d024fc75569d2a4a338bfda76cc2f328f627",
+      "grade": "swebench"
+    },
+    {
+      "id": "pallets__flask-5014",
+      "repo": "https://github.com/pallets/flask.git",
+      "commit": "7ee9ceb71e868944a46e1ff00b506772a53a4f1d",
+      "grade": "swebench"
+    }
+  ]
+}
