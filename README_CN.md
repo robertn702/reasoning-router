@@ -267,38 +267,7 @@ npm run check   # typecheck + lint + test
 
 完整的命令列表和仓库约定请参阅 [AGENTS.md](AGENTS.md)。
 
-## 目前的决策
-
-这些决策都是可逆的：
-
-- **npm workspaces**（`packages/*`）。
-- **Node 24、TypeScript、Vitest**。
-- **Biome** 用于 lint 和格式化，只需一个开发依赖、无需插件即可同时覆盖两者。`noNonNullAssertion`
-  已关闭，测试中的 `noExplicitAny` 也已关闭。
-- **不使用类型断言。** Biome 的 `nursery/noUnsafeTypeAssertion` 设为 error，唯一的例外是 `as const`。
-  请使用类型标注、`satisfies`、类型谓词或类型收窄，并修复被标记的代码，而不是抑制该规则。
-  该规则位于 Biome 的 nursery 中，因此其行为可能在次要版本中发生变化。
-- **Source 条件。** 软件包的 `exports` 将自定义的 `@reasoning-router/source` 条件映射到 `src/*.ts`，
-  因此类型检查和测试无需构建即可针对源码运行；已发布软件包的使用者获得的是 `dist/`。
-- **Changesets**，采用独立版本。每个更改软件包已发布行为的 PR 都要添加一个 changeset。
-  发布工作流会创建一个 "Version Packages" PR，合并后会通过 npm 可信发布（trusted publishing）
-  带来源证明（provenance）地发布到 npm（不存储 npm token）。
-- **独立代理是单独的软件包**（`@reasoning-router/proxy`，命令 `reasoning-router`），因为它需要一个分类器，
-  而 core 不得依赖分类器。不带作用域的 `reasoning-router` 名称保持空闲，留给未来的统一 CLI。
-- **Zod 仅用于配置。** 插件选项、代理环境变量和分类器设置都是 Zod schema，其选项类型由这些 schema 推导而来。
-  Core 导出共享的 schema 和 `parseConfig`，后者会在一个错误中报告所有问题。请求体和流式用量仍使用
-  `isRecord` 收窄，以便未知的提供方字段原样透传。Zod 是 core 唯一的依赖。
-- **Pi 扩展使用 Pi 的虚拟模型。** 它只设置思考级别，由 Pi 负责放置强度，因此只支持 Pi 为其提供对话中途强度
-  调整的 Anthropic 模型。它读取代理的 `REASONING_ROUTER_*` 变量（因为 Pi 扩展没有选项），
-  并将最近一次分类得到的强度存储在 Pi 的会话中，以供 `previous` 回退使用。
-- **Laya 的 `baseUrl` 为 HTTPS，或仅限回环地址的纯 HTTP**，因此对话摘要绝不会在网络上以未加密方式传输。
-  默认值是 `laya-serve` 的 `http://127.0.0.1:8000`，且路由器不发送 `max_len`。
-- **Kev 是独立的 `kev` 预设**，沿用 Laya 的连接规则，以便决策日志标明正确的服务。
-  其默认基础 URL 是 `kev.serve` 的 `http://127.0.0.1:8008`。
-- **CLM 同样是独立的 `clm` 预设**，沿用 Laya 的连接规则。其默认基础 URL 是 `clm-serve` 的
-  `http://127.0.0.1:8700`。
-- **OpenAI Decisions 的基础 URL 采用允许列表**（全球、`us.` 和 `eu.` 的 OpenAI API 根地址），
-  因此沿用自其他分类器的基础 URL 无法接收到 OpenAI 密钥。在 OpenAI 增加新模型之前，`model` 只接受 `gpt-6-luna`。
+可逆的设计和工具决策记录在 [docs/architecture.md](docs/architecture.md#decisions) 中。
 
 ## 许可证
 

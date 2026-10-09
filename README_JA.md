@@ -229,23 +229,7 @@ npm run check   # typecheck + lint + test
 
 コマンドの全一覧とリポジトリの規約については [AGENTS.md](AGENTS.md) を参照してください。
 
-## これまでの決定事項
-
-以下は元に戻せる決定です。
-
-- **npm workspaces**（`packages/*`）。
-- **Node 24、TypeScript、Vitest**。
-- **Biome** による lint とフォーマット。1 つの開発依存関係でプラグインなしに両方をカバーします。`noNonNullAssertion` は無効、`noExplicitAny` はテストでは無効です。
-- **型アサーションは使用しません。** Biome の `nursery/noUnsafeTypeAssertion` はエラーとして扱い、例外は `as const` のみです。アノテーション、`satisfies`、型述語、絞り込みを使い、指摘されたコードはルールを抑制せずに修正してください。このルールは Biome の nursery にあるため、マイナーリリースで挙動が変わる可能性があります。
-- **ソース条件。** パッケージの `exports` はカスタムの `@reasoning-router/source` 条件を `src/*.ts` にマップします。そのため、型チェックとテストはビルドなしでソースに対して実行され、公開パッケージの利用者には `dist/` が提供されます。
-- **Changesets**（バージョンは独立）。パッケージの公開される挙動を変更する PR ごとに changeset を追加します。リリースワークフローが "Version Packages" PR を作成し、それをマージすると、npm の trusted publishing により provenance 付きで npm に公開されます（npm トークンは保存されません）。
-- **スタンドアロンプロキシは独立したパッケージです**（`@reasoning-router/proxy`、コマンドは `reasoning-router`）。分類器を必要とする一方で、core は分類器に依存してはならないためです。スコープなしの `reasoning-router` という名前は、将来の統合 CLI のために空けてあります。
-- **Zod は設定のみに使用します。** プラグインオプション、プロキシの環境変数、分類器の設定は Zod スキーマであり、オプションの型はそれらのスキーマから推論されます。core は共有スキーマと、すべての問題を 1 つのエラーにまとめて報告する `parseConfig` をエクスポートします。リクエストボディとストリーミングされる使用量は `isRecord` による絞り込みのままとし、未知のプロバイダーフィールドがそのまま通過するようにしています。Zod は core の唯一の依存関係です。
-- **Pi 拡張機能は Pi の仮想モデルを使用します。** 設定するのは思考レベルのみで、推論強度の配置は Pi に任せるため、Pi が会話途中の推論強度を提供する Anthropic モデルのみをサポートします。Pi 拡張機能にはオプションがないため、プロキシの `REASONING_ROUTER_*` 変数を読み取り、最後に分類された推論強度を `previous` フォールバック用に Pi のセッションへ保存します。
-- **Laya の `baseUrl` は HTTPS か、ループバック宛ての平文 HTTP のみです。** これにより、会話の要約がネットワーク上を暗号化なしで流れることはありません。デフォルトは `laya-serve` の `http://127.0.0.1:8000` で、ルーターは `max_len` を送信しません。
-- **Kev は独自の `kev` プリセットです。** 接続ルールは Laya と同じで、判断ログに正しいサービス名が記録されます。デフォルトのベース URL は `kev.serve` の `http://127.0.0.1:8008` です。
-- **CLM も独自の `clm` プリセットです。** 接続ルールは Laya と同じです。デフォルトのベース URL は `clm-serve` の `http://127.0.0.1:8700` です。
-- **OpenAI Decisions のベース URL は許可リスト方式です**（グローバル、`us.`、`eu.` の OpenAI API ルート）。そのため、別の分類器の設定から残ったベース URL に OpenAI キーが送られることはありません。`model` は、OpenAI がモデルを追加するまで `gpt-6-luna` のみを受け付けます。
+元に戻せる設計とツールの決定事項は [docs/architecture.md](docs/architecture.md#decisions) に記録されています。
 
 ## ライセンス
 

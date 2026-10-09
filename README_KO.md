@@ -229,23 +229,7 @@ npm run check   # typecheck + lint + test
 
 전체 명령어 목록과 저장소 규칙은 [AGENTS.md](AGENTS.md)를 참조하세요.
 
-## 지금까지의 결정 사항
-
-다음은 되돌릴 수 있는 결정입니다.
-
-- **npm workspaces** (`packages/*`).
-- **Node 24, TypeScript, Vitest**.
-- **Biome**으로 lint와 포맷을 처리합니다. 하나의 개발 의존성으로 플러그인 없이 둘 다 다룹니다. `noNonNullAssertion`은 꺼져 있고, `noExplicitAny`는 테스트에서 꺼져 있습니다.
-- **타입 단언을 사용하지 않습니다.** Biome의 `nursery/noUnsafeTypeAssertion`은 오류로 처리하며, 예외는 `as const`뿐입니다. 어노테이션, `satisfies`, 타입 서술자(type predicate), 좁히기(narrowing)를 사용하고, 지적된 코드는 규칙을 억제하지 말고 수정하세요. 이 규칙은 Biome의 nursery에 있으므로 마이너 릴리스에서 동작이 바뀔 수 있습니다.
-- **소스 조건.** 패키지 `exports`는 커스텀 `@reasoning-router/source` 조건을 `src/*.ts`에 매핑하므로, 타입 검사와 테스트는 빌드 없이 소스를 대상으로 실행됩니다. 게시된 패키지를 사용하는 쪽에는 `dist/`가 제공됩니다.
-- **Changesets**를 사용하며 버전은 독립적입니다. 패키지의 게시되는 동작을 변경하는 PR마다 changeset을 추가하세요. 릴리스 워크플로가 "Version Packages" PR을 열고, 이를 머지하면 npm trusted publishing을 통해 provenance와 함께 npm에 게시됩니다(npm 토큰은 저장되지 않습니다).
-- **독립 실행형 프록시는 별도의 패키지입니다**(`@reasoning-router/proxy`, 명령어 `reasoning-router`). 분류기가 필요한 반면 core는 분류기에 의존해서는 안 되기 때문입니다. 스코프 없는 `reasoning-router` 이름은 향후 통합 CLI를 위해 비워 둡니다.
-- **Zod는 설정에만 사용합니다.** 플러그인 옵션, 프록시 환경 변수, 분류기 설정은 Zod 스키마이며, 옵션 타입은 이 스키마에서 추론됩니다. core는 공유 스키마와, 모든 문제를 하나의 오류로 보고하는 `parseConfig`를 내보냅니다. 요청 본문과 스트리밍되는 사용량은 `isRecord` 좁히기를 그대로 사용하여 알 수 없는 제공자 필드가 변경 없이 통과하도록 합니다. Zod는 core의 유일한 의존성입니다.
-- **Pi 확장 프로그램은 Pi의 가상 모델을 사용합니다.** 사고(thinking) 수준만 설정하고 추론 수준의 배치는 Pi에 맡기므로, Pi가 대화 도중 추론 수준 변경을 지원하는 Anthropic 모델만 지원합니다. Pi 확장 프로그램에는 옵션이 없으므로 프록시의 `REASONING_ROUTER_*` 변수를 읽고, 마지막으로 분류된 추론 수준을 `previous` 폴백용으로 Pi의 세션에 저장합니다.
-- **Laya `baseUrl`은 HTTPS이거나, 루프백에 대한 평문 HTTP만 허용합니다.** 그래서 대화 요약이 암호화되지 않은 채 네트워크를 가로지르는 일이 없습니다. 기본값은 `laya-serve`의 `http://127.0.0.1:8000`이며, 라우터는 `max_len`을 전송하지 않습니다.
-- **Kev는 별도의 `kev` 프리셋입니다.** 연결 규칙은 Laya와 동일하며, 결정 로그에 올바른 서비스 이름이 남습니다. 기본 base URL은 `kev.serve`의 `http://127.0.0.1:8008`입니다.
-- **CLM도 별도의 `clm` 프리셋입니다.** 연결 규칙은 Laya와 동일합니다. 기본 base URL은 `clm-serve`의 `http://127.0.0.1:8700`입니다.
-- **OpenAI Decisions base URL은 허용 목록 방식입니다**(글로벌, `us.`, `eu.` OpenAI API 루트). 따라서 다른 분류기에서 남아 있던 base URL이 OpenAI 키를 받을 수 없습니다. `model`은 OpenAI가 모델을 추가하기 전까지 `gpt-6-luna`만 허용합니다.
+되돌릴 수 있는 설계 및 도구 결정은 [docs/architecture.md](docs/architecture.md#decisions)에 기록되어 있습니다.
 
 ## 라이선스
 
