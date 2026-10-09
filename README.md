@@ -2,9 +2,22 @@
 
 Harness-agnostic adaptive reasoning effort for coding agents.
 
-> **Status: alpha.** The packages below are a port of
-> `opencode-jev-router`. Install them from npm as described in each package
-> README.
+> **Status: alpha.** Install the packages below from npm as described in each
+> package README.
+
+## Why
+
+A single model at low effort and at max effort can differ as much as separate
+model tiers do, in both capability and price.
+
+You could route easy steps of a coding session to a cheaper model, but
+switching models invalidates the prompt cache. On a long session, rebuilding
+that context can cost more than the cheaper model saves.
+
+Models that let you change reasoning effort mid-conversation keep the cache,
+so a session can stay on one strong model. It can use low effort for simple
+edits and tool calls and save high or max for architecture and hard debugging.
+`reasoning-router` picks the effort for each step.
 
 ## Alpha limitations
 
@@ -23,20 +36,16 @@ Report vulnerabilities as described in [SECURITY.md](SECURITY.md).
 
 ## Intent
 
-[`opencode-jev-router`](https://github.com/robertn702/opencode-jev-router) asks
-[Jev](https://typesafe.ai/) how much reasoning each step of an OpenCode session
-needs, then applies that effort to the outgoing model request without breaking
-the prompt cache. It works, but only inside OpenCode (or behind its standalone
-proxy).
+`reasoning-router` asks a classifier how much reasoning each step of an agent
+session needs, then applies that effort to the outgoing model request without
+breaking the prompt cache.
 
-`reasoning-router` generalizes that idea in two directions:
-
-- **Any classifier.** Jev is one of several decision models that can classify
-  how much reasoning a step needs, and more are being released. Which
-  classifier to use is configuration, not a dependency: `reasoning-router`
-  must not depend on Jev or any single provider.
-- **Any harness.** The same routing should run inside other agent harnesses,
-  not only OpenCode.
+- **Any classifier.** [Jev](https://typesafe.ai/) is one of several decision
+  models that can classify how much reasoning a step needs, and more are being
+  released. Which classifier to use is configuration, not a dependency:
+  `reasoning-router` must not depend on Jev or any single provider.
+- **Any harness.** The same routing runs inside OpenCode, Pi, or any client
+  that can talk to the standalone proxy.
 
 The packages are:
 
@@ -88,11 +97,9 @@ See [AGENTS.md](AGENTS.md) for the full command list and repo conventions.
 These are reversible:
 
 - **npm workspaces** (`packages/*`).
-- **Node 24, TypeScript, Vitest**, matching `opencode-jev-router`.
-- **Biome** for lint and format. `opencode-jev-router` has no linter or
-  formatter; Biome covers both with one dev dependency and no plugins.
-  `noNonNullAssertion` is off, and `noExplicitAny` is off in tests, to keep
-  ported code close to its source.
+- **Node 24, TypeScript, Vitest**.
+- **Biome** for lint and format, covering both with one dev dependency and no
+  plugins. `noNonNullAssertion` is off, and `noExplicitAny` is off in tests.
 - **No type assertions.** Biome's `nursery/noUnsafeTypeAssertion` is an
   error, and `as const` is the only exception. Use annotations, `satisfies`,
   type predicates, or narrowing, and fix flagged code instead of suppressing
