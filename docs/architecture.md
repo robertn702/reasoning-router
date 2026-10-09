@@ -183,6 +183,55 @@ that Jev-specific names become provider-neutral.
   interface. A classifier that runs a local model (such as Laya) also needs
   the user's own server running.
 
+## Decisions
+
+These are reversible:
+
+- **npm workspaces** (`packages/*`).
+- **Node 24, TypeScript, Vitest**.
+- **Biome** for lint and format, covering both with one dev dependency and no
+  plugins. `noNonNullAssertion` is off, and `noExplicitAny` is off in tests.
+- **No type assertions.** Biome's `nursery/noUnsafeTypeAssertion` is an
+  error, and `as const` is the only exception. Use annotations, `satisfies`,
+  type predicates, or narrowing, and fix flagged code instead of suppressing
+  the rule. The rule is in Biome's nursery, so its behavior may change in a
+  minor release.
+- **Source condition.** Package `exports` map the custom
+  `@reasoning-router/source` condition to `src/*.ts`, so typecheck and tests
+  run against source without a build; published consumers get `dist/`.
+- **Changesets** with independent versions. Add a changeset to each PR
+  that changes a package's published behavior. The release workflow opens a
+  "Version Packages" PR, and merging it publishes to npm with provenance
+  through npm trusted publishing (no npm token is stored).
+- **The standalone proxy is its own package** (`@reasoning-router/proxy`,
+  command `reasoning-router`), since it needs a classifier and core must not
+  depend on one. The unscoped `reasoning-router` name stays free for a future
+  umbrella CLI.
+- **Zod for configuration only.** Plugin options, proxy environment
+  variables, and classifier settings are Zod schemas, and their option types
+  are inferred from those schemas. Core exports the shared schemas and `parseConfig`, which
+  reports every problem in one error. Request bodies and streamed usage stay on
+  `isRecord` narrowing so unknown provider fields pass through unchanged. Zod
+  is core's only dependency.
+- **The Pi extension uses Pi's virtual models.** It sets only the thinking
+  level and lets Pi place effort, so it supports only Anthropic models that
+  Pi gives mid-conversation effort. It reads the proxy's `REASONING_ROUTER_*`
+  variables, since Pi extensions have no options, and stores the last
+  classified effort in Pi's session for `previous` fallback.
+- **Laya `baseUrl` is HTTPS, or plain HTTP to loopback only**, so the
+  conversation summary never crosses a network unencrypted. The default is
+  `laya-serve`'s `http://127.0.0.1:8000`, and the router doesn't send
+  `max_len`.
+- **Kev is its own `kev` preset** with Laya's connection rules, so decision
+  logs name the right service. Its default base URL is `kev.serve`'s
+  `http://127.0.0.1:8008`.
+- **CLM is likewise its own `clm` preset** with Laya's connection rules. Its
+  default base URL is `clm-serve`'s `http://127.0.0.1:8700`.
+- **OpenAI Decisions base URLs are an allowlist** (the global, `us.`, and
+  `eu.` OpenAI API roots), so a base URL left over from another classifier
+  cannot receive the OpenAI key. `model` accepts only `gpt-6-luna` until
+  OpenAI adds models.
+
 ## Open questions
 
 ### Which harnesses to target

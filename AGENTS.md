@@ -89,7 +89,7 @@ before starting an agent. The script runs `npm ci`, copies local `.env*` files
 - Make the smallest change that works. Add no speculative abstractions and no
   configuration without a current requirement.
 - Record reversible decisions in the commit message and, when they affect
-  contributors, in `README.md`.
+  contributors, under "Decisions" in `docs/architecture.md`.
 - Every `README.md` has a Simplified Chinese `README_CN.md`, a Japanese
   `README_JA.md`, and a Korean `README_KO.md` beside it. Any change to a
   README must make the same change to every translation in the same commit,
