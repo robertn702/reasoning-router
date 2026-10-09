@@ -50,6 +50,18 @@ REASONING_ROUTER_UPSTREAM_API_KEY=<openai-key> \
 npx @reasoning-router/proxy
 ```
 
+Codex では、`~/.codex/config.toml` にプロキシをプロバイダーとして追加します。推論強度は分類器が選ぶため、Codex 自身の推論強度設定は無視されます:
+
+```toml
+model = "gpt-6-astra"
+model_provider = "reasoning-router"
+
+[model_providers.reasoning-router]
+name = "reasoning-router"
+base_url = "http://127.0.0.1:4320/v1"
+wire_api = "responses"
+```
+
 分類器が遅い場合や利用できない場合でも、リクエストはフォールバックの推論強度（デフォルトは `high`）で実行されます。
 
 ## 仕組み

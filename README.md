@@ -61,6 +61,19 @@ REASONING_ROUTER_UPSTREAM_API_KEY=<openai-key> \
 npx @reasoning-router/proxy
 ```
 
+For Codex, add the proxy as a provider in `~/.codex/config.toml`. The
+classifier picks the effort, so Codex's own effort setting is ignored:
+
+```toml
+model = "gpt-6-astra"
+model_provider = "reasoning-router"
+
+[model_providers.reasoning-router]
+name = "reasoning-router"
+base_url = "http://127.0.0.1:4320/v1"
+wire_api = "responses"
+```
+
 If the classifier is slow or unavailable, the request still runs, at the
 fallback effort (`high` by default).
 
