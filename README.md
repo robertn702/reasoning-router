@@ -1,9 +1,92 @@
 # reasoning-router
 
-Harness-agnostic adaptive reasoning effort for coding agents.
+[![CI](https://github.com/robertn702/reasoning-router/actions/workflows/ci.yml/badge.svg)](https://github.com/robertn702/reasoning-router/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/%40reasoning-router%2Fproxy?label=%40reasoning-router%2Fproxy)](https://www.npmjs.com/package/@reasoning-router/proxy)
+[![MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+**Keep the quality. Spend less reasoning.** `reasoning-router` asks a
+classifier how much reasoning each step of a coding session needs, so one
+strong model handles quick edits and hard debugging without you switching
+effort levels by hand. It works in OpenCode, Pi, Codex CLI, and any client
+that can talk to a local proxy, with the classifier you choose.
+
+![Core comparison: both arms solve 44 of 44; Jev averages 20.2% less input, 14.3% less output, and 8.7% less time than fixed high.](eval/results/router-core-comparison.svg)
+
+Across the tested GPT-6 Astra task mix, Jev-routed effort and fixed `high`
+effort each solved **44/44 attempts**, and Jev used **14% fewer output tokens**
+(including reasoning) and finished **9% faster** on average. Results on other
+workloads, models, and classifiers may differ.
+[See the evaluation](eval/results/router-consolidated-2026-09-25.md).
 
 > **Status: alpha.** Install the packages below from npm as described in each
 > package README.
+
+## Quick start
+
+Pick your harness. Each example uses Jev with a
+[TypeSafe](https://typesafe.ai/) key; see [Classifiers](#classifiers) for the
+others.
+
+**OpenCode** — add the plugin to `opencode.json`
+([full guide](packages/opencode)):
+
+```jsonc
+{
+  "plugins": [{ "package": "@reasoning-router/opencode", "options": {
+    "classifier": { "provider": "jev", "apiKey": "{env:REASONING_ROUTER_CLASSIFIER_API_KEY}" },
+    "wrap": { "openai": ["openai/gpt-6-astra"] }
+  }}],
+  "model": "reasoning-router/gpt-6-astra"
+}
+```
+
+**Pi** — Claude models only ([full guide](packages/pi)):
+
+```bash
+export REASONING_ROUTER_CLASSIFIER_API_KEY=<typesafe-key>
+pi install npm:@reasoning-router/pi
+pi --model reasoning-router/claude-opus-5-5
+```
+
+**Codex CLI or any Responses/Messages client** — run the local proxy and point
+the client at `http://127.0.0.1:4320/v1` ([full guide](packages/proxy)):
+
+```bash
+REASONING_ROUTER_CLASSIFIER_API_KEY=<typesafe-key> \
+REASONING_ROUTER_UPSTREAM_BASE_URL=https://api.openai.com/v1 \
+REASONING_ROUTER_UPSTREAM_AUTH=bearer \
+REASONING_ROUTER_UPSTREAM_API_KEY=<openai-key> \
+npx @reasoning-router/proxy
+```
+
+If the classifier is slow or unavailable, the request still runs, at the
+fallback effort (`high` by default).
+
+## How it works
+
+For each primary request, the router:
+
+1. Sends a bounded summary of the recent conversation to the classifier, which
+   picks a reasoning effort (for example `low` for a rename, `high` for a
+   failing test).
+2. Adds that effort to the request as an OpenAI `configuration_update` item or
+   an Anthropic effort-only system message. Earlier updates stay in place, so
+   the prompt prefix stays cacheable.
+3. Sends the request to your model endpoint and streams the response back
+   unchanged.
+
+## What is sent where
+
+- **To the classifier:** bounded excerpts of recent user and assistant text, up
+  to 8 recent tool results (with tool names and error flags), a short failure
+  summary, and the model ID. Hosted-tool and computer-use payloads are not
+  sent. Laya and Kev run on your own server.
+- **To your endpoint:** the full request, with the effort update added.
+- **Logged:** metadata only (IDs, model, effort, latency, token counts), and
+  only to the proxy's stdout or a decision log you enable. Prompts, tool
+  output, credentials, and raw errors are never logged.
+
+See [docs/behavior.md](docs/behavior.md) for the details.
 
 ## Why
 
