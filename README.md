@@ -56,6 +56,13 @@ The default base URL is `http://127.0.0.1:8000`. See
 [docs/environment.md](docs/environment.md) for a remote server, a key, or a
 checkpoint.
 
+## SemIf
+
+[SemIf](https://github.com/TheoLeeCJ/SemIf-OpenJev) is not supported yet.
+Its released code has no HTTP server. See
+[docs/proposals/semif.md](docs/proposals/semif.md) for the upstream
+prerequisite and what is and isn't known about its decision quality.
+
 ## Development
 
 Requires Node.js 24.x.
