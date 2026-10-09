@@ -89,7 +89,7 @@ describe("Jev connection", () => {
 describe("resource limit configuration", () => {
   it("uses bounded defaults and accepts positive overrides", () => {
     const defaults = load({});
-    expect(defaults.maxRequestBytes).toBe(1_048_576);
+    expect(defaults.maxRequestBytes).toBe(33_554_432);
     expect(defaults.maxInFlight).toBe(32);
     expect(defaults.upstreamHeaderTimeoutMs).toBe(10_000);
     expect(defaults.upstreamIdleTimeoutMs).toBe(60_000);

@@ -119,7 +119,7 @@ const envSchema = z
     ),
     REASONING_ROUTER_MAX_REQUEST_BYTES: positiveInteger(
       "REASONING_ROUTER_MAX_REQUEST_BYTES",
-      1_048_576,
+      33_554_432,
     ),
     REASONING_ROUTER_MAX_IN_FLIGHT: positiveInteger(
       "REASONING_ROUTER_MAX_IN_FLIGHT",

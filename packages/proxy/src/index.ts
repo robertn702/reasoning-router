@@ -47,7 +47,7 @@ Environment:
   REASONING_ROUTER_FALLBACK_MODE    fixed (default), previous, or error
   REASONING_ROUTER_FALLBACK_EFFORT  Backup effort (default: high)
   REASONING_ROUTER_DECISIONS_LOG_PATH  Optional absolute path for local decision JSONL
-  REASONING_ROUTER_MAX_REQUEST_BYTES  Maximum POST body bytes (default: 1048576)
+  REASONING_ROUTER_MAX_REQUEST_BYTES  Maximum POST body bytes (default: 33554432)
   REASONING_ROUTER_MAX_IN_FLIGHT      Maximum active proxy requests (default: 32)
   REASONING_ROUTER_UPSTREAM_HEADER_TIMEOUT_MS  Upstream header deadline (default: 10000)
   REASONING_ROUTER_UPSTREAM_IDLE_TIMEOUT_MS    Upstream response idle deadline (default: 60000)

@@ -55,7 +55,7 @@ OpenAI Decisions（パブリックベータ）を使う場合は、`classifier` 
 | `maxRetries` | `1` | 一時的な分類器エラーの後の追加試行回数。 |
 | `fallbackMode` | `fixed` | `fixed`、`previous`、または `error`。 |
 | `fallbackEffort` | `high` | 分類に失敗したときに使用する推論強度。 |
-| `maxRequestBytes` | `1048576` | リクエストボディの最大サイズ。 |
+| `maxRequestBytes` | `33554432` | リクエストボディの最大サイズ。 |
 | `maxInFlight` | `32` | 同時リクエスト数。 |
 | `upstreamHeaderTimeoutMs` | `10000` | エンドポイントのレスポンスヘッダーを待つ時間。 |
 | `upstreamIdleTimeoutMs` | `60000` | ストリーミングされるチャンク間の最大の間隔。 |

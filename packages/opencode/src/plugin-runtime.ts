@@ -52,7 +52,7 @@ const pluginOptionsSchema = z.object({
   fixedEffort: universalEffort(
     "fixedEffort must be supported by every model",
   ).optional(),
-  maxRequestBytes: positiveInteger("maxRequestBytes", 1_048_576),
+  maxRequestBytes: positiveInteger("maxRequestBytes", 33_554_432),
   maxInFlight: positiveInteger("maxInFlight", 32),
   upstreamHeaderTimeoutMs: positiveInteger("upstreamHeaderTimeoutMs", 10_000),
   upstreamIdleTimeoutMs: positiveInteger("upstreamIdleTimeoutMs", 60_000),

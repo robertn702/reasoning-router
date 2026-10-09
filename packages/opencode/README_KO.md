@@ -55,7 +55,7 @@ OpenAI Decisions(공개 베타)를 사용하려면 `classifier` 블록을 다음
 | `maxRetries` | `1` | 일시적인 분류기 오류 후의 추가 시도 횟수. |
 | `fallbackMode` | `fixed` | `fixed`, `previous` 또는 `error`. |
 | `fallbackEffort` | `high` | 분류에 실패했을 때 사용하는 추론 수준. |
-| `maxRequestBytes` | `1048576` | 요청 본문의 최대 크기. |
+| `maxRequestBytes` | `33554432` | 요청 본문의 최대 크기. |
 | `maxInFlight` | `32` | 동시 요청 수. |
 | `upstreamHeaderTimeoutMs` | `10000` | 엔드포인트 응답 헤더를 기다리는 시간. |
 | `upstreamIdleTimeoutMs` | `60000` | 스트리밍 청크 사이의 최대 간격. |
