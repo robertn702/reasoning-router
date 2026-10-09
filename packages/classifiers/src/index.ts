@@ -3,6 +3,7 @@ import { clefClassifierProvider } from "./clef.js";
 import { jevClassifierProvider } from "./jev.js";
 import { kevClassifierProvider } from "./kev.js";
 import { layaClassifierProvider } from "./laya.js";
+import { openAIDecisionsClassifierProvider } from "./openai-decisions.js";
 
 export {
   type ClefConnection,
@@ -31,6 +32,12 @@ export {
   layaClassifierProvider,
   resolveLayaConnection,
 } from "./laya.js";
+export {
+  createOpenAIDecisionsTransport,
+  type OpenAIDecisionsConnection,
+  openAIDecisionsClassifierProvider,
+  resolveOpenAIDecisionsConnection,
+} from "./openai-decisions.js";
 export { ClassifierRequestError, type Fetch } from "./systemone.js";
 
 /** Every bundled classifier, for `createConfiguredSelector`. */
@@ -39,4 +46,5 @@ export const classifierProviders: readonly ClassifierProvider[] = [
   clefClassifierProvider,
   layaClassifierProvider,
   kevClassifierProvider,
+  openAIDecisionsClassifierProvider,
 ];

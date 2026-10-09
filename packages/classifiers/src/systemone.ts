@@ -39,7 +39,7 @@ const systemOneSchema = z.object({
   answers: z.object({ effort: z.object({ choice: z.unknown() }) }),
 });
 
-const DESCRIPTIONS: Record<Effort, string> = {
+export const DESCRIPTIONS: Record<Effort, string> = {
   none: "Mechanical work that does not benefit from reasoning.",
   low: "Simple, mechanical, or well-understood work.",
   medium: "Routine engineering work needing some reasoning.",
@@ -49,7 +49,7 @@ const DESCRIPTIONS: Record<Effort, string> = {
 };
 
 /** POSTs a JSON body; resolves the parsed response, or `undefined` when it is not JSON. */
-async function postJson(request: {
+export async function postJson(request: {
   fetch: Fetch | undefined;
   url: string;
   apiKey: string | undefined;
