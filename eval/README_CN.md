@@ -1,6 +1,6 @@
 # 评测
 
-[English](README.md) | 简体中文 | [日本語](README_JA.md)
+[English](README.md) | 简体中文 | [日本語](README_JA.md) | [한국어](README_KO.md)
 
 由分类器路由的推理强度，能否在保持解决率的同时，比固定强度花费更少的推理？这些报告在来自
 [SWE-bench Verified](https://huggingface.co/datasets/SWE-bench/SWE-bench_Verified)

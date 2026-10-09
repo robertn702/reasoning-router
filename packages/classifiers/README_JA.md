@@ -1,6 +1,6 @@
 # @reasoning-router/classifiers
 
-[English](README.md) | [简体中文](README_CN.md) | 日本語
+[English](README.md) | [简体中文](README_CN.md) | 日本語 | [한국어](README_KO.md)
 
 reasoning-router の推論エフォート分類器です。各分類器は、対象モデルがサポートするエフォートに限定した `choice` 質問を 1 つ、プレーンな `fetch` で判断モデルに尋ねます。OpenAI Decisions のみ、独自のリクエスト形式を使用します。
 

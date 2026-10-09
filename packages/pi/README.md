@@ -1,6 +1,6 @@
 # @reasoning-router/pi
 
-English | [简体中文](README_CN.md) | [日本語](README_JA.md)
+English | [简体中文](README_CN.md) | [日本語](README_JA.md) | [한국어](README_KO.md)
 
 A [Pi](https://pi.dev) extension that asks a classifier how much reasoning
 each Claude request needs and lets Pi place that effort without breaking the

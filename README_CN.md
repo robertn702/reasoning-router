@@ -1,6 +1,6 @@
 # reasoning-router
 
-[English](README.md) | 简体中文 | [日本語](README_JA.md)
+[English](README.md) | 简体中文 | [日本語](README_JA.md) | [한국어](README_KO.md)
 
 [![CI](https://github.com/robertn702/reasoning-router/actions/workflows/ci.yml/badge.svg)](https://github.com/robertn702/reasoning-router/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/%40reasoning-router%2Fproxy?label=%40reasoning-router%2Fproxy)](https://www.npmjs.com/package/@reasoning-router/proxy)

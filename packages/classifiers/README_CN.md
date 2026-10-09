@@ -1,6 +1,6 @@
 # @reasoning-router/classifiers
 
-[English](README.md) | 简体中文 | [日本語](README_JA.md)
+[English](README.md) | 简体中文 | [日本語](README_JA.md) | [한국어](README_KO.md)
 
 reasoning-router 的推理强度分类器。每个分类器都通过普通的 `fetch` 向决策模型提出一个 `choice` 问题，
 选项仅限目标模型所支持的强度。OpenAI Decisions 使用它自己的请求格式。

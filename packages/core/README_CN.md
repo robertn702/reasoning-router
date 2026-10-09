@@ -1,6 +1,6 @@
 # @reasoning-router/core
 
-[English](README.md) | 简体中文 | [日本語](README_JA.md)
+[English](README.md) | 简体中文 | [日本語](README_JA.md) | [한국어](README_KO.md)
 
 reasoning-router 中与 harness 和分类器无关的共享部分：请求校验、模型注册表、面向 Responses 和
 Anthropic Messages 且保持缓存的强度改写、缓存谱系（cache lineage）、带重试和回退的分类器选择、

@@ -90,10 +90,11 @@ before starting an agent. The script runs `npm ci`, copies local `.env*` files
   configuration without a current requirement.
 - Record reversible decisions in the commit message and, when they affect
   contributors, in `README.md`.
-- Every `README.md` has a Simplified Chinese `README_CN.md` and a Japanese
-  `README_JA.md` beside it. Any change to a README must make the same change
-  to both translations in the same commit, and a new README needs both
-  translations. Translations link to each other's `_CN`/`_JA` counterparts.
+- Every `README.md` has a Simplified Chinese `README_CN.md`, a Japanese
+  `README_JA.md`, and a Korean `README_KO.md` beside it. Any change to a
+  README must make the same change to every translation in the same commit,
+  and a new README needs all three translations. Translations link to each
+  other's `_CN`/`_JA`/`_KO` counterparts.
   In a translation, put `<a id="..."></a>` with the English anchor above any
   heading that is linked to, so `#fragment` links keep working, and point
   links to a package directory at that directory's translated README.

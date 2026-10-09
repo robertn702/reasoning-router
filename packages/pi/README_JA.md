@@ -1,6 +1,6 @@
 # @reasoning-router/pi
 
-[English](README.md) | [简体中文](README_CN.md) | 日本語
+[English](README.md) | [简体中文](README_CN.md) | 日本語 | [한국어](README_KO.md)
 
 各 Claude リクエストにどれだけの推論が必要かを分類器に尋ね、そのエフォートをプロンプトキャッシュを壊すことなく Pi に配置させる [Pi](https://pi.dev) 拡張機能です。Pi 1.0.0 以降と Node.js 24.x が必要です。
 
