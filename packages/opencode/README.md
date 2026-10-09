@@ -4,7 +4,7 @@ An [OpenCode](https://opencode.ai) V2 plugin that asks a classifier how much
 reasoning each step needs, then applies that effort to the outgoing model
 request without breaking the prompt cache. Every classifier in
 [`@reasoning-router/classifiers`](../classifiers) (Jev, Cloudflare Clef,
-and Laya) is available.
+Laya, and Kev) is available.
 
 > **Alpha.** OpenCode installs the plugin from npm by package name; list it
 > under `plugins` as shown below.
@@ -18,8 +18,8 @@ Ported from
 - A classifier key. For Jev: a [TypeSafe](https://typesafe.ai/) key, or a
   [Vercel AI Gateway](https://vercel.com/docs/ai-gateway/sdks-and-apis/typesafe)
   key used with `baseUrl: "https://ai-gateway.vercel.sh/typesafe"`. For Clef:
-  a Cloudflare Workers AI API token and account ID. For Laya: a Laya server
-  you run (see [`docs/environment.md`](../../docs/environment.md)).
+  a Cloudflare Workers AI API token and account ID. For Laya or Kev: a
+  server you run (see [`docs/environment.md`](../../docs/environment.md)).
 - A Responses API endpoint serving GPT-6 Astra, Luna, or Sol, or an Anthropic
   Messages endpoint with the mid-conversation output-config beta.
 
@@ -52,11 +52,11 @@ example.
 
 | Option | Default | Purpose |
 | --- | --- | --- |
-| `classifier.provider` | `REASONING_ROUTER_CLASSIFIER` env, then `jev` | Classifier provider: `jev`, `clef`, or `laya`. |
-| `classifier.apiKey` | `REASONING_ROUTER_CLASSIFIER_API_KEY` env | Classifier key. Required for `jev` and `clef` unless `fixedEffort` is set; optional for `laya`. |
-| `classifier.baseUrl` | `REASONING_ROUTER_CLASSIFIER_BASE_URL` env, then the provider default | Jev endpoint, or the Laya server (default `http://127.0.0.1:8000`). |
+| `classifier.provider` | `REASONING_ROUTER_CLASSIFIER` env, then `jev` | Classifier provider: `jev`, `clef`, `laya`, or `kev`. |
+| `classifier.apiKey` | `REASONING_ROUTER_CLASSIFIER_API_KEY` env | Classifier key. Required for `jev` and `clef` unless `fixedEffort` is set; optional for `laya` and `kev`. |
+| `classifier.baseUrl` | `REASONING_ROUTER_CLASSIFIER_BASE_URL` env, then the provider default | Jev endpoint, the Laya server (default `http://127.0.0.1:8000`), or the Kev server (default `http://127.0.0.1:8008`). |
 | `classifier.accountId` | `REASONING_ROUTER_CLASSIFIER_ACCOUNT_ID` env | Clef: Cloudflare account ID. |
-| `classifier.model` | `REASONING_ROUTER_CLASSIFIER_MODEL` env | Clef: `clef` or `clef-flash` (required). |
+| `classifier.model` | `REASONING_ROUTER_CLASSIFIER_MODEL` env | Clef: `clef` or `clef-flash` (required). Laya: optional checkpoint. Kev: optional, echoed only. |
 | `classifier.timeoutMs` | `4000` | Total classification budget, including retries. |
 | `wrap` | none | Required nonempty object of `openai`/`anthropic` source refs. |
 | `decisionsLogPath` | off | Absolute path for `ReasoningDecision` JSONL. |

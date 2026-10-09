@@ -142,7 +142,7 @@ that Jev-specific names become provider-neutral.
   failure summary, and the target model ID). The single question is a
   `choice` named `effort` whose options are the target model's supported
   efforts. The answer is `answers.effort.choice`, rejected if the model does
-  not support it. Laya and Clef accept the same request and response shape
+  not support it. Laya, Kev, and Clef accept the same request and response shape
   as Jev's `system_one`, so every provider fits this contract.
 - **Policy:** as in `opencode-jev-router`'s
   [classification policy](https://github.com/robertn702/opencode-jev-router/blob/main/docs/classification-policy.md):
@@ -151,8 +151,9 @@ that Jev-specific names become provider-neutral.
   `error`). Client cancellation aborts and never falls back.
 - **Configuration:** one `classifier` block selects the provider, for example
   `classifier: { provider: "jev", apiKey, baseUrl, timeoutMs }`,
-  `classifier: { provider: "clef", accountId, apiKey, model, timeoutMs }`, or
-  `classifier: { provider: "laya", baseUrl, apiKey, model, timeoutMs }`.
+  `classifier: { provider: "clef", accountId, apiKey, model, timeoutMs }`,
+  `classifier: { provider: "laya", baseUrl, apiKey, model, timeoutMs }`, or
+  `classifier: { provider: "kev", baseUrl, apiKey, model, timeoutMs }`.
 - **Logging:** the same metadata-only decision events, with Jev-specific
   names made provider-neutral (`jev_attempts` becomes `classifier_attempts`,
   `jev_timeout` becomes `classifier_timeout`) and the classifier recorded.
