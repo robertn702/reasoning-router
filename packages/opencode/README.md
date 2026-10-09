@@ -1,5 +1,7 @@
 # @reasoning-router/opencode
 
+English | [简体中文](README_CN.md) | [日本語](README_JA.md)
+
 An [OpenCode](https://opencode.ai) V2 plugin that asks a classifier how much
 reasoning each step needs, then applies that effort to the outgoing model
 request without breaking the prompt cache. Every classifier in

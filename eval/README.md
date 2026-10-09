@@ -1,5 +1,7 @@
 # Evaluations
 
+English | [简体中文](README_CN.md) | [日本語](README_JA.md)
+
 Does classifier-routed effort keep solve rates while spending less reasoning
 than a fixed effort? These reports measure that on real coding tasks from
 [SWE-bench Verified](https://huggingface.co/datasets/SWE-bench/SWE-bench_Verified).
