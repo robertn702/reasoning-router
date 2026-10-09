@@ -38,11 +38,11 @@ Pi 会继续运行，并且在变量有效之前，下一个请求会再次读�
 
 | 变量 | 默认值 | 用途 |
 | --- | --- | --- |
-| `REASONING_ROUTER_CLASSIFIER` | `jev` | 分类器提供方：`jev`、`clef`、`laya`、`kev`、`openai-decisions` 或 `clm`。 |
-| `REASONING_ROUTER_CLASSIFIER_API_KEY` | 无 | 分类器凭据。`jev`、`clef` 和 `openai-decisions` 必填；`laya`、`kev` 和 `clm` 可选。 |
-| `REASONING_ROUTER_CLASSIFIER_BASE_URL` | 提供方默认值 | Jev 端点、Laya 服务器（默认 `http://127.0.0.1:8000`）、Kev 服务器（默认 `http://127.0.0.1:8008`）、OpenAI 区域端点或 CLM 服务器（默认 `http://127.0.0.1:8700`）。`clef` 会忽略它。 |
+| `REASONING_ROUTER_CLASSIFIER` | `jev` | 分类器提供方：`jev`、`clef`、`laya`、`kev`、`semif`、`openai-decisions` 或 `clm`。 |
+| `REASONING_ROUTER_CLASSIFIER_API_KEY` | 无 | 分类器凭据。`jev`、`clef` 和 `openai-decisions` 必填；`laya`、`kev`、`semif` 和 `clm` 可选。 |
+| `REASONING_ROUTER_CLASSIFIER_BASE_URL` | 提供方默认值 | Jev 端点、Laya 服务器（默认 `http://127.0.0.1:8000`）、Kev 服务器（默认 `http://127.0.0.1:8008`）、SemIf 服务器（默认 `http://127.0.0.1:8471`）、OpenAI 区域端点或 CLM 服务器（默认 `http://127.0.0.1:8700`）。`clef` 会忽略它。 |
 | `REASONING_ROUTER_CLASSIFIER_ACCOUNT_ID` | 无 | Clef：Cloudflare 账户 ID。`clef` 必填。 |
-| `REASONING_ROUTER_CLASSIFIER_MODEL` | 无 | Clef：`clef` 或 `clef-flash`。`clef` 必填。Laya：可选的检查点。Kev：可选，仅原样回显。OpenAI Decisions：`gpt-6-luna`。CLM：可选的 head，服务器默认 `clm-latest`。 |
+| `REASONING_ROUTER_CLASSIFIER_MODEL` | 无 | Clef：`clef` 或 `clef-flash`。`clef` 必填。Laya：可选的检查点。Kev：可选，仅原样回显。SemIf：可选的模型 ID 或别名，默认 `semif-latest`。OpenAI Decisions：`gpt-6-luna`。CLM：可选的 head，服务器默认 `clm-latest`。 |
 | `REASONING_ROUTER_CLASSIFICATION_TIMEOUT_MS` | `4000` | 分类的总预算，含重试。 |
 | `REASONING_ROUTER_MAX_RETRIES` | `1` | 遇到可重试错误后分类器的重试次数（0–10）。 |
 | `REASONING_ROUTER_FALLBACK_MODE` | `fixed` | 失败时：`fixed`、`previous`（上一次分类得到的强度，否则为 fixed）或 `error`。 |

@@ -1,9 +1,13 @@
 # Findings: SemIf as an effort classifier
 
-Status: blocked on upstream
-([#22](https://github.com/robertn702/reasoning-router/issues/22)). There is
-no `semif` preset and no supported SemIf configuration. SemIf's released
-code has no HTTP server, and this repo does not run models.
+Status: implemented
+([#22](https://github.com/robertn702/reasoning-router/issues/22)) as the
+`semif` preset, against the unreleased contract of upstream
+[PR #27](https://github.com/TheoLeeCJ/SemIf-OpenJev/pull/27) (`semif-serve`).
+It was verified only with a fake `fetch`: no live server was run, and the PR
+is unmerged and may change. SemIf's released code has no HTTP server, so
+users run `semif-serve` from that PR's branch. There is no evidence yet that
+SemIf picks good reasoning efforts.
 
 [SemIf](https://github.com/TheoLeeCJ/SemIf-OpenJev) (formerly OpenJev)
 reproduces Jev's interface pattern with frozen open models. It reads the
@@ -27,10 +31,10 @@ Checked on 2026-10-09 through the GitHub API, not by running anything:
   `851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a` (BF16). Backends: Torch
   (CUDA, MPS, CPU), MLX, and llama.cpp (GGUF).
 
-## The blocker: no HTTP contract
+## No released server
 
-The only entry point is `semif-score`, a batch command. It loads a model
-in-process, reads a JSONL file of rows with this shape, writes one
+The only entry point on `master` is `semif-score`, a batch command. It loads
+a model in-process, reads a JSONL file of rows with this shape, writes one
 result per row to a new file, and exits:
 
 ```json
@@ -43,7 +47,9 @@ server dependency, no auth, and no error contract. Under this repo's
 rules (AGENTS.md, `docs/architecture.md`), the router reaches every
 classifier over HTTP and never runs a model, its weights, or its runtime.
 Wrapping `semif-score` would mean shelling out to a Python model runtime
-from the router, which those rules rule out. The fix belongs upstream.
+from the router, which those rules rule out. The `semif` preset therefore
+only calls a server that the user runs, and the only such server is the one
+in PR #27.
 
 Upstream status of a server:
 
@@ -59,22 +65,37 @@ Upstream status of a server:
   SGLang backend to `semif-score`. SGLang would be the scoring backend
   behind SemIf, not a System One endpoint, so it doesn't help here.
 
-## Upstream prerequisite
+## The preset
 
-To unblock, upstream needs to release a server the user runs that serves
-`POST /v1/systemone` with the System One request and a bare
-`{ model, answers, usage }` response, such as PR #27 merged to `master`.
-Once that lands, the smallest change on our side is a `semif` preset that
-reuses `createSystemOneClassifier`, as the `laya` preset does: a base URL
-(HTTPS or loopback HTTP), an optional bearer key, and a required `model`.
-Add it with mocked-transport tests, and verify it against the released
-server before documenting it as supported.
+The `semif` preset reuses `createSystemOneClassifier`, as the `laya` and `kev`
+presets do, and reuses Laya's connection rules. It adds no new behavior to
+review except the model default:
+
+| Setting | Proxy / Pi variable | Value |
+| --- | --- | --- |
+| `provider` | `REASONING_ROUTER_CLASSIFIER` | `semif` |
+| `baseUrl` | `REASONING_ROUTER_CLASSIFIER_BASE_URL` | Default `http://127.0.0.1:8471`. Must be HTTPS, or HTTP to loopback only. No credentials, query, or fragment. |
+| `apiKey` | `REASONING_ROUTER_CLASSIFIER_API_KEY` | Optional. Set it only when the server sets `SEMIF_API_KEY`; the header is sent only then. |
+| `model` | `REASONING_ROUTER_CLASSIFIER_MODEL` | Optional. The server requires a model, so the preset always sends one: this value, else `semif-latest`. |
+| `timeoutMs` | `REASONING_ROUTER_CLASSIFICATION_TIMEOUT_MS` | Default 4000. |
+
+Retries and fallback come from the shared classification policy. Because
+upstream has no release, a user runs the server from PR #27's branch (an
+example is in the root [README](../../README.md#semif)):
+
+```sh
+SEMIF_BACKEND=torch SEMIF_MODEL=Qwen/Qwen3.5-4B \
+SEMIF_REVISION=851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a \
+SEMIF_MAX_INPUT_TOKENS=8192 semif-serve
+REASONING_ROUTER_CLASSIFIER=semif reasoning-router
+```
 
 ## The PR #27 contract, unreleased
 
-The following is read from PR #27's source and docs at `27bbe96`. None of
-it has been run against a live server, and all of it may change before a
-merge:
+The following is read from PR #27's source and docs at `27bbe96`. The
+preset's tests encode it with a fake `fetch`, which shows what we assumed and
+not that the server accepts it. None of it has been run against a live
+server, and all of it may change before a merge:
 
 - **Endpoint:** `POST /v1/systemone` and `GET /v1/models`, plus
   `GET /healthz`. Binds `127.0.0.1:8471` by default.
@@ -83,9 +104,8 @@ merge:
   non-loopback address requires a key.
 - **Request:** `state`, `questions`, and `model` are all **required**.
   `model` must be the served ID, `semif-latest`, or (by default) a Jev
-  alias such as `jev-latest`. Our transport omits `model` unless one is
-  configured, so a future preset must require it or default it to
-  `semif-latest`. A `choice` question needs `instructions` and a
+  alias such as `jev-latest`. The preset always sends `model`, defaulting
+  to `semif-latest`. A `choice` question needs `instructions` and a
   `criteria` object, whose keys become the options in order. We already
   send both.
 - **Response:** `{ model, answers, usage }`, unwrapped.
@@ -106,25 +126,25 @@ merge:
 
 ### Why our state would need a larger budget
 
-The state we would send is the bounded summary described in
+The state we send is the bounded summary described in
 [`docs/architecture.md`](../architecture.md#classifiers): the last user
 text (≤ 2,000 characters), the assistant's progress (≤ 2,000), up to 8 tool
 results (≤ 1,600 each, with name and error flag), a failure summary (≤ 1,600),
 and the target model ID. That is roughly 18,400 characters at most before
 JSON overhead. That can exceed SemIf's 4,096-token default. Each over-budget
 step would cost a 500, a retry, and then the fallback effort. Operators
-would need to raise `SEMIF_MAX_INPUT_TOKENS` (8192 should cover it, but this
-is unmeasured), at a cost in latency. No prompts or tool output reach our
+need to raise `SEMIF_MAX_INPUT_TOKENS` (8192 should cover it, but this is
+unmeasured), at a cost in latency. No prompts or tool output reach our
 logs either way; decision events stay metadata-only.
 
 ## API compatibility versus decision quality
 
 These are separate questions, and only the first one is partly answered:
 
-- **API compatibility:** unverified. If PR #27 merges as written, our
-  System One request maps onto it with no transformation except a
-  required `model`. Until it is released and tested, there is nothing to
-  configure.
+- **API compatibility:** unverified against a live server. If PR #27 merges
+  as written, our System One request maps onto it with no transformation
+  except a required `model`, which the preset always sends. Before calling
+  the preset supported, run it against a released server.
 - **Effort-decision quality:** there is no evidence. SemIf's published
   results cover general decision fixtures, not reasoning-effort selection.
   According to its README, Qwen3.5-4B (BF16, direct logits) scores 0.813

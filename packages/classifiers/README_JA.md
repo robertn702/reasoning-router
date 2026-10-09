@@ -50,6 +50,19 @@ Cloudflare の [Clef](https://developers.cloudflare.com/workers-ai/models/clef/)
 | `model` | なし | 省略可。そのままエコーバックされるだけで、チェックポイントは起動時にサーバーが選びます（`--run`）。 |
 | `timeoutMs` | `4000` | リトライを含む、分類全体の時間予算。 |
 
+## SemIf（`provider: "semif"`）
+
+[SemIf](https://github.com/TheoLeeCJ/SemIf-OpenJev)（旧 OpenJev）。固定（frozen）のオープンモデルの次トークン logits から各選択肢の確率を読み取るもので、自分で動かす `semif-serve` サーバーが提供します。このパッケージは HTTP 経由で呼び出すだけです。アップストリームはこのサーバーをまだリリースしていません。サーバーは [PR #27](https://github.com/TheoLeeCJ/SemIf-OpenJev/pull/27) にしか存在しないため、その PR のブランチから `semif-serve` を実行してください。このプリセットはその PR の未リリースのコントラクトに従っており、モックした `fetch` に対してのみ検証されています。
+
+| フィールド | デフォルト | 用途 |
+| --- | --- | --- |
+| `baseUrl` | `http://127.0.0.1:8471` | SemIf サーバー。HTTPS、またはループバックホスト宛ての平文 HTTP のみ。 |
+| `apiKey` | なし | 省略可。サーバー側で `SEMIF_API_KEY` を設定している場合にのみ設定します。 |
+| `model` | `semif-latest` | サーバーは `model` を必須とするため、常に送信されます。サーバーが提供するモデル ID、`semif-latest`、または Jev のエイリアスを指定できます。 |
+| `timeoutMs` | `4000` | リトライを含む、分類全体の時間予算。 |
+
+サーバーは `SEMIF_MAX_INPUT_TOKENS`（デフォルト 4096）を超えるプロンプトを切り詰めずに 500 で拒否します。ルーターの上限付きの状態は最大で約 18.4k 文字になり得るため、この値を引き上げてください（8192 は未計測です）。SemIf が推論強度をどれだけうまく選べるかを示す証拠は、まだありません。[docs/proposals/semif.md](../../docs/proposals/semif.md) を参照してください。
+
 <a id="openai-decisions-provider-openai-decisions"></a>
 
 ## OpenAI Decisions（`provider: "openai-decisions"`）
@@ -85,10 +98,10 @@ OpenAI には、他の分類器と同じ長さに上限を設けた要約が送�
 ## エクスポート
 
 - `classifierProviders`: すべての分類器。[`@reasoning-router/core`](../core/README_JA.md) の `createConfiguredSelector` 用。
-- `jevClassifierProvider`、`clefClassifierProvider`、`layaClassifierProvider`、`kevClassifierProvider`: 各プロバイダー。
+- `jevClassifierProvider`、`clefClassifierProvider`、`layaClassifierProvider`、`kevClassifierProvider`、`semifClassifierProvider`: 各プロバイダー。
 - `openAIDecisionsClassifierProvider`、`createOpenAIDecisionsTransport`、`resolveOpenAIDecisionsConnection`、および `OpenAIDecisionsConnection` 型。
 - `clmClassifierProvider`、`createClmTransport`、`resolveClmConnection`、および `ClmConnection` 型。
-- `createJevClassifier`、`createJevTransport`、`createClefTransport`、`createLayaTransport`、`createKevTransport`、`resolveJevConnection`、`resolveClefConnection`、`resolveLayaConnection`、`resolveKevConnection`: 低レベルのヘルパー。
+- `createJevClassifier`、`createJevTransport`、`createClefTransport`、`createLayaTransport`、`createKevTransport`、`createSemifTransport`、`resolveJevConnection`、`resolveClefConnection`、`resolveLayaConnection`、`resolveKevConnection`、`resolveSemifConnection`: 低レベルのヘルパー。
 - `ClassifierRequestError` と `Fetch` 型。トランスポートが使用します。
 
 ## ライセンス

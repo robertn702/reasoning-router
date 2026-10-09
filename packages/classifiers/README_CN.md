@@ -53,6 +53,24 @@ Laya 服务器提供服务。本软件包只通过 HTTP 调用它。
 | `model` | 无 | 可选。仅原样回显；服务器在启动时（`--run`）选择检查点。 |
 | `timeoutMs` | `4000` | 分类的总预算，含重试。 |
 
+## SemIf（`provider: "semif"`）
+
+[SemIf](https://github.com/TheoLeeCJ/SemIf-OpenJev)（前身为 OpenJev），从冻结开源模型的下一个 token logits 中读取
+每个选项的概率，由你自行运行的 `semif-serve` 服务器提供服务。本软件包只通过 HTTP 调用它。上游尚未发布该服务器：
+它只存在于 [PR #27](https://github.com/TheoLeeCJ/SemIf-OpenJev/pull/27) 中，因此请从该 PR 的分支运行
+`semif-serve`。该预设遵循此 PR 尚未发布的契约，且只针对模拟的 `fetch` 验证过。
+
+| 字段 | 默认值 | 用途 |
+| --- | --- | --- |
+| `baseUrl` | `http://127.0.0.1:8471` | SemIf 服务器。使用 HTTPS，或仅限回环主机的纯 HTTP。 |
+| `apiKey` | 无 | 可选；仅当服务器设置了 `SEMIF_API_KEY` 时才设置。 |
+| `model` | `semif-latest` | 服务器要求提供模型，因此总会发送一个：服务器提供的模型 ID、`semif-latest` 或 Jev 别名。 |
+| `timeoutMs` | `4000` | 分类的总预算，含重试。 |
+
+服务器会以 500 拒绝超过 `SEMIF_MAX_INPUT_TOKENS`（默认 4096）的提示词，而不是截断它；路由器的有限状态最多可达约
+18.4k 个字符，因此请调大该值（8192 尚未经过实测）。目前还没有证据表明 SemIf 选择强度的效果如何。请参阅
+[docs/proposals/semif.md](../../docs/proposals/semif.md)。
+
 <a id="openai-decisions-provider-openai-decisions"></a>
 ## OpenAI Decisions（`provider: "openai-decisions"`）
 
@@ -107,14 +125,14 @@ OpenAI 声称延迟比 Responses API 低约 10 倍，这是其自己的说法，
 - `classifierProviders`：所有分类器，供 [`@reasoning-router/core`](../core/README_CN.md) 中的
   `createConfiguredSelector` 使用。
 - `jevClassifierProvider`、`clefClassifierProvider`、`layaClassifierProvider`、
-  `kevClassifierProvider`：各个提供方。
+  `kevClassifierProvider`、`semifClassifierProvider`：各个提供方。
 - `openAIDecisionsClassifierProvider`、`createOpenAIDecisionsTransport`、
   `resolveOpenAIDecisionsConnection`，以及 `OpenAIDecisionsConnection` 类型。
 - `clmClassifierProvider`、`createClmTransport`、`resolveClmConnection`，以及 `ClmConnection` 类型。
 - `createJevClassifier`、`createJevTransport`、`createClefTransport`、
-  `createLayaTransport`、`createKevTransport`、`resolveJevConnection`、
-  `resolveClefConnection`、`resolveLayaConnection`、`resolveKevConnection`：
-  较底层的辅助函数。
+  `createLayaTransport`、`createKevTransport`、`createSemifTransport`、
+  `resolveJevConnection`、`resolveClefConnection`、`resolveLayaConnection`、
+  `resolveKevConnection`、`resolveSemifConnection`：较底层的辅助函数。
 - `ClassifierRequestError` 和 `Fetch` 类型，供各 transport 使用。
 
 ## 许可证

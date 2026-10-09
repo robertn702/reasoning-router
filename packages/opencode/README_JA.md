@@ -2,7 +2,7 @@
 
 [English](README.md) | [简体中文](README_CN.md) | 日本語 | [한국어](README_KO.md)
 
-各ステップにどれだけの推論が必要かを分類器に尋ね、その推論強度を、プロンプトキャッシュを壊すことなく送信するモデルリクエストに適用する [OpenCode](https://opencode.ai) V2 プラグインです。[`@reasoning-router/classifiers`](../classifiers/README_JA.md) のすべての分類器（Jev、Cloudflare Clef、Laya、Kev、OpenAI Decisions、CLM）を利用できます。
+各ステップにどれだけの推論が必要かを分類器に尋ね、その推論強度を、プロンプトキャッシュを壊すことなく送信するモデルリクエストに適用する [OpenCode](https://opencode.ai) V2 プラグインです。[`@reasoning-router/classifiers`](../classifiers/README_JA.md) のすべての分類器（Jev、Cloudflare Clef、Laya、Kev、SemIf、OpenAI Decisions、CLM）を利用できます。
 
 > **Alpha。** OpenCode はパッケージ名を指定して npm からプラグインをインストールします。以下に示すように `plugins` に記載してください。
 
@@ -11,7 +11,7 @@
 ## 要件
 
 - OpenCode V2 2.0.4 以降（2.0.18 でスモークテスト済み）。
-- 分類器のキー。Jev の場合: [TypeSafe](https://typesafe.ai/) のキー、または `baseUrl: "https://ai-gateway.vercel.sh/typesafe"` と組み合わせて使う [Vercel AI Gateway](https://vercel.com/docs/ai-gateway/sdks-and-apis/typesafe) のキー。Clef の場合: Cloudflare Workers AI の API トークンとアカウント ID。Laya、Kev、または CLM の場合: 自分で動かすサーバー（[`docs/environment.md`](../../docs/environment.md) を参照）。OpenAI Decisions の場合: Decisions へのアクセス権を持つ OpenAI API キー。
+- 分類器のキー。Jev の場合: [TypeSafe](https://typesafe.ai/) のキー、または `baseUrl: "https://ai-gateway.vercel.sh/typesafe"` と組み合わせて使う [Vercel AI Gateway](https://vercel.com/docs/ai-gateway/sdks-and-apis/typesafe) のキー。Clef の場合: Cloudflare Workers AI の API トークンとアカウント ID。Laya、Kev、SemIf、または CLM の場合: 自分で動かすサーバー（[`docs/environment.md`](../../docs/environment.md) を参照）。OpenAI Decisions の場合: Decisions へのアクセス権を持つ OpenAI API キー。
 - GPT-6 Astra、Luna、Sol を提供する Responses API エンドポイント、または会話途中の output-config ベータに対応した Anthropic Messages エンドポイント。
 
 ## 使い方
@@ -42,11 +42,11 @@ OpenAI Decisions（パブリックベータ）を使う場合は、`classifier` 
 
 | オプション | デフォルト | 用途 |
 | --- | --- | --- |
-| `classifier.provider` | `REASONING_ROUTER_CLASSIFIER` 環境変数、なければ `jev` | 分類器プロバイダー: `jev`、`clef`、`laya`、`kev`、`openai-decisions`、または `clm`。 |
-| `classifier.apiKey` | `REASONING_ROUTER_CLASSIFIER_API_KEY` 環境変数 | 分類器のキー。`jev`、`clef`、`openai-decisions` では、`fixedEffort` を設定していない限り必須。`laya`、`kev`、`clm` では省略可。 |
-| `classifier.baseUrl` | `REASONING_ROUTER_CLASSIFIER_BASE_URL` 環境変数、なければプロバイダーのデフォルト | Jev のエンドポイント、Laya サーバー（デフォルトは `http://127.0.0.1:8000`）、Kev サーバー（デフォルトは `http://127.0.0.1:8008`）、OpenAI のリージョナルエンドポイント、または CLM サーバー（デフォルトは `http://127.0.0.1:8700`）。 |
+| `classifier.provider` | `REASONING_ROUTER_CLASSIFIER` 環境変数、なければ `jev` | 分類器プロバイダー: `jev`、`clef`、`laya`、`kev`、`semif`、`openai-decisions`、または `clm`。 |
+| `classifier.apiKey` | `REASONING_ROUTER_CLASSIFIER_API_KEY` 環境変数 | 分類器のキー。`jev`、`clef`、`openai-decisions` では、`fixedEffort` を設定していない限り必須。`laya`、`kev`、`semif`、`clm` では省略可。 |
+| `classifier.baseUrl` | `REASONING_ROUTER_CLASSIFIER_BASE_URL` 環境変数、なければプロバイダーのデフォルト | Jev のエンドポイント、Laya サーバー（デフォルトは `http://127.0.0.1:8000`）、Kev サーバー（デフォルトは `http://127.0.0.1:8008`）、SemIf サーバー（デフォルトは `http://127.0.0.1:8471`）、OpenAI のリージョナルエンドポイント、または CLM サーバー（デフォルトは `http://127.0.0.1:8700`）。 |
 | `classifier.accountId` | `REASONING_ROUTER_CLASSIFIER_ACCOUNT_ID` 環境変数 | Clef: Cloudflare アカウント ID。 |
-| `classifier.model` | `REASONING_ROUTER_CLASSIFIER_MODEL` 環境変数 | Clef: `clef` または `clef-flash`（必須）。Laya: 省略可のチェックポイント。Kev: 省略可、エコーバックのみ。OpenAI Decisions: `gpt-6-luna`。CLM: 省略可のヘッド。サーバーのデフォルトは `clm-latest`。 |
+| `classifier.model` | `REASONING_ROUTER_CLASSIFIER_MODEL` 環境変数 | Clef: `clef` または `clef-flash`（必須）。Laya: 省略可のチェックポイント。Kev: 省略可、エコーバックのみ。SemIf: 省略可のモデル ID またはエイリアス、デフォルトは `semif-latest`。OpenAI Decisions: `gpt-6-luna`。CLM: 省略可のヘッド。サーバーのデフォルトは `clm-latest`。 |
 | `classifier.timeoutMs` | `4000` | リトライを含む、分類全体の時間予算。 |
 | `wrap` | なし | `openai`/`anthropic` のソース参照を持つ、空でないオブジェクト。必須。 |
 | `decisionsLogPath` | オフ | `ReasoningDecision` の JSONL を書き出す絶対パス。 |

@@ -50,6 +50,19 @@ Cloudflare의 [Clef](https://developers.cloudflare.com/workers-ai/models/clef/)�
 | `model` | 없음 | 선택 사항. 그대로 되돌려 보내기만 하며, 체크포인트는 서버가 시작 시(`--run`) 선택합니다. |
 | `timeoutMs` | `4000` | 재시도를 포함한 전체 분류 시간 예산. |
 
+## SemIf (`provider: "semif"`)
+
+[SemIf](https://github.com/TheoLeeCJ/SemIf-OpenJev)(이전 이름 OpenJev)는 고정(frozen) 오픈 모델의 다음 토큰 logits에서 각 선택지의 확률을 읽어 내며, 직접 실행하는 `semif-serve` 서버가 제공합니다. 이 패키지는 HTTP로 호출만 합니다. 업스트림은 이 서버를 아직 릴리스하지 않았습니다. 서버는 [PR #27](https://github.com/TheoLeeCJ/SemIf-OpenJev/pull/27)에만 있으므로 해당 PR의 브랜치에서 `semif-serve`를 실행하세요. 이 프리셋은 해당 PR의 릴리스되지 않은 계약을 따르며, 모킹된 `fetch`로만 검증되었습니다.
+
+| 필드 | 기본값 | 용도 |
+| --- | --- | --- |
+| `baseUrl` | `http://127.0.0.1:8471` | SemIf 서버. HTTPS, 또는 루프백 호스트에 대한 평문 HTTP만 허용. |
+| `apiKey` | 없음 | 선택 사항. 서버에서 `SEMIF_API_KEY`를 설정한 경우에만 설정합니다. |
+| `model` | `semif-latest` | 서버가 `model`을 필수로 요구하므로 항상 전송됩니다. 서버가 제공하는 모델 ID, `semif-latest` 또는 Jev 별칭. |
+| `timeoutMs` | `4000` | 재시도를 포함한 전체 분류 시간 예산. |
+
+서버는 `SEMIF_MAX_INPUT_TOKENS`(기본값 4096)를 초과하는 프롬프트를 잘라내지 않고 500으로 거부합니다. 라우터의 제한된 상태는 최대 약 18.4k자에 이를 수 있으므로 이 값을 높이세요(8192는 측정되지 않았습니다). SemIf가 추론 수준을 얼마나 잘 고르는지에 대한 근거는 아직 없습니다. [docs/proposals/semif.md](../../docs/proposals/semif.md)를 참조하세요.
+
 <a id="openai-decisions-provider-openai-decisions"></a>
 
 ## OpenAI Decisions (`provider: "openai-decisions"`)
@@ -85,10 +98,10 @@ OpenAI는 다른 분류기와 동일하게 길이를 제한한 요약을 받습�
 ## 내보내기(Exports)
 
 - `classifierProviders`: 모든 분류기. [`@reasoning-router/core`](../core/README_KO.md)의 `createConfiguredSelector`용.
-- `jevClassifierProvider`, `clefClassifierProvider`, `layaClassifierProvider`, `kevClassifierProvider`: 각 제공자.
+- `jevClassifierProvider`, `clefClassifierProvider`, `layaClassifierProvider`, `kevClassifierProvider`, `semifClassifierProvider`: 각 제공자.
 - `openAIDecisionsClassifierProvider`, `createOpenAIDecisionsTransport`, `resolveOpenAIDecisionsConnection`, 그리고 `OpenAIDecisionsConnection` 타입.
 - `clmClassifierProvider`, `createClmTransport`, `resolveClmConnection`, 그리고 `ClmConnection` 타입.
-- `createJevClassifier`, `createJevTransport`, `createClefTransport`, `createLayaTransport`, `createKevTransport`, `resolveJevConnection`, `resolveClefConnection`, `resolveLayaConnection`, `resolveKevConnection`: 저수준 헬퍼.
+- `createJevClassifier`, `createJevTransport`, `createClefTransport`, `createLayaTransport`, `createKevTransport`, `createSemifTransport`, `resolveJevConnection`, `resolveClefConnection`, `resolveLayaConnection`, `resolveKevConnection`, `resolveSemifConnection`: 저수준 헬퍼.
 - `ClassifierRequestError`와 `Fetch` 타입. 트랜스포트에서 사용합니다.
 
 ## 라이선스

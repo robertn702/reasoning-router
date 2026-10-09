@@ -5,6 +5,7 @@ import { jevClassifierProvider } from "./jev.js";
 import { kevClassifierProvider } from "./kev.js";
 import { layaClassifierProvider } from "./laya.js";
 import { openAIDecisionsClassifierProvider } from "./openai-decisions.js";
+import { semifClassifierProvider } from "./semif.js";
 
 export {
   type ClefConnection,
@@ -45,6 +46,12 @@ export {
   openAIDecisionsClassifierProvider,
   resolveOpenAIDecisionsConnection,
 } from "./openai-decisions.js";
+export {
+  createSemifTransport,
+  resolveSemifConnection,
+  type SemifConnection,
+  semifClassifierProvider,
+} from "./semif.js";
 export { ClassifierRequestError, type Fetch } from "./systemone.js";
 
 /** Every bundled classifier, for `createConfiguredSelector`. */
@@ -53,6 +60,7 @@ export const classifierProviders: readonly ClassifierProvider[] = [
   clefClassifierProvider,
   layaClassifierProvider,
   kevClassifierProvider,
+  semifClassifierProvider,
   openAIDecisionsClassifierProvider,
   clmClassifierProvider,
 ];

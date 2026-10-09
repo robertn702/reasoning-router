@@ -71,7 +71,7 @@ npx @reasoning-router/proxy
 
 - **发送给分类器：** 近期用户文本和助手文本的有限摘录、最多 8 条近期工具结果
   （含工具名称和错误标记）、一份简短的失败摘要，以及模型 ID。托管工具和 computer-use
-  的载荷不会发送。Laya、Kev 和 CLM 运行在你自己的服务器上。
+  的载荷不会发送。Laya、Kev、SemIf 和 CLM 运行在你自己的服务器上。
 - **发送给你的端点：** 完整请求，并附加强度更新。
 - **日志记录：** 仅记录元数据（ID、模型、强度、延迟、token 数量），并且只输出到代理的
   stdout 或你启用的决策日志。提示词、工具输出、凭据和原始错误绝不会被记录。
@@ -116,7 +116,7 @@ npx @reasoning-router/proxy
 - [`@reasoning-router/core`](packages/core/README_CN.md)：共享的、与 harness 和分类器无关的路由器。
 - [`@reasoning-router/opencode`](packages/opencode/README_CN.md)：OpenCode V2 插件。
 - [`@reasoning-router/classifiers`](packages/classifiers/README_CN.md)：各分类器
-  （Jev、Cloudflare Clef、Laya、Kev、OpenAI Decisions 和 CLM），通过 `classifier.provider` 选择。
+  （Jev、Cloudflare Clef、Laya、Kev、SemIf、OpenAI Decisions 和 CLM），通过 `classifier.provider` 选择。
 - [`@reasoning-router/pi`](packages/pi/README_CN.md)：Pi 扩展（目前仅支持 Claude 模型）。
 - [`@reasoning-router/proxy`](packages/proxy/README_CN.md)：独立的
   Responses/Messages 代理（命令为 `reasoning-router`）。
@@ -188,6 +188,30 @@ REASONING_ROUTER_CLASSIFIER=kev reasoning-router
 
 固定的版本、已确认的 HTTP 契约、认证、限制以及尚未验证的内容，请参阅
 [docs/proposals/kev.md](docs/proposals/kev.md)。
+
+### SemIf
+
+[SemIf](https://github.com/TheoLeeCJ/SemIf-OpenJev)（前身为 OpenJev）会从由你自行运行的冻结开源模型的下一个 token
+logits 中读取每个选项的概率。路由器只通过 HTTP 调用它。上游尚未发布其服务器：`semif-serve` 目前只存在于
+[PR #27](https://github.com/TheoLeeCJ/SemIf-OpenJev/pull/27) 中，因此请从该 PR 的分支运行它。
+这是尚未发布的代码，契约可能会变化：
+
+```bash
+SEMIF_BACKEND=torch SEMIF_MODEL=Qwen/Qwen3.5-4B \
+SEMIF_REVISION=851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a \
+SEMIF_MAX_INPUT_TOKENS=8192 semif-serve   # http://127.0.0.1:8471
+REASONING_ROUTER_CLASSIFIER=semif reasoning-router
+```
+
+`SEMIF_BACKEND` 可取 `torch`（CUDA）、`mlx`（Apple Silicon）或 `llamacpp`（CPU，需设置 `SEMIF_GGUF`）。默认的基础 URL 是 `http://127.0.0.1:8471`。远程服务器必须使用 HTTPS。
+仅当服务器设置了 `SEMIF_API_KEY` 时才需要设置 `REASONING_ROUTER_CLASSIFIER_API_KEY`。服务器要求提供 `model`，
+因此路由器总会发送一个：默认是 `semif-latest`，也可以把 `REASONING_ROUTER_CLASSIFIER_MODEL` 设置为服务器提供的模型 ID
+或 Jev 别名。
+
+路由器的有限状态摘要最多可达约 18.4k 个字符，可能超过服务器默认的 `SEMIF_MAX_INPUT_TOKENS`（4096）。
+超出预算的提示词会失败（服务器从不截断），路由器随即回退，因此请调大该值；8192 尚未经过实测。
+该预设只针对模拟的 `fetch` 测试过，目前也没有证据表明 SemIf 选择强度的效果如何。请参阅
+[docs/proposals/semif.md](docs/proposals/semif.md)。
 
 ### OpenAI Decisions
 
@@ -283,6 +307,8 @@ npm run check   # typecheck + lint + test
   默认值是 `laya-serve` 的 `http://127.0.0.1:8000`，且路由器不发送 `max_len`。
 - **Kev 是独立的 `kev` 预设**，沿用 Laya 的连接规则，以便决策日志标明正确的服务。
   其默认基础 URL 是 `kev.serve` 的 `http://127.0.0.1:8008`。
+- **SemIf 是独立的 `semif` 预设**，沿用 Laya 的连接规则。其默认基础 URL 是 `semif-serve` 的
+  `http://127.0.0.1:8471`；由于该服务器要求提供 `model`，预设总会发送一个（默认是 `semif-latest`）。
 - **CLM 同样是独立的 `clm` 预设**，沿用 Laya 的连接规则。其默认基础 URL 是 `clm-serve` 的
   `http://127.0.0.1:8700`。
 - **OpenAI Decisions 的基础 URL 采用允许列表**（全球、`us.` 和 `eu.` 的 OpenAI API 根地址），

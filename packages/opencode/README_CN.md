@@ -4,7 +4,7 @@
 
 一个 [OpenCode](https://opencode.ai) V2 插件，它会向分类器询问每一步需要多少推理强度，然后在不破坏提示缓存的前提下，
 将该强度应用到发出的模型请求上。[`@reasoning-router/classifiers`](../classifiers/README_CN.md) 中的所有分类器
-（Jev、Cloudflare Clef、Laya、Kev、OpenAI Decisions 和 CLM）均可使用。
+（Jev、Cloudflare Clef、Laya、Kev、SemIf、OpenAI Decisions 和 CLM）均可使用。
 
 > **Alpha。** OpenCode 按包名从 npm 安装该插件；请如下所示将其列在 `plugins` 下。
 
@@ -16,7 +16,7 @@
 - 一个分类器密钥。对于 Jev：一个 [TypeSafe](https://typesafe.ai/) 密钥，或配合
   `baseUrl: "https://ai-gateway.vercel.sh/typesafe"` 使用的
   [Vercel AI Gateway](https://vercel.com/docs/ai-gateway/sdks-and-apis/typesafe) 密钥。对于 Clef：
-  Cloudflare Workers AI API token 和账户 ID。对于 Laya、Kev 或 CLM：一台你自行运行的服务器
+  Cloudflare Workers AI API token 和账户 ID。对于 Laya、Kev、SemIf 或 CLM：一台你自行运行的服务器
   （请参阅 [`docs/environment.md`](../../docs/environment.md)）。对于 OpenAI Decisions：
   具有 Decisions 访问权限的 OpenAI API 密钥。
 - 一个提供 GPT-6 Astra、Luna 或 Sol 的 Responses API 端点，或一个启用了对话中途 output-config beta 的
@@ -53,11 +53,11 @@
 
 | 选项 | 默认值 | 用途 |
 | --- | --- | --- |
-| `classifier.provider` | `REASONING_ROUTER_CLASSIFIER` 环境变量，然后是 `jev` | 分类器提供方：`jev`、`clef`、`laya`、`kev`、`openai-decisions` 或 `clm`。 |
-| `classifier.apiKey` | `REASONING_ROUTER_CLASSIFIER_API_KEY` 环境变量 | 分类器密钥。除非设置了 `fixedEffort`，否则 `jev`、`clef` 和 `openai-decisions` 必填；`laya`、`kev` 和 `clm` 可选。 |
-| `classifier.baseUrl` | `REASONING_ROUTER_CLASSIFIER_BASE_URL` 环境变量，然后是提供方默认值 | Jev 端点、Laya 服务器（默认 `http://127.0.0.1:8000`）、Kev 服务器（默认 `http://127.0.0.1:8008`）、OpenAI 区域端点或 CLM 服务器（默认 `http://127.0.0.1:8700`）。 |
+| `classifier.provider` | `REASONING_ROUTER_CLASSIFIER` 环境变量，然后是 `jev` | 分类器提供方：`jev`、`clef`、`laya`、`kev`、`semif`、`openai-decisions` 或 `clm`。 |
+| `classifier.apiKey` | `REASONING_ROUTER_CLASSIFIER_API_KEY` 环境变量 | 分类器密钥。除非设置了 `fixedEffort`，否则 `jev`、`clef` 和 `openai-decisions` 必填；`laya`、`kev`、`semif` 和 `clm` 可选。 |
+| `classifier.baseUrl` | `REASONING_ROUTER_CLASSIFIER_BASE_URL` 环境变量，然后是提供方默认值 | Jev 端点、Laya 服务器（默认 `http://127.0.0.1:8000`）、Kev 服务器（默认 `http://127.0.0.1:8008`）、SemIf 服务器（默认 `http://127.0.0.1:8471`）、OpenAI 区域端点或 CLM 服务器（默认 `http://127.0.0.1:8700`）。 |
 | `classifier.accountId` | `REASONING_ROUTER_CLASSIFIER_ACCOUNT_ID` 环境变量 | Clef：Cloudflare 账户 ID。 |
-| `classifier.model` | `REASONING_ROUTER_CLASSIFIER_MODEL` 环境变量 | Clef：`clef` 或 `clef-flash`（必填）。Laya：可选的检查点。Kev：可选，仅原样回显。OpenAI Decisions：`gpt-6-luna`。CLM：可选的 head，服务器默认 `clm-latest`。 |
+| `classifier.model` | `REASONING_ROUTER_CLASSIFIER_MODEL` 环境变量 | Clef：`clef` 或 `clef-flash`（必填）。Laya：可选的检查点。Kev：可选，仅原样回显。SemIf：可选的模型 ID 或别名，默认 `semif-latest`。OpenAI Decisions：`gpt-6-luna`。CLM：可选的 head，服务器默认 `clm-latest`。 |
 | `classifier.timeoutMs` | `4000` | 分类的总预算，含重试。 |
 | `wrap` | 无 | 必填的非空对象，包含 `openai`/`anthropic` 源引用。 |
 | `decisionsLogPath` | 关闭 | `ReasoningDecision` JSONL 的绝对路径。 |
