@@ -1,6 +1,6 @@
 {
   "name": "@reasoning-router/opencode",
-  "version": "0.0.0",
+  "version": "0.1.5",
   "description": "Adaptive per-step reasoning effort for OpenCode V2",
   "type": "module",
   "license": "MIT",
@@ -32,13 +32,16 @@
   "files": [
     "dist/"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\" && tsc -p tsconfig.build.json",
     "prepack": "npm run build"
   },
   "dependencies": {
-    "@reasoning-router/classifiers": "^0.0.0",
-    "@reasoning-router/core": "^0.0.0",
+    "@reasoning-router/classifiers": "^0.4.0",
+    "@reasoning-router/core": "^0.2.0",
     "zod": "^4.6.5"
   },
   "devDependencies": {

@@ -21,7 +21,7 @@ Use Node.js 24.x from the repo root.
 | Build every package to `dist/`, in dependency order | `npm run build` |
 | Pack, install, and run the packages | `npm run smoke:package` |
 | Install the packed plugin in OpenCode 2.0.18 | `npm run smoke:plugin:v2` |
-| Install the packed extension in Pi 1.0.0 | `npm run smoke:pi` |
+| Install the packed extension in Pi 1.0.4 | `npm run smoke:pi` |
 
 CI (`.github/workflows/ci.yml`) runs install, typecheck, lint, test, and
 `smoke:package` on pushes to `main` and on pull requests, plus the plugin
@@ -42,7 +42,8 @@ before starting an agent. The script runs `npm ci`, copies local `.env*` files
 - `packages/core` (`@reasoning-router/core`): validation, rewrite, lineage,
   forwarding, logging, model registry, and the classifier interface.
 - `packages/classifiers` (`@reasoning-router/classifiers`): every
-  classifier (Jev, Clef, Laya), as presets selected by `classifier.provider`.
+  classifier (Jev, Clef, Laya, Kev, OpenAI Decisions, CLM), as presets
+  selected by `classifier.provider`.
 - `packages/opencode` (`@reasoning-router/opencode`): the OpenCode V2 plugin.
 - `packages/pi` (`@reasoning-router/pi`): the Pi extension.
 - `packages/proxy` (`@reasoning-router/proxy`): the standalone proxy, run as
@@ -75,11 +76,29 @@ before starting an agent. The script runs `npm ci`, copies local `.env*` files
   or start a model, its weights, or its runtime from these packages, and add
   no model runtime dependency.
 - Each test lives in the package whose code it covers.
-- Do not publish to npm. Changesets is configured for versioning only; there
-  is no publish workflow. Do not add changesets until the packages are first
-  released.
+- Never run `npm publish` or `changeset publish` locally; releases go
+  through `.github/workflows/release.yml`. Add a changeset
+  (`npx changeset`) to any PR that changes a package's published behavior.
+  On `main`, the workflow opens a "Version Packages" PR that applies
+  pending changesets; merging it publishes the new versions to npm with
+  provenance through npm trusted publishing, so no npm token is stored. If
+  npm stages a release instead of publishing it, a maintainer approves it
+  with `npm stage approve`. A new package has no trusted publisher, so its
+  first version is published manually by a maintainer.
 - Do not modify `opencode-jev-router` from here; read it for reference only.
 - Make the smallest change that works. Add no speculative abstractions and no
   configuration without a current requirement.
 - Record reversible decisions in the commit message and, when they affect
   contributors, in `README.md`.
+- Every `README.md` has a Simplified Chinese `README_CN.md`, a Japanese
+  `README_JA.md`, and a Korean `README_KO.md` beside it. Any change to a
+  README must make the same change to every translation in the same commit,
+  and a new README needs all three translations. Translations link to each
+  other's `_CN`/`_JA`/`_KO` counterparts.
+  In a translation, put `<a id="..."></a>` with the English anchor above any
+  heading that is linked to, so `#fragment` links keep working, and point
+  links to a package directory at that directory's translated README.
+  Use the terms from OpenAI's and Anthropic's localized docs: effort is
+  推理强度 / 推論強度 / 추론 수준, classifier is 分类器 / 分類器 / 분류기, and
+  prompt cache is 提示缓存 / プロンプトキャッシュ / 프롬프트 캐시 (CN / JA /
+  KO). Chinese writes "token", not 令牌.

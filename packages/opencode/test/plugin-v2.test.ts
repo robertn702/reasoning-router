@@ -654,6 +654,44 @@ describe("V2 wrap aliases", () => {
     }
   });
 
+  it("logs a valid turn-id header as turn_id and otherwise a random UUID", async () =>
+    withLog(async (path) => {
+      const turn = "6f1c2a3b-4d5e-4f60-8a7b-9c0d1e2f3a4b";
+      const other = "0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d";
+      let received: Headers | undefined;
+      mockFetch(async (request) => {
+        received = request.headers;
+        return new Response("{}");
+      });
+      const h = await host({ ...base, decisionsLogPath: path });
+      const cases: Record<string, string>[] = [
+        { "x-reasoning-router-turn-id": turn, "x-opencode-turn-id": other },
+        { "x-opencode-turn-id": other },
+        { "x-reasoning-router-turn-id": "invalid" },
+        {},
+      ];
+      for (const headers of cases) {
+        await (await h.exchange(body, { headers })).response.text();
+        expect(received!.get("x-reasoning-router-turn-id")).toBeNull();
+        expect(received!.get("x-opencode-turn-id")).toBeNull();
+      }
+      await vi.waitFor(async () =>
+        expect((await readFile(path, "utf8")).trim().split("\n")).toHaveLength(
+          4,
+        ),
+      );
+      const ids = (await decisions(path)).map((line) => line.turn_id);
+      expect(ids.slice(0, 2)).toEqual([turn, other]);
+      for (const id of ids.slice(2)) {
+        expect(id).toMatch(
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
+        );
+        expect([turn, other, "invalid"]).not.toContain(id);
+      }
+      expect(ids[2]).not.toBe(ids[3]);
+      h.cleanup();
+    }));
+
   it("injects a stored OpenAI key into an auxiliary title request", async () => {
     mockFetch();
     const h = await host(base, sources(), {
@@ -862,6 +900,44 @@ describe("V2 wrap aliases", () => {
       h.cleanup();
     }));
 
+  it("selects OpenAI Decisions from the classifier environment variables", async () =>
+    withLog(async (path) => {
+      const classifierRequests: Request[] = [];
+      mockFetch(async (request) => {
+        if (!request.url.endsWith("/v1/decisions"))
+          return new Response("{}", {
+            headers: { "content-type": "application/json" },
+          });
+        classifierRequests.push(request);
+        return new Response(
+          JSON.stringify({
+            answers: [{ type: "choice", name: "effort", choice: "high" }],
+          }),
+        );
+      });
+      vi.stubEnv("REASONING_ROUTER_CLASSIFIER", "openai-decisions");
+      vi.stubEnv("REASONING_ROUTER_CLASSIFIER_API_KEY", "sk-classifier");
+      vi.stubEnv(
+        "REASONING_ROUTER_CLASSIFIER_BASE_URL",
+        "https://eu.api.openai.com/v1",
+      );
+      const h = await host({ wrap: base.wrap, decisionsLogPath: path });
+      await (await h.exchange()).response.text();
+      expect(classifierRequests.map((request) => request.url)).toEqual([
+        "https://eu.api.openai.com/v1/decisions",
+      ]);
+      expect(classifierRequests[0]!.headers.get("authorization")).toBe(
+        "Bearer sk-classifier",
+      );
+      expect((await classifierRequests[0]!.json()).model).toBe("gpt-6-luna");
+      expect((await decisions(path))[0]).toMatchObject({
+        classifier: "openai-decisions",
+        effort: "high",
+        fallback: null,
+      });
+      h.cleanup();
+    }));
+
   it("session cancellation aborts classification without starting upstream generation", async () => {
     const upstream = vi.fn<(request: Request) => Promise<Response>>();
     mockFetch((request) =>
@@ -983,7 +1059,9 @@ describe("V2 wrap aliases", () => {
         "openai-project": "project",
         "openai-organization": "org",
         "x-reasoning-router-session-id": "ses_secret",
+        "x-reasoning-router-turn-id": "8e5bbd8c-5f1c-4b4e-9b3f-2d0d6f1f6a01",
         "x-opencode-session-id": "private",
+        "x-opencode-turn-id": "8e5bbd8c-5f1c-4b4e-9b3f-2d0d6f1f6a02",
         connection: "x-hop",
         "x-hop": "no",
         "x-random": "kept",
@@ -994,7 +1072,9 @@ describe("V2 wrap aliases", () => {
     expect(received!.get("x-random")).toBe("kept");
     for (const name of [
       "x-reasoning-router-session-id",
+      "x-reasoning-router-turn-id",
       "x-opencode-session-id",
+      "x-opencode-turn-id",
       "connection",
       "x-hop",
     ])

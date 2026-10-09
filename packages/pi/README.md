@@ -1,16 +1,14 @@
 # @reasoning-router/pi
 
+English | [简体中文](README_CN.md) | [日本語](README_JA.md) | [한국어](README_KO.md)
+
 A [Pi](https://pi.dev) extension that asks a classifier how much reasoning
 each Claude request needs and lets Pi place that effort without breaking the
 prompt cache. Requires Pi 1.0.0 or later and Node.js 24.x.
 
-This package is not published yet. Build it from a checkout and install it
-from the local path:
-
 ```bash
-npm ci && npm run build
 export REASONING_ROUTER_CLASSIFIER_API_KEY=your-jev-key
-pi install /path/to/reasoning-router/packages/pi
+pi install npm:@reasoning-router/pi
 pi --model reasoning-router/claude-opus-5-5
 ```
 
@@ -32,7 +30,7 @@ system message, so changing effort keeps the cached prefix.
 - The last classified effort is stored in the session, per virtual model, so
   `previous` fallback survives a restart.
 - A model that Pi lacks, or that Pi cannot give mid-conversation effort, is
-  rejected with `reasoning-router unsupported_model: ...`. In Pi 1.0.0 that
+  rejected with `reasoning-router unsupported_model: ...`. In Pi 1.0.0 and 1.0.4 that
   includes `claude-mythos-5-1`.
 - A classification failure in `error` fallback mode rejects the request with
   `reasoning-router classification_failed: ...`. Cancelling a request never
@@ -54,11 +52,11 @@ running, and the next request reads the variables again until they are valid.
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `REASONING_ROUTER_CLASSIFIER` | `jev` | Classifier provider: `jev`, `clef`, or `laya`. |
-| `REASONING_ROUTER_CLASSIFIER_API_KEY` | none | Classifier credential. Required for `jev` and `clef`; optional for `laya`. |
-| `REASONING_ROUTER_CLASSIFIER_BASE_URL` | provider default | Jev endpoint, or the Laya server (default `http://127.0.0.1:8000`). Ignored by `clef`. |
+| `REASONING_ROUTER_CLASSIFIER` | `jev` | Classifier provider: `jev`, `clef`, `laya`, `kev`, `openai-decisions`, or `clm`. |
+| `REASONING_ROUTER_CLASSIFIER_API_KEY` | none | Classifier credential. Required for `jev`, `clef`, and `openai-decisions`; optional for `laya`, `kev`, and `clm`. |
+| `REASONING_ROUTER_CLASSIFIER_BASE_URL` | provider default | Jev endpoint, the Laya server (default `http://127.0.0.1:8000`), the Kev server (default `http://127.0.0.1:8008`), an OpenAI regional endpoint, or the CLM server (default `http://127.0.0.1:8700`). Ignored by `clef`. |
 | `REASONING_ROUTER_CLASSIFIER_ACCOUNT_ID` | none | Clef: Cloudflare account ID. Required for `clef`. |
-| `REASONING_ROUTER_CLASSIFIER_MODEL` | none | Clef: `clef` or `clef-flash`. Required for `clef`. Laya: optional checkpoint. |
+| `REASONING_ROUTER_CLASSIFIER_MODEL` | none | Clef: `clef` or `clef-flash`. Required for `clef`. Laya: optional checkpoint. Kev: optional, echoed only. OpenAI Decisions: `gpt-6-luna`. CLM: optional head, server default `clm-latest`. |
 | `REASONING_ROUTER_CLASSIFICATION_TIMEOUT_MS` | `4000` | Total classification budget, including retries. |
 | `REASONING_ROUTER_MAX_RETRIES` | `1` | Classifier retries after a retryable error (0–10). |
 | `REASONING_ROUTER_FALLBACK_MODE` | `fixed` | On failure: `fixed`, `previous` (last classified effort, else fixed), or `error`. |

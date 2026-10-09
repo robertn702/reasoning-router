@@ -1,6 +1,6 @@
 {
   "name": "@reasoning-router/core",
-  "version": "0.0.0",
+  "version": "0.2.0",
   "description": "Classifier- and harness-independent per-step reasoning effort routing: validation, cache-preserving rewrite, lineage, forwarding, and decision logging",
   "type": "module",
   "license": "MIT",
@@ -27,6 +27,9 @@
   "files": [
     "dist/"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\" && tsc -p tsconfig.build.json",
     "prepack": "npm run build"

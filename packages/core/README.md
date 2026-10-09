@@ -1,5 +1,7 @@
 # @reasoning-router/core
 
+English | [简体中文](README_CN.md) | [日本語](README_JA.md) | [한국어](README_KO.md)
+
 The shared, harness- and classifier-independent part of reasoning-router:
 request validation, the model registry, cache-preserving effort rewrites for
 Responses and Anthropic Messages, cache lineage, classifier selection with

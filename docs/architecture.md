@@ -132,6 +132,13 @@ that Jev-specific names become provider-neutral.
   `{baseUrl}/v1/systemone`. `model` (`clef` or `clef-flash`) is required
   until effort selection is evaluated. Running Clef locally is out of scope;
   its backbones need a GPU.
+- **OpenAI Decisions:** OpenAI's public-beta
+  [`POST /v1/decisions`](https://developers.openai.com/api/docs/guides/decisions), with
+  classifier model `gpt-6-luna`. It is not System One: it takes text `input`
+  and a `questions` array, and returns an `answers` array. The
+  `openai-decisions` preset sends the state as JSON text and one `effort`
+  choice, and matches the answer by name. It shares the transport; the
+  translation stays in the preset.
 - **Transport:** presets share one `fetch`-based client that maps HTTP
   status and `fetch` failures to the error categories and reads
   `Retry-After`. `@typesafe-ai/sdk` is dropped; it only adds a `choice()`
@@ -142,8 +149,9 @@ that Jev-specific names become provider-neutral.
   failure summary, and the target model ID). The single question is a
   `choice` named `effort` whose options are the target model's supported
   efforts. The answer is `answers.effort.choice`, rejected if the model does
-  not support it. Laya and Clef accept the same request and response shape
-  as Jev's `system_one`, so every provider fits this contract.
+  not support it. Laya, Kev, Clef, and CLM accept the same request and response
+  shape as Jev's `system_one`, so they fit this contract; OpenAI Decisions
+  maps the same state and question onto its own format.
 - **Policy:** as in `opencode-jev-router`'s
   [classification policy](https://github.com/robertn702/opencode-jev-router/blob/main/docs/classification-policy.md):
   a 4000 ms total deadline, one retry for connection errors, timeouts, 429,
@@ -151,8 +159,11 @@ that Jev-specific names become provider-neutral.
   `error`). Client cancellation aborts and never falls back.
 - **Configuration:** one `classifier` block selects the provider, for example
   `classifier: { provider: "jev", apiKey, baseUrl, timeoutMs }`,
-  `classifier: { provider: "clef", accountId, apiKey, model, timeoutMs }`, or
-  `classifier: { provider: "laya", baseUrl, apiKey, model, timeoutMs }`.
+  `classifier: { provider: "clef", accountId, apiKey, model, timeoutMs }`,
+  `classifier: { provider: "laya", baseUrl, apiKey, model, timeoutMs }`,
+  `classifier: { provider: "kev", baseUrl, apiKey, model, timeoutMs }`,
+  `classifier: { provider: "openai-decisions", apiKey, baseUrl, model, timeoutMs }`, or
+  `classifier: { provider: "clm", baseUrl, apiKey, model, timeoutMs }`.
 - **Logging:** the same metadata-only decision events, with Jev-specific
   names made provider-neutral (`jev_attempts` becomes `classifier_attempts`,
   `jev_timeout` becomes `classifier_timeout`) and the classifier recorded.

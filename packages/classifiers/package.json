@@ -1,7 +1,7 @@
 {
   "name": "@reasoning-router/classifiers",
-  "version": "0.0.0",
-  "description": "Reasoning-effort classifiers (Jev, Clef, Laya) for reasoning-router",
+  "version": "0.4.0",
+  "description": "Reasoning-effort classifiers (Jev, Clef, Laya, Kev, OpenAI Decisions, CLM) for reasoning-router",
   "type": "module",
   "license": "MIT",
   "engines": {
@@ -19,7 +19,11 @@
     "typesafe",
     "clef",
     "cloudflare",
-    "laya"
+    "laya",
+    "kev",
+    "openai",
+    "decisions",
+    "clm"
   ],
   "exports": {
     ".": {
@@ -31,12 +35,15 @@
   "files": [
     "dist/"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\" && tsc -p tsconfig.build.json",
     "prepack": "npm run build"
   },
   "dependencies": {
-    "@reasoning-router/core": "^0.0.0",
+    "@reasoning-router/core": "^0.2.0",
     "zod": "^4.6.5"
   }
 }
