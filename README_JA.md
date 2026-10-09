@@ -62,7 +62,7 @@ npx @reasoning-router/proxy
 
 ## 何がどこに送信されるか
 
-- **分類器へ:** 直近のユーザーおよびアシスタントのテキストの抜粋（長さに上限あり）、最大 8 件の直近のツール結果（ツール名とエラーフラグ付き）、短い失敗の要約、およびモデル ID。ホスト型ツールとコンピューター操作のペイロードは送信されません。Laya と Kev は自分のサーバー上で動作します。
+- **分類器へ:** 直近のユーザーおよびアシスタントのテキストの抜粋（長さに上限あり）、最大 8 件の直近のツール結果（ツール名とエラーフラグ付き）、短い失敗の要約、およびモデル ID。ホスト型ツールとコンピューター操作のペイロードは送信されません。Laya、Kev、CLM は自分のサーバー上で動作します。
 - **お使いのエンドポイントへ:** 推論強度の更新を追加した完全なリクエスト。
 - **ログに記録されるもの:** メタデータのみ（ID、モデル、推論強度、レイテンシ、トークン数）で、記録先もプロキシの stdout か、有効にした判断ログのみです。プロンプト、ツールの出力、認証情報、生のエラーが記録されることはありません。
 
@@ -96,7 +96,7 @@ npx @reasoning-router/proxy
 
 - [`@reasoning-router/core`](packages/core/README_JA.md): ハーネスにも分類器にも依存しない、共有のルーター。
 - [`@reasoning-router/opencode`](packages/opencode/README_JA.md): OpenCode V2 プラグイン。
-- [`@reasoning-router/classifiers`](packages/classifiers/README_JA.md): 分類器（Jev、Cloudflare Clef、Laya、Kev、OpenAI Decisions）。`classifier.provider` で選択します。
+- [`@reasoning-router/classifiers`](packages/classifiers/README_JA.md): 分類器（Jev、Cloudflare Clef、Laya、Kev、OpenAI Decisions、CLM）。`classifier.provider` で選択します。
 - [`@reasoning-router/pi`](packages/pi/README_JA.md): Pi 拡張機能（現時点では Claude モデルのみ）。
 - [`@reasoning-router/proxy`](packages/proxy/README_JA.md): スタンドアロンの Responses/Messages プロキシ（コマンド `reasoning-router`）。
 
@@ -172,6 +172,18 @@ reasoning-router
 [packages/classifiers](packages/classifiers/README_JA.md#openai-decisions-provider-openai-decisions)
 を参照してください。
 
+### CLM
+
+[CLM](https://github.com/Contrastive-LM/CLM) は、自分で `clm-serve` を使って動かす判断モデルです。`clm-serve` には、同じく自分で動かす別のプーリングバックエンド（Qwen3-8B の埋め込み。例: vLLM）が必要です。ルーターは `clm-serve` を HTTP 経由で呼び出すだけです。
+
+```bash
+vllm serve Qwen/Qwen3-8B --served-model-name qwen3-8b --runner pooling --max-model-len 2048 --host 127.0.0.1 --port 8090
+clm-serve --host 127.0.0.1 --no-ui   # http://127.0.0.1:8700
+REASONING_ROUTER_CLASSIFIER=clm reasoning-router
+```
+
+デフォルトのベース URL は `http://127.0.0.1:8700` です。`REASONING_ROUTER_CLASSIFIER_API_KEY` は、サーバー側で `CLM_API_KEY` を設定している場合にのみ設定してください。CLM ヘッドは `REASONING_ROUTER_CLASSIFIER_MODEL` で選びます（サーバーのデフォルトは `clm-latest`）。固定バージョン、プーリングバックエンド、2,048 トークンでの切り詰めについては [docs/classifiers/clm.md](docs/classifiers/clm.md) を参照してください。検証したのは API の互換性のみで、推論強度の判断品質は検証していません。
+
 <a id="supported-models"></a>
 
 ## 対応モデル
@@ -220,6 +232,7 @@ npm run check   # typecheck + lint + test
 - **Pi 拡張機能は Pi の仮想モデルを使用します。** 設定するのは思考レベルのみで、推論強度の配置は Pi に任せるため、Pi が会話途中の推論強度を提供する Anthropic モデルのみをサポートします。Pi 拡張機能にはオプションがないため、プロキシの `REASONING_ROUTER_*` 変数を読み取り、最後に分類された推論強度を `previous` フォールバック用に Pi のセッションへ保存します。
 - **Laya の `baseUrl` は HTTPS か、ループバック宛ての平文 HTTP のみです。** これにより、会話の要約がネットワーク上を暗号化なしで流れることはありません。デフォルトは `laya-serve` の `http://127.0.0.1:8000` で、ルーターは `max_len` を送信しません。
 - **Kev は独自の `kev` プリセットです。** 接続ルールは Laya と同じで、判断ログに正しいサービス名が記録されます。デフォルトのベース URL は `kev.serve` の `http://127.0.0.1:8008` です。
+- **CLM も独自の `clm` プリセットです。** 接続ルールは Laya と同じです。デフォルトのベース URL は `clm-serve` の `http://127.0.0.1:8700` です。
 - **OpenAI Decisions のベース URL は許可リスト方式です**（グローバル、`us.`、`eu.` の OpenAI API ルート）。そのため、別の分類器の設定から残ったベース URL に OpenAI キーが送られることはありません。`model` は、OpenAI がモデルを追加するまで `gpt-6-luna` のみを受け付けます。
 
 ## ライセンス

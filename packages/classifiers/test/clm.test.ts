@@ -6,15 +6,16 @@ import {
 } from "@reasoning-router/core";
 import { describe, expect, it } from "vitest";
 import {
+  type ClmConnection,
   classifierProviders,
-  createLayaTransport,
-  resolveLayaConnection,
+  createClmTransport,
+  loadClassifierConfig,
+  resolveClmConnection,
 } from "../src/index.js";
 
-// CLM's `clm-serve` (Contrastive-LM/CLM d5f9ef0) speaks the same
-// `POST /v1/systemone` contract as Laya, so it is configured through the
-// `laya` preset; see docs/classifiers/clm.md.
-const CLM = { baseUrl: "http://127.0.0.1:8700", model: "clm-latest" };
+// CLM's `clm-serve` (Contrastive-LM/CLM d5f9ef0) speaks the Jev
+// `POST /v1/systemone` contract; see docs/classifiers/clm.md.
+const CLM = { model: "clm-latest" };
 
 /** A `clm-serve` response, as built by `clm.schema.answer_from_probs`. */
 const answer = (choice: unknown) =>
@@ -47,8 +48,8 @@ function clm(
   policy: { timeoutMs?: number; maxRetries?: number } = {},
 ) {
   return createClassifierSelector({
-    classifier: createLayaTransport({
-      ...resolveLayaConnection({ ...CLM, ...config }),
+    classifier: createClmTransport({
+      ...resolveClmConnection({ ...CLM, ...config }),
       fetch,
     }),
     timeoutMs: policy.timeoutMs ?? 1000,
@@ -73,7 +74,7 @@ const hanging: FakeFetch = (_url, init) =>
     );
   });
 
-describe("CLM through the laya preset", () => {
+describe("CLM classifier", () => {
   it("posts a System One choice request with clm-latest and a bearer key", async () => {
     let sent: [string, RequestInit | undefined] | undefined;
     const decision = await clm(
@@ -86,7 +87,7 @@ describe("CLM through the laya preset", () => {
 
     expect(decision).toMatchObject({
       effort: "high",
-      classifier: "laya",
+      classifier: "clm",
       fallback: null,
     });
     expect(sent?.[0]).toBe("http://127.0.0.1:8700/v1/systemone");
@@ -195,19 +196,48 @@ describe("CLM through the laya preset", () => {
     expect(aborted).toBe(true);
   });
 
-  it("accepts CLM's address and model as a laya configuration", () => {
+  it("is selected from the shared REASONING_ROUTER_CLASSIFIER_* variables", () => {
+    const config = loadClassifierConfig({ REASONING_ROUTER_CLASSIFIER: "clm" });
     expect(() =>
-      createConfiguredSelector(
-        { provider: "laya", ...CLM },
-        classifierProviders,
-        {},
-      ),
+      createConfiguredSelector(config, classifierProviders, {}),
     ).not.toThrow();
+    expect(resolveClmConnection(config)).toEqual({
+      baseURL: "http://127.0.0.1:8700",
+      apiKey: undefined,
+      model: undefined,
+    } satisfies ClmConnection);
+    expect(
+      resolveClmConnection(
+        loadClassifierConfig({
+          REASONING_ROUTER_CLASSIFIER: "clm",
+          REASONING_ROUTER_CLASSIFIER_BASE_URL: "https://clm.example.com/",
+          REASONING_ROUTER_CLASSIFIER_MODEL: "clm-raw",
+        }),
+      ),
+    ).toMatchObject({ baseURL: "https://clm.example.com", model: "clm-raw" });
   });
 
-  it("rejects plaintext HTTP to a remote clm-serve", () => {
-    expect(() =>
-      resolveLayaConnection({ baseUrl: "http://gpu-box.example.com:8700" }),
-    ).toThrow(/HTTP URL to a loopback host/);
+  it("omits model when unset, so clm-serve picks clm-latest", async () => {
+    let body: Record<string, unknown> | undefined;
+    await clm(
+      async (_url, init) => {
+        body = JSON.parse(String(init?.body));
+        return answer("low");
+      },
+      { model: " " },
+    )(args());
+    expect(body).not.toHaveProperty("model");
+  });
+});
+
+describe("CLM connection", () => {
+  it.each([
+    ["http://gpu-box.example.com:8700", /HTTP URL to a loopback host/],
+    ["http://0.0.0.0:8700", /HTTP URL to a loopback host/],
+    ["https://user:pass@clm.example.com", /without credentials/],
+    ["https://clm.example.com?key=x", /without credentials, query/],
+    ["", /must be a valid URL/],
+  ])("rejects baseUrl %s", (baseUrl, message) => {
+    expect(() => resolveClmConnection({ baseUrl })).toThrow(message);
   });
 });

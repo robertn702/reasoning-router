@@ -82,7 +82,7 @@ For each primary request, the router:
 - **To the classifier:** bounded excerpts of recent user and assistant text, up
   to 8 recent tool results (with tool names and error flags), a short failure
   summary, and the model ID. Hosted-tool and computer-use payloads are not
-  sent. Laya and Kev run on your own server.
+  sent. Laya, Kev, and CLM run on your own server.
 - **To your endpoint:** the full request, with the effort update added.
 - **Logged:** metadata only (IDs, model, effort, latency, token counts), and
   only to the proxy's stdout or a decision log you enable. Prompts, tool
@@ -137,8 +137,8 @@ The packages are:
   classifier-independent router.
 - [`@reasoning-router/opencode`](packages/opencode): the OpenCode V2 plugin.
 - [`@reasoning-router/classifiers`](packages/classifiers): the
-  classifiers (Jev, Cloudflare Clef, Laya, Kev, and OpenAI Decisions), selected by
-  `classifier.provider`.
+  classifiers (Jev, Cloudflare Clef, Laya, Kev, OpenAI Decisions, and CLM),
+  selected by `classifier.provider`.
 - [`@reasoning-router/pi`](packages/pi): the Pi extension (Claude models
   only, for now).
 - [`@reasoning-router/proxy`](packages/proxy): the standalone
@@ -237,6 +237,26 @@ effort-selection quality are unverified. See
 [packages/classifiers](packages/classifiers/README.md#openai-decisions-provider-openai-decisions)
 for the privacy boundary, regional endpoints, and cost.
 
+### CLM
+
+[CLM](https://github.com/Contrastive-LM/CLM) is a decision model that you run
+yourself with its `clm-serve`. `clm-serve` needs a separate pooling backend
+(Qwen3-8B embeddings, for example vLLM) that you also run. The router only
+calls `clm-serve` over HTTP:
+
+```bash
+vllm serve Qwen/Qwen3-8B --served-model-name qwen3-8b --runner pooling --max-model-len 2048 --host 127.0.0.1 --port 8090
+clm-serve --host 127.0.0.1 --no-ui   # http://127.0.0.1:8700
+REASONING_ROUTER_CLASSIFIER=clm reasoning-router
+```
+
+The default base URL is `http://127.0.0.1:8700`. Set
+`REASONING_ROUTER_CLASSIFIER_API_KEY` only if the server sets `CLM_API_KEY`,
+and `REASONING_ROUTER_CLASSIFIER_MODEL` to choose a CLM head (the server
+defaults to `clm-latest`). See [docs/classifiers/clm.md](docs/classifiers/clm.md)
+for the pinned version, the pooling backend, and the 2,048-token truncation.
+Only API compatibility has been verified. Effort-decision quality has not.
+
 ## Supported models
 
 The router rejects any other model locally. Whether your upstream account can
@@ -263,14 +283,6 @@ See [docs/behavior.md](docs/behavior.md) and
 [docs/classification-policy.md](docs/classification-policy.md). The registry
 lives in
 [`packages/core/src/models.ts`](packages/core/src/models.ts).
-
-[CLM](https://github.com/Contrastive-LM/CLM)'s `clm-serve` uses the same
-API, so the `laya` preset can call it with
-`REASONING_ROUTER_CLASSIFIER_BASE_URL=http://127.0.0.1:8700` and
-`REASONING_ROUTER_CLASSIFIER_MODEL=clm-latest`. The
-[CLM findings](docs/classifiers/clm.md) cover the pinned version, the
-pooling backend you must run, and the 2,048-token truncation. Only API
-compatibility has been verified. Effort-decision quality has not.
 
 ## Development
 
@@ -325,6 +337,8 @@ These are reversible:
 - **Kev is its own `kev` preset** with Laya's connection rules, so decision
   logs name the right service. Its default base URL is `kev.serve`'s
   `http://127.0.0.1:8008`.
+- **CLM is likewise its own `clm` preset** with Laya's connection rules. Its
+  default base URL is `clm-serve`'s `http://127.0.0.1:8700`.
 - **OpenAI Decisions base URLs are an allowlist** (the global, `us.`, and
   `eu.` OpenAI API roots), so a base URL left over from another classifier
   cannot receive the OpenAI key. `model` accepts only `gpt-6-luna` until

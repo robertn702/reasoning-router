@@ -71,11 +71,23 @@ OpenAI는 다른 분류기와 동일하게 길이를 제한한 요약을 받습�
 
 [Decisions 가이드](https://developers.openai.com/api/docs/guides/decisions)는 2026-10-07에 확인했습니다. 요청 및 응답 타입은 `openai` npm 패키지 7.30.0(`src/resources/decisions.ts`, OpenAI의 OpenAPI 사양에서 생성됨)에서 가져왔으며, 당시에는 `/v1/decisions` API 레퍼런스 페이지가 게시되어 있지 않았습니다. 리전별 URL은 같은 날 확인한 데이터 컨트롤 가이드에서 가져왔습니다. [issue #33](https://github.com/robertn702/reasoning-router/issues/33)을 참조하세요.
 
+## CLM (`provider: "clm"`)
+
+[CLM](https://github.com/Contrastive-LM/CLM)은 직접 실행하는 `clm-serve` 서버가 제공합니다. `clm-serve`에는 마찬가지로 직접 실행하는 별도의 풀링 백엔드(Qwen3-8B 임베딩, 예: vLLM)가 필요합니다. 이 패키지는 `clm-serve`를 HTTP로 호출만 합니다. 고정된 버전과 제한 사항은 [docs/classifiers/clm.md](../../docs/classifiers/clm.md)를 참조하세요. 검증된 것은 API 호환성뿐이며, 추론 수준 결정의 품질은 검증되지 않았습니다.
+
+| 필드 | 기본값 | 용도 |
+| --- | --- | --- |
+| `baseUrl` | `http://127.0.0.1:8700` | CLM 서버. HTTPS, 또는 루프백 호스트에 대한 평문 HTTP만 허용. |
+| `apiKey` | 없음 | 선택 사항. 서버에서 `CLM_API_KEY`를 설정한 경우에만 설정합니다. |
+| `model` | 서버의 `clm-latest` | 선택적 CLM 헤드: `clm-latest`, `clm-raw`, 또는 `--model NAME=PATH`로 로드한 헤드. |
+| `timeoutMs` | `4000` | 재시도를 포함한 전체 분류 시간 예산. |
+
 ## 내보내기(Exports)
 
 - `classifierProviders`: 모든 분류기. [`@reasoning-router/core`](../core/README_KO.md)의 `createConfiguredSelector`용.
 - `jevClassifierProvider`, `clefClassifierProvider`, `layaClassifierProvider`, `kevClassifierProvider`: 각 제공자.
 - `openAIDecisionsClassifierProvider`, `createOpenAIDecisionsTransport`, `resolveOpenAIDecisionsConnection`, 그리고 `OpenAIDecisionsConnection` 타입.
+- `clmClassifierProvider`, `createClmTransport`, `resolveClmConnection`, 그리고 `ClmConnection` 타입.
 - `createJevClassifier`, `createJevTransport`, `createClefTransport`, `createLayaTransport`, `createKevTransport`, `resolveJevConnection`, `resolveClefConnection`, `resolveLayaConnection`, `resolveKevConnection`: 저수준 헬퍼.
 - `ClassifierRequestError`와 `Fetch` 타입. 트랜스포트에서 사용합니다.
 

@@ -1,7 +1,7 @@
 {
   "name": "@reasoning-router/classifiers",
   "version": "0.3.0",
-  "description": "Reasoning-effort classifiers (Jev, Clef, Laya, Kev, OpenAI Decisions) for reasoning-router",
+  "description": "Reasoning-effort classifiers (Jev, Clef, Laya, Kev, OpenAI Decisions, CLM) for reasoning-router",
   "type": "module",
   "license": "MIT",
   "engines": {
@@ -22,7 +22,8 @@
     "laya",
     "kev",
     "openai",
-    "decisions"
+    "decisions",
+    "clm"
   ],
   "exports": {
     ".": {
