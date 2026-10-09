@@ -1,5 +1,7 @@
 # @reasoning-router/pi
 
+English | [简体中文](README_CN.md) | [日本語](README_JA.md)
+
 A [Pi](https://pi.dev) extension that asks a classifier how much reasoning
 each Claude request needs and lets Pi place that effort without breaking the
 prompt cache. Requires Pi 1.0.0 or later and Node.js 24.x.
