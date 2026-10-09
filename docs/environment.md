@@ -11,11 +11,11 @@ replacement.
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `REASONING_ROUTER_CLASSIFIER` | `jev` | Classifier provider: `jev`, `clef`, `laya`, `kev`, or `openai-decisions`. |
-| `REASONING_ROUTER_CLASSIFIER_API_KEY` | none | Classifier credential. Required for `jev`, `clef`, and `openai-decisions`; optional for `laya` and `kev`. |
-| `REASONING_ROUTER_CLASSIFIER_BASE_URL` | provider default | Jev endpoint, the Laya server (default `http://127.0.0.1:8000`), the Kev server (default `http://127.0.0.1:8008`), or an OpenAI regional endpoint. Ignored by `clef`. |
+| `REASONING_ROUTER_CLASSIFIER` | `jev` | Classifier provider: `jev`, `clef`, `laya`, `kev`, `openai-decisions`, or `clm`. |
+| `REASONING_ROUTER_CLASSIFIER_API_KEY` | none | Classifier credential. Required for `jev`, `clef`, and `openai-decisions`; optional for `laya`, `kev`, and `clm`. |
+| `REASONING_ROUTER_CLASSIFIER_BASE_URL` | provider default | Jev endpoint, the Laya server (default `http://127.0.0.1:8000`), the Kev server (default `http://127.0.0.1:8008`), an OpenAI regional endpoint, or the CLM server (default `http://127.0.0.1:8700`). Ignored by `clef`. |
 | `REASONING_ROUTER_CLASSIFIER_ACCOUNT_ID` | none | Clef: Cloudflare account ID. Required for `clef`. |
-| `REASONING_ROUTER_CLASSIFIER_MODEL` | none | Clef: `clef` or `clef-flash`. Required for `clef`. Laya: optional checkpoint. Kev: optional, echoed only. OpenAI Decisions: `gpt-6-luna`. |
+| `REASONING_ROUTER_CLASSIFIER_MODEL` | none | Clef: `clef` or `clef-flash`. Required for `clef`. Laya: optional checkpoint. Kev: optional, echoed only. OpenAI Decisions: `gpt-6-luna`. CLM: optional head, server default `clm-latest`. |
 | `REASONING_ROUTER_CLASSIFICATION_TIMEOUT_MS` | `4000` | Total classification budget, including retries. |
 
 For `jev`, the key is a TypeSafe credential when the base URL is omitted
@@ -35,10 +35,6 @@ counts as unset. `model` selects a checkpoint (`english`, `multilingual`,
 `typed-decisions`); when unset, the server chooses by the language of the
 state.
 
-CLM's `clm-serve` also works through `laya`. Set the base URL to its server
-(for example `http://127.0.0.1:8700`) and `model` to `clm-latest`. The key
-matches the server's `CLM_API_KEY`. See [CLM findings](classifiers/clm.md).
-
 For `kev`, the router calls a `kev.serve` server that you run, at
 `{baseUrl}/v1/systemone`, with the same base URL and key rules as `laya`.
 Set the key only when the server sets `KEV_API_KEY`. The checkpoint is
@@ -53,6 +49,15 @@ other value is accepted. `model` is the classifier model, `gpt-6-luna` (the
 default and only value), not the model being routed. See
 [the classifiers README](../packages/classifiers/README.md) for the beta,
 privacy, and cost notes.
+
+For `clm`, the router calls a `clm-serve` server that you run, at
+`{baseUrl}/v1/systemone`, with the same base URL and key rules as `laya`. The
+base URL defaults to `http://127.0.0.1:8700`. Set the key only when the
+server sets `CLM_API_KEY`. `model` is optional and selects the CLM head: when
+unset the server uses `clm-latest`, and `clm-raw` or a head loaded with
+`--model NAME=PATH` is also accepted. `clm-serve` needs a separate pooling
+backend (Qwen3-8B embeddings) that you also run. See
+[CLM findings](classifiers/clm.md).
 
 The OpenCode plugin takes the same settings as its `classifier` option
 (`provider`, `apiKey`, `baseUrl`, `accountId`, `model`, `timeoutMs`). Each

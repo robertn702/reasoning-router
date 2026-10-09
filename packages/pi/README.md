@@ -52,11 +52,11 @@ running, and the next request reads the variables again until they are valid.
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `REASONING_ROUTER_CLASSIFIER` | `jev` | Classifier provider: `jev`, `clef`, `laya`, `kev`, or `openai-decisions`. |
-| `REASONING_ROUTER_CLASSIFIER_API_KEY` | none | Classifier credential. Required for `jev`, `clef`, and `openai-decisions`; optional for `laya` and `kev`. |
-| `REASONING_ROUTER_CLASSIFIER_BASE_URL` | provider default | Jev endpoint, the Laya server (default `http://127.0.0.1:8000`), the Kev server (default `http://127.0.0.1:8008`), or an OpenAI regional endpoint. Ignored by `clef`. |
+| `REASONING_ROUTER_CLASSIFIER` | `jev` | Classifier provider: `jev`, `clef`, `laya`, `kev`, `openai-decisions`, or `clm`. |
+| `REASONING_ROUTER_CLASSIFIER_API_KEY` | none | Classifier credential. Required for `jev`, `clef`, and `openai-decisions`; optional for `laya`, `kev`, and `clm`. |
+| `REASONING_ROUTER_CLASSIFIER_BASE_URL` | provider default | Jev endpoint, the Laya server (default `http://127.0.0.1:8000`), the Kev server (default `http://127.0.0.1:8008`), an OpenAI regional endpoint, or the CLM server (default `http://127.0.0.1:8700`). Ignored by `clef`. |
 | `REASONING_ROUTER_CLASSIFIER_ACCOUNT_ID` | none | Clef: Cloudflare account ID. Required for `clef`. |
-| `REASONING_ROUTER_CLASSIFIER_MODEL` | none | Clef: `clef` or `clef-flash`. Required for `clef`. Laya: optional checkpoint. Kev: optional, echoed only. OpenAI Decisions: `gpt-6-luna`. |
+| `REASONING_ROUTER_CLASSIFIER_MODEL` | none | Clef: `clef` or `clef-flash`. Required for `clef`. Laya: optional checkpoint. Kev: optional, echoed only. OpenAI Decisions: `gpt-6-luna`. CLM: optional head, server default `clm-latest`. |
 | `REASONING_ROUTER_CLASSIFICATION_TIMEOUT_MS` | `4000` | Total classification budget, including retries. |
 | `REASONING_ROUTER_MAX_RETRIES` | `1` | Classifier retries after a retryable error (0–10). |
 | `REASONING_ROUTER_FALLBACK_MODE` | `fixed` | On failure: `fixed`, `previous` (last classified effort, else fixed), or `error`. |

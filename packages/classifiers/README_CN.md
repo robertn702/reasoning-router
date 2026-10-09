@@ -88,6 +88,20 @@ OpenAI 声称延迟比 Responses API 低约 10 倍，这是其自己的说法，
 当时尚未发布 `/v1/decisions` API 参考页面。区域 URL 来自数据控制指南，同日查阅。请参阅
 [issue #33](https://github.com/robertn702/reasoning-router/issues/33)。
 
+## CLM（`provider: "clm"`）
+
+[CLM](https://github.com/Contrastive-LM/CLM)，由你自行运行的 `clm-serve` 服务器提供服务。
+`clm-serve` 另需一个你同样自行运行的池化后端（Qwen3-8B 嵌入，例如 vLLM）。本软件包只通过 HTTP 调用
+`clm-serve`。固定的版本和限制请参阅 [docs/classifiers/clm.md](../../docs/classifiers/clm.md)。
+目前只验证了 API 兼容性，尚未验证推理强度决策的质量。
+
+| 字段 | 默认值 | 用途 |
+| --- | --- | --- |
+| `baseUrl` | `http://127.0.0.1:8700` | CLM 服务器。使用 HTTPS，或仅限回环主机的纯 HTTP。 |
+| `apiKey` | 无 | 可选；仅当服务器设置了 `CLM_API_KEY` 时才设置。 |
+| `model` | 服务器的 `clm-latest` | 可选的 CLM head：`clm-latest`、`clm-raw`，或通过 `--model NAME=PATH` 加载的 head。 |
+| `timeoutMs` | `4000` | 分类的总预算，含重试。 |
+
 ## 导出
 
 - `classifierProviders`：所有分类器，供 [`@reasoning-router/core`](../core/README_CN.md) 中的
@@ -96,6 +110,7 @@ OpenAI 声称延迟比 Responses API 低约 10 倍，这是其自己的说法，
   `kevClassifierProvider`：各个提供方。
 - `openAIDecisionsClassifierProvider`、`createOpenAIDecisionsTransport`、
   `resolveOpenAIDecisionsConnection`，以及 `OpenAIDecisionsConnection` 类型。
+- `clmClassifierProvider`、`createClmTransport`、`resolveClmConnection`，以及 `ClmConnection` 类型。
 - `createJevClassifier`、`createJevTransport`、`createClefTransport`、
   `createLayaTransport`、`createKevTransport`、`resolveJevConnection`、
   `resolveClefConnection`、`resolveLayaConnection`、`resolveKevConnection`：

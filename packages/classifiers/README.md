@@ -102,6 +102,22 @@ OpenAPI spec); no `/v1/decisions` API reference page was published then.
 Regional URLs come from the data controls guide, checked the same day. See
 [issue #33](https://github.com/robertn702/reasoning-router/issues/33).
 
+## CLM (`provider: "clm"`)
+
+[CLM](https://github.com/Contrastive-LM/CLM), served by a `clm-serve` server
+that you run. `clm-serve` needs a separate pooling backend (Qwen3-8B
+embeddings, for example vLLM) that you also run. This package only calls
+`clm-serve` over HTTP. See [docs/classifiers/clm.md](../../docs/classifiers/clm.md)
+for the pinned version and limits. Only API compatibility is verified, not
+effort-decision quality.
+
+| Field | Default | Purpose |
+| --- | --- | --- |
+| `baseUrl` | `http://127.0.0.1:8700` | CLM server. HTTPS, or plain HTTP to a loopback host only. |
+| `apiKey` | none | Optional; set only when the server sets `CLM_API_KEY`. |
+| `model` | server's `clm-latest` | Optional CLM head: `clm-latest`, `clm-raw`, or a head loaded with `--model NAME=PATH`. |
+| `timeoutMs` | `4000` | Total classification budget, including retries. |
+
 ## Exports
 
 - `classifierProviders`: every classifier, for `createConfiguredSelector` in
@@ -110,6 +126,8 @@ Regional URLs come from the data controls guide, checked the same day. See
   `kevClassifierProvider`: each provider.
 - `openAIDecisionsClassifierProvider`, `createOpenAIDecisionsTransport`,
   `resolveOpenAIDecisionsConnection`, and the `OpenAIDecisionsConnection` type.
+- `clmClassifierProvider`, `createClmTransport`, `resolveClmConnection`, and
+  the `ClmConnection` type.
 - `createJevClassifier`, `createJevTransport`, `createClefTransport`,
   `createLayaTransport`, `createKevTransport`, `resolveJevConnection`,
   `resolveClefConnection`, `resolveLayaConnection`, `resolveKevConnection`:

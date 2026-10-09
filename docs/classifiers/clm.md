@@ -7,9 +7,11 @@ and the Hugging Face model API. No CLM server was run.
 ## Result
 
 CLM's `clm-serve` accepts the router's existing System One request without a
-code change. Configure it through the existing `laya` preset, which posts to
-`{baseUrl}/v1/systemone` with an optional bearer key and `model`. No CLM
-preset was added. Decision logs therefore record `classifier: "laya"`.
+code change. The `clm` preset (`provider: "clm"`) posts to
+`{baseUrl}/v1/systemone` with an optional bearer key and `model`. It reuses
+Laya's connection rules and the shared System One transport, and its base URL
+defaults to `clm-serve`'s `http://127.0.0.1:8700`. Decision logs record
+`classifier: "clm"`.
 
 This result covers API compatibility only. It says nothing about the quality
 of CLM's reasoning-effort decisions. Upstream reports CLM results as a
@@ -103,23 +105,26 @@ the state or the response body.
 Run the two servers yourself, then:
 
 ```bash
-REASONING_ROUTER_CLASSIFIER=laya \
-REASONING_ROUTER_CLASSIFIER_BASE_URL=http://127.0.0.1:8700 \
-REASONING_ROUTER_CLASSIFIER_MODEL=clm-latest \
-reasoning-router
+REASONING_ROUTER_CLASSIFIER=clm reasoning-router
 ```
 
-Set `REASONING_ROUTER_CLASSIFIER_API_KEY` only when `clm-serve` runs with
-`CLM_API_KEY`. The OpenCode plugin form is
-`classifier: { provider: "laya", baseUrl: "http://127.0.0.1:8700", model: "clm-latest" }`.
-The base URL must be HTTPS, or HTTP to a loopback host. For a remote GPU host,
-use an SSH tunnel (`ssh -L 8700:localhost:8700 <host>`) or an HTTPS proxy.
+The base URL defaults to `http://127.0.0.1:8700`, so
+`REASONING_ROUTER_CLASSIFIER_BASE_URL` is optional. `REASONING_ROUTER_CLASSIFIER_MODEL`
+is also optional and selects the CLM head; when unset, `clm-serve` uses
+`clm-latest`. Set `REASONING_ROUTER_CLASSIFIER_API_KEY` only when `clm-serve`
+runs with `CLM_API_KEY`. The OpenCode plugin form is
+`classifier: { provider: "clm" }`, plus `baseUrl`, `apiKey`, or `model` when
+needed. The base URL must be HTTPS, or HTTP to a loopback host. For a remote
+GPU host, use an SSH tunnel (`ssh -L 8700:localhost:8700 <host>`) or an HTTPS
+proxy.
 
 The mocked contract tests in
 [`packages/classifiers/test/clm.test.ts`](../../packages/classifiers/test/clm.test.ts)
-cover this configuration. They exercise the request shape, `clm-latest`, auth,
-invalid answers, 401/422/502 handling, retries, the deadline, and
-cancellation. No live CLM call is made, and none is needed for `npm run check`.
+cover this configuration. They exercise the `clm` preset: the request shape,
+the default base URL, `clm-latest`, auth, selection from the
+`REASONING_ROUTER_CLASSIFIER_*` variables, base URL rejection, invalid
+answers, 401/422/502 handling, retries, the deadline, and cancellation. No
+live CLM call is made, and none is needed for `npm run check`.
 
 ## Limitations
 

@@ -149,7 +149,7 @@ that Jev-specific names become provider-neutral.
   failure summary, and the target model ID). The single question is a
   `choice` named `effort` whose options are the target model's supported
   efforts. The answer is `answers.effort.choice`, rejected if the model does
-  not support it. Laya, Kev, and Clef accept the same request and response
+  not support it. Laya, Kev, Clef, and CLM accept the same request and response
   shape as Jev's `system_one`, so they fit this contract; OpenAI Decisions
   maps the same state and question onto its own format.
 - **Policy:** as in `opencode-jev-router`'s
@@ -161,8 +161,9 @@ that Jev-specific names become provider-neutral.
   `classifier: { provider: "jev", apiKey, baseUrl, timeoutMs }`,
   `classifier: { provider: "clef", accountId, apiKey, model, timeoutMs }`,
   `classifier: { provider: "laya", baseUrl, apiKey, model, timeoutMs }`,
-  `classifier: { provider: "kev", baseUrl, apiKey, model, timeoutMs }`, or
-  `classifier: { provider: "openai-decisions", apiKey, baseUrl, model, timeoutMs }`.
+  `classifier: { provider: "kev", baseUrl, apiKey, model, timeoutMs }`,
+  `classifier: { provider: "openai-decisions", apiKey, baseUrl, model, timeoutMs }`, or
+  `classifier: { provider: "clm", baseUrl, apiKey, model, timeoutMs }`.
 - **Logging:** the same metadata-only decision events, with Jev-specific
   names made provider-neutral (`jev_attempts` becomes `classifier_attempts`,
   `jev_timeout` becomes `classifier_timeout`) and the classifier recorded.

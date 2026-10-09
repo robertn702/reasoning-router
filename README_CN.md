@@ -71,7 +71,7 @@ npx @reasoning-router/proxy
 
 - **发送给分类器：** 近期用户文本和助手文本的有限摘录、最多 8 条近期工具结果
   （含工具名称和错误标记）、一份简短的失败摘要，以及模型 ID。托管工具和 computer-use
-  的载荷不会发送。Laya 和 Kev 运行在你自己的服务器上。
+  的载荷不会发送。Laya、Kev 和 CLM 运行在你自己的服务器上。
 - **发送给你的端点：** 完整请求，并附加强度更新。
 - **日志记录：** 仅记录元数据（ID、模型、强度、延迟、token 数量），并且只输出到代理的
   stdout 或你启用的决策日志。提示词、工具输出、凭据和原始错误绝不会被记录。
@@ -116,7 +116,7 @@ npx @reasoning-router/proxy
 - [`@reasoning-router/core`](packages/core/README_CN.md)：共享的、与 harness 和分类器无关的路由器。
 - [`@reasoning-router/opencode`](packages/opencode/README_CN.md)：OpenCode V2 插件。
 - [`@reasoning-router/classifiers`](packages/classifiers/README_CN.md)：各分类器
-  （Jev、Cloudflare Clef、Laya、Kev 和 OpenAI Decisions），通过 `classifier.provider` 选择。
+  （Jev、Cloudflare Clef、Laya、Kev、OpenAI Decisions 和 CLM），通过 `classifier.provider` 选择。
 - [`@reasoning-router/pi`](packages/pi/README_CN.md)：Pi 扩展（目前仅支持 Claude 模型）。
 - [`@reasoning-router/proxy`](packages/proxy/README_CN.md)：独立的
   Responses/Messages 代理（命令为 `reasoning-router`）。
@@ -203,6 +203,23 @@ reasoning-router
 它只针对模拟响应进行过测试；实际兼容性和强度选择质量均未经验证。隐私边界、区域端点和费用请参阅
 [packages/classifiers](packages/classifiers/README_CN.md#openai-decisions-provider-openai-decisions)。
 
+### CLM
+
+[CLM](https://github.com/Contrastive-LM/CLM) 是由你通过其 `clm-serve` 自行运行的决策模型。
+`clm-serve` 另需一个你同样自行运行的池化后端（Qwen3-8B 嵌入，例如 vLLM）。路由器只通过 HTTP 调用
+`clm-serve`：
+
+```bash
+vllm serve Qwen/Qwen3-8B --served-model-name qwen3-8b --runner pooling --max-model-len 2048 --host 127.0.0.1 --port 8090
+clm-serve --host 127.0.0.1 --no-ui   # http://127.0.0.1:8700
+REASONING_ROUTER_CLASSIFIER=clm reasoning-router
+```
+
+默认的基础 URL 是 `http://127.0.0.1:8700`。仅当服务器设置了 `CLM_API_KEY` 时才需要设置
+`REASONING_ROUTER_CLASSIFIER_API_KEY`，并通过 `REASONING_ROUTER_CLASSIFIER_MODEL` 选择 CLM head
+（服务器默认使用 `clm-latest`）。固定的版本、池化后端以及 2,048 token 的截断，请参阅
+[docs/classifiers/clm.md](docs/classifiers/clm.md)。目前只验证了 API 兼容性，尚未验证推理强度决策的质量。
+
 <a id="supported-models"></a>
 ## 支持的模型
 
@@ -266,6 +283,8 @@ npm run check   # typecheck + lint + test
   默认值是 `laya-serve` 的 `http://127.0.0.1:8000`，且路由器不发送 `max_len`。
 - **Kev 是独立的 `kev` 预设**，沿用 Laya 的连接规则，以便决策日志标明正确的服务。
   其默认基础 URL 是 `kev.serve` 的 `http://127.0.0.1:8008`。
+- **CLM 同样是独立的 `clm` 预设**，沿用 Laya 的连接规则。其默认基础 URL 是 `clm-serve` 的
+  `http://127.0.0.1:8700`。
 - **OpenAI Decisions 的基础 URL 采用允许列表**（全球、`us.` 和 `eu.` 的 OpenAI API 根地址），
   因此沿用自其他分类器的基础 URL 无法接收到 OpenAI 密钥。在 OpenAI 增加新模型之前，`model` 只接受 `gpt-6-luna`。
 

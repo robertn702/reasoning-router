@@ -42,8 +42,8 @@ before starting an agent. The script runs `npm ci`, copies local `.env*` files
 - `packages/core` (`@reasoning-router/core`): validation, rewrite, lineage,
   forwarding, logging, model registry, and the classifier interface.
 - `packages/classifiers` (`@reasoning-router/classifiers`): every
-  classifier (Jev, Clef, Laya, Kev, OpenAI Decisions), as presets selected by
-  `classifier.provider`.
+  classifier (Jev, Clef, Laya, Kev, OpenAI Decisions, CLM), as presets
+  selected by `classifier.provider`.
 - `packages/opencode` (`@reasoning-router/opencode`): the OpenCode V2 plugin.
 - `packages/pi` (`@reasoning-router/pi`): the Pi extension.
 - `packages/proxy` (`@reasoning-router/proxy`): the standalone proxy, run as

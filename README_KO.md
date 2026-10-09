@@ -62,7 +62,7 @@ npx @reasoning-router/proxy
 
 ## 무엇이 어디로 전송되는가
 
-- **분류기로:** 최근 사용자 및 어시스턴트 텍스트의 발췌문(길이 제한 있음), 최대 8개의 최근 도구 결과(도구 이름과 오류 플래그 포함), 짧은 실패 요약, 그리고 모델 ID. 호스팅 도구와 컴퓨터 사용(computer-use) 페이로드는 전송되지 않습니다. Laya와 Kev는 사용자의 서버에서 실행됩니다.
+- **분류기로:** 최근 사용자 및 어시스턴트 텍스트의 발췌문(길이 제한 있음), 최대 8개의 최근 도구 결과(도구 이름과 오류 플래그 포함), 짧은 실패 요약, 그리고 모델 ID. 호스팅 도구와 컴퓨터 사용(computer-use) 페이로드는 전송되지 않습니다. Laya, Kev, CLM은 사용자의 서버에서 실행됩니다.
 - **사용자의 엔드포인트로:** 추론 수준 업데이트가 추가된 전체 요청.
 - **로그에 기록되는 것:** 메타데이터(ID, 모델, 추론 수준, 지연 시간, 토큰 수)만 기록되며, 기록 위치도 프록시의 stdout 또는 사용자가 활성화한 결정 로그뿐입니다. 프롬프트, 도구 출력, 자격 증명, 원시 오류는 절대 기록되지 않습니다.
 
@@ -96,7 +96,7 @@ npx @reasoning-router/proxy
 
 - [`@reasoning-router/core`](packages/core/README_KO.md): 하네스와 분류기에 독립적인 공유 라우터.
 - [`@reasoning-router/opencode`](packages/opencode/README_KO.md): OpenCode V2 플러그인.
-- [`@reasoning-router/classifiers`](packages/classifiers/README_KO.md): 분류기(Jev, Cloudflare Clef, Laya, Kev, OpenAI Decisions). `classifier.provider`로 선택합니다.
+- [`@reasoning-router/classifiers`](packages/classifiers/README_KO.md): 분류기(Jev, Cloudflare Clef, Laya, Kev, OpenAI Decisions, CLM). `classifier.provider`로 선택합니다.
 - [`@reasoning-router/pi`](packages/pi/README_KO.md): Pi 확장 프로그램(현재는 Claude 모델만 지원).
 - [`@reasoning-router/proxy`](packages/proxy/README_KO.md): 독립 실행형 Responses/Messages 프록시(명령어 `reasoning-router`).
 
@@ -172,6 +172,18 @@ reasoning-router
 [packages/classifiers](packages/classifiers/README_KO.md#openai-decisions-provider-openai-decisions)를
 참조하세요.
 
+### CLM
+
+[CLM](https://github.com/Contrastive-LM/CLM)은 `clm-serve`로 직접 실행하는 결정 모델입니다. `clm-serve`에는 마찬가지로 직접 실행하는 별도의 풀링 백엔드(Qwen3-8B 임베딩, 예: vLLM)가 필요합니다. 라우터는 `clm-serve`를 HTTP로 호출만 합니다.
+
+```bash
+vllm serve Qwen/Qwen3-8B --served-model-name qwen3-8b --runner pooling --max-model-len 2048 --host 127.0.0.1 --port 8090
+clm-serve --host 127.0.0.1 --no-ui   # http://127.0.0.1:8700
+REASONING_ROUTER_CLASSIFIER=clm reasoning-router
+```
+
+기본 base URL은 `http://127.0.0.1:8700`입니다. `REASONING_ROUTER_CLASSIFIER_API_KEY`는 서버에서 `CLM_API_KEY`를 설정한 경우에만 설정하세요. CLM 헤드는 `REASONING_ROUTER_CLASSIFIER_MODEL`로 선택합니다(서버 기본값은 `clm-latest`). 고정된 버전, 풀링 백엔드, 2,048 토큰 잘라내기는 [docs/classifiers/clm.md](docs/classifiers/clm.md)를 참조하세요. 검증된 것은 API 호환성뿐이며, 추론 수준 결정의 품질은 검증되지 않았습니다.
+
 <a id="supported-models"></a>
 
 ## 지원 모델
@@ -220,6 +232,7 @@ npm run check   # typecheck + lint + test
 - **Pi 확장 프로그램은 Pi의 가상 모델을 사용합니다.** 사고(thinking) 수준만 설정하고 추론 수준의 배치는 Pi에 맡기므로, Pi가 대화 도중 추론 수준 변경을 지원하는 Anthropic 모델만 지원합니다. Pi 확장 프로그램에는 옵션이 없으므로 프록시의 `REASONING_ROUTER_*` 변수를 읽고, 마지막으로 분류된 추론 수준을 `previous` 폴백용으로 Pi의 세션에 저장합니다.
 - **Laya `baseUrl`은 HTTPS이거나, 루프백에 대한 평문 HTTP만 허용합니다.** 그래서 대화 요약이 암호화되지 않은 채 네트워크를 가로지르는 일이 없습니다. 기본값은 `laya-serve`의 `http://127.0.0.1:8000`이며, 라우터는 `max_len`을 전송하지 않습니다.
 - **Kev는 별도의 `kev` 프리셋입니다.** 연결 규칙은 Laya와 동일하며, 결정 로그에 올바른 서비스 이름이 남습니다. 기본 base URL은 `kev.serve`의 `http://127.0.0.1:8008`입니다.
+- **CLM도 별도의 `clm` 프리셋입니다.** 연결 규칙은 Laya와 동일합니다. 기본 base URL은 `clm-serve`의 `http://127.0.0.1:8700`입니다.
 - **OpenAI Decisions base URL은 허용 목록 방식입니다**(글로벌, `us.`, `eu.` OpenAI API 루트). 따라서 다른 분류기에서 남아 있던 base URL이 OpenAI 키를 받을 수 없습니다. `model`은 OpenAI가 모델을 추가하기 전까지 `gpt-6-luna`만 허용합니다.
 
 ## 라이선스

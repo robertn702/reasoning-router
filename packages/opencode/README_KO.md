@@ -2,7 +2,7 @@
 
 [English](README.md) | [简体中文](README_CN.md) | [日本語](README_JA.md) | 한국어
 
-각 단계에 얼마나 많은 추론이 필요한지 분류기에 물어본 뒤, 프롬프트 캐시를 깨뜨리지 않고 그 추론 수준을 나가는 모델 요청에 적용하는 [OpenCode](https://opencode.ai) V2 플러그인입니다. [`@reasoning-router/classifiers`](../classifiers/README_KO.md)의 모든 분류기(Jev, Cloudflare Clef, Laya, Kev, OpenAI Decisions)를 사용할 수 있습니다.
+각 단계에 얼마나 많은 추론이 필요한지 분류기에 물어본 뒤, 프롬프트 캐시를 깨뜨리지 않고 그 추론 수준을 나가는 모델 요청에 적용하는 [OpenCode](https://opencode.ai) V2 플러그인입니다. [`@reasoning-router/classifiers`](../classifiers/README_KO.md)의 모든 분류기(Jev, Cloudflare Clef, Laya, Kev, OpenAI Decisions, CLM)를 사용할 수 있습니다.
 
 > **Alpha.** OpenCode는 패키지 이름으로 npm에서 플러그인을 설치합니다. 아래와 같이 `plugins`에 나열하세요.
 
@@ -11,7 +11,7 @@
 ## 요구 사항
 
 - OpenCode V2 2.0.4 이상(2.0.18에서 스모크 테스트 완료).
-- 분류기 키. Jev: [TypeSafe](https://typesafe.ai/) 키, 또는 `baseUrl: "https://ai-gateway.vercel.sh/typesafe"`와 함께 사용하는 [Vercel AI Gateway](https://vercel.com/docs/ai-gateway/sdks-and-apis/typesafe) 키. Clef: Cloudflare Workers AI API 토큰과 계정 ID. Laya 또는 Kev: 직접 실행하는 서버([`docs/environment.md`](../../docs/environment.md) 참조). OpenAI Decisions: Decisions 접근 권한이 있는 OpenAI API 키.
+- 분류기 키. Jev: [TypeSafe](https://typesafe.ai/) 키, 또는 `baseUrl: "https://ai-gateway.vercel.sh/typesafe"`와 함께 사용하는 [Vercel AI Gateway](https://vercel.com/docs/ai-gateway/sdks-and-apis/typesafe) 키. Clef: Cloudflare Workers AI API 토큰과 계정 ID. Laya, Kev 또는 CLM: 직접 실행하는 서버([`docs/environment.md`](../../docs/environment.md) 참조). OpenAI Decisions: Decisions 접근 권한이 있는 OpenAI API 키.
 - GPT-6 Astra, Luna 또는 Sol을 제공하는 Responses API 엔드포인트, 또는 대화 중 output-config 베타를 지원하는 Anthropic Messages 엔드포인트.
 
 ## 사용법
@@ -42,11 +42,11 @@ OpenAI Decisions(공개 베타)를 사용하려면 `classifier` 블록을 다음
 
 | 옵션 | 기본값 | 용도 |
 | --- | --- | --- |
-| `classifier.provider` | `REASONING_ROUTER_CLASSIFIER` 환경 변수, 없으면 `jev` | 분류기 제공자: `jev`, `clef`, `laya`, `kev` 또는 `openai-decisions`. |
-| `classifier.apiKey` | `REASONING_ROUTER_CLASSIFIER_API_KEY` 환경 변수 | 분류기 키. `fixedEffort`를 설정하지 않은 경우 `jev`, `clef`, `openai-decisions`에서 필수이며, `laya`와 `kev`에서는 선택 사항. |
-| `classifier.baseUrl` | `REASONING_ROUTER_CLASSIFIER_BASE_URL` 환경 변수, 없으면 제공자 기본값 | Jev 엔드포인트, Laya 서버(기본값 `http://127.0.0.1:8000`), Kev 서버(기본값 `http://127.0.0.1:8008`) 또는 OpenAI 리전 엔드포인트. |
+| `classifier.provider` | `REASONING_ROUTER_CLASSIFIER` 환경 변수, 없으면 `jev` | 분류기 제공자: `jev`, `clef`, `laya`, `kev`, `openai-decisions` 또는 `clm`. |
+| `classifier.apiKey` | `REASONING_ROUTER_CLASSIFIER_API_KEY` 환경 변수 | 분류기 키. `fixedEffort`를 설정하지 않은 경우 `jev`, `clef`, `openai-decisions`에서 필수이며, `laya`, `kev`, `clm`에서는 선택 사항. |
+| `classifier.baseUrl` | `REASONING_ROUTER_CLASSIFIER_BASE_URL` 환경 변수, 없으면 제공자 기본값 | Jev 엔드포인트, Laya 서버(기본값 `http://127.0.0.1:8000`), Kev 서버(기본값 `http://127.0.0.1:8008`), OpenAI 리전 엔드포인트 또는 CLM 서버(기본값 `http://127.0.0.1:8700`). |
 | `classifier.accountId` | `REASONING_ROUTER_CLASSIFIER_ACCOUNT_ID` 환경 변수 | Clef: Cloudflare 계정 ID. |
-| `classifier.model` | `REASONING_ROUTER_CLASSIFIER_MODEL` 환경 변수 | Clef: `clef` 또는 `clef-flash`(필수). Laya: 선택적 체크포인트. Kev: 선택 사항이며 그대로 되돌려 보내기만 함. OpenAI Decisions: `gpt-6-luna`. |
+| `classifier.model` | `REASONING_ROUTER_CLASSIFIER_MODEL` 환경 변수 | Clef: `clef` 또는 `clef-flash`(필수). Laya: 선택적 체크포인트. Kev: 선택 사항이며 그대로 되돌려 보내기만 함. OpenAI Decisions: `gpt-6-luna`. CLM: 선택적 헤드이며 서버 기본값은 `clm-latest`. |
 | `classifier.timeoutMs` | `4000` | 재시도를 포함한 전체 분류 시간 예산. |
 | `wrap` | 없음 | `openai`/`anthropic` 소스 참조로 이루어진, 비어 있지 않은 필수 객체. |
 | `decisionsLogPath` | 꺼짐 | `ReasoningDecision` JSONL의 절대 경로. |

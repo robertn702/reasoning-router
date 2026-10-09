@@ -71,11 +71,23 @@ OpenAI には、他の分類器と同じ長さに上限を設けた要約が送�
 
 [Decisions ガイド](https://developers.openai.com/api/docs/guides/decisions)は 2026-10-07 に確認しました。リクエストとレスポンスの型は `openai` npm パッケージ 7.30.0（`src/resources/decisions.ts`。OpenAI の OpenAPI 仕様から生成）から取得しました。当時、`/v1/decisions` の API リファレンスページは公開されていませんでした。リージョン別 URL はデータコントロールガイドから取得し、同日に確認しました。[issue #33](https://github.com/robertn702/reasoning-router/issues/33) を参照してください。
 
+## CLM（`provider: "clm"`）
+
+[CLM](https://github.com/Contrastive-LM/CLM)。自分で動かす `clm-serve` サーバーが提供します。`clm-serve` には、同じく自分で動かす別のプーリングバックエンド（Qwen3-8B の埋め込み。例: vLLM）が必要です。このパッケージは `clm-serve` を HTTP 経由で呼び出すだけです。固定バージョンと制限については [docs/classifiers/clm.md](../../docs/classifiers/clm.md) を参照してください。検証したのは API の互換性のみで、推論強度の判断品質は検証していません。
+
+| フィールド | デフォルト | 用途 |
+| --- | --- | --- |
+| `baseUrl` | `http://127.0.0.1:8700` | CLM サーバー。HTTPS、またはループバックホスト宛ての平文 HTTP のみ。 |
+| `apiKey` | なし | 省略可。サーバー側で `CLM_API_KEY` を設定している場合にのみ設定します。 |
+| `model` | サーバーの `clm-latest` | 省略可の CLM ヘッド: `clm-latest`、`clm-raw`、または `--model NAME=PATH` で読み込んだヘッド。 |
+| `timeoutMs` | `4000` | リトライを含む、分類全体の時間予算。 |
+
 ## エクスポート
 
 - `classifierProviders`: すべての分類器。[`@reasoning-router/core`](../core/README_JA.md) の `createConfiguredSelector` 用。
 - `jevClassifierProvider`、`clefClassifierProvider`、`layaClassifierProvider`、`kevClassifierProvider`: 各プロバイダー。
 - `openAIDecisionsClassifierProvider`、`createOpenAIDecisionsTransport`、`resolveOpenAIDecisionsConnection`、および `OpenAIDecisionsConnection` 型。
+- `clmClassifierProvider`、`createClmTransport`、`resolveClmConnection`、および `ClmConnection` 型。
 - `createJevClassifier`、`createJevTransport`、`createClefTransport`、`createLayaTransport`、`createKevTransport`、`resolveJevConnection`、`resolveClefConnection`、`resolveLayaConnection`、`resolveKevConnection`: 低レベルのヘルパー。
 - `ClassifierRequestError` と `Fetch` 型。トランスポートが使用します。
 

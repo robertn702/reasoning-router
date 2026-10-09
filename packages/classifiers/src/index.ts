@@ -1,5 +1,6 @@
 import type { ClassifierProvider } from "@reasoning-router/core";
 import { clefClassifierProvider } from "./clef.js";
+import { clmClassifierProvider } from "./clm.js";
 import { jevClassifierProvider } from "./jev.js";
 import { kevClassifierProvider } from "./kev.js";
 import { layaClassifierProvider } from "./laya.js";
@@ -11,6 +12,12 @@ export {
   createClefTransport,
   resolveClefConnection,
 } from "./clef.js";
+export {
+  type ClmConnection,
+  clmClassifierProvider,
+  createClmTransport,
+  resolveClmConnection,
+} from "./clm.js";
 export { loadClassifierConfig } from "./env.js";
 export {
   createJevClassifier,
@@ -47,4 +54,5 @@ export const classifierProviders: readonly ClassifierProvider[] = [
   layaClassifierProvider,
   kevClassifierProvider,
   openAIDecisionsClassifierProvider,
+  clmClassifierProvider,
 ];

@@ -163,6 +163,7 @@ describe("Clef classifier", () => {
       "laya",
       "kev",
       "openai-decisions",
+      "clm",
     ]);
     expect(() =>
       createConfiguredSelector(

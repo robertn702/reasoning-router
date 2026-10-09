@@ -20,19 +20,21 @@ if (process.argv.includes("--help") || process.argv.includes("-h")) {
 Start the local adaptive-reasoning Responses and Messages API proxy.
 
 Environment:
-  REASONING_ROUTER_CLASSIFIER           Classifier provider: jev (default), clef, laya, kev, or openai-decisions
+  REASONING_ROUTER_CLASSIFIER           Classifier provider: jev (default), clef, laya, kev, openai-decisions, or clm
   REASONING_ROUTER_CLASSIFIER_API_KEY   Classifier key (separate from upstream/client keys);
-                                        required for jev, clef, and openai-decisions, optional for laya and kev
+                                        required for jev, clef, and openai-decisions, optional for laya, kev, and clm
   REASONING_ROUTER_CLASSIFIER_BASE_URL  jev API root (default: https://api.typesafe.ai)
                                         Vercel: https://ai-gateway.vercel.sh/typesafe
                                         laya: your Laya server (default: http://127.0.0.1:8000)
                                         kev: your kev.serve server (default: http://127.0.0.1:8008)
                                         openai-decisions: https://api.openai.com/v1 (default), or us./eu. regional endpoint
+                                        clm: your clm-serve server (default: http://127.0.0.1:8700)
   REASONING_ROUTER_CLASSIFIER_ACCOUNT_ID  clef: Cloudflare account ID (required)
   REASONING_ROUTER_CLASSIFIER_MODEL     clef: clef or clef-flash (required)
                                         laya: optional checkpoint, e.g. english or multilingual
                                         kev: optional; echoed only (checkpoint is set by kev.serve --run)
                                         openai-decisions: gpt-6-luna (default, only value)
+                                        clm: optional head (the server defaults to clm-latest)
   REASONING_ROUTER_PORT     Listening port (default: 4320)
   REASONING_ROUTER_UPSTREAM_BASE_URL  Required Responses API-compatible base URL, e.g. https://api.openai.com/v1
   REASONING_ROUTER_UPSTREAM_AUTH      forward (default, loopback only) or bearer
