@@ -122,6 +122,36 @@ HTTPS. Set `REASONING_ROUTER_CLASSIFIER_API_KEY` only if the server sets
 `LAYA_API_KEY`, and set `REASONING_ROUTER_CLASSIFIER_MODEL` to choose a
 checkpoint (`english`, `multilingual`, or `typed-decisions`).
 
+### Kev
+
+[Kev](https://github.com/jaredpalmer/kev) is an open-source, Jev-compatible
+family of decision models that you run yourself with its `kev.serve`. The
+router only calls it over HTTP:
+
+```bash
+uv run --extra serve python -m kev.serve --run jaredpalmer/kev-4b@v1.0   # http://127.0.0.1:8008
+REASONING_ROUTER_CLASSIFIER=kev reasoning-router
+```
+
+See [docs/proposals/kev.md](docs/proposals/kev.md) for the pinned version,
+the confirmed HTTP contract, auth, limits, and what is not yet verified.
+
+### OpenAI Decisions
+
+The `openai-decisions` classifier calls OpenAI's Decisions API (public beta,
+model `gpt-6-luna`) with your own OpenAI API key:
+
+```bash
+REASONING_ROUTER_CLASSIFIER=openai-decisions \
+REASONING_ROUTER_CLASSIFIER_API_KEY="$OPENAI_API_KEY" \
+reasoning-router
+```
+
+It is tested against mocked responses only; live compatibility and
+effort-selection quality are unverified. See
+[packages/classifiers](packages/classifiers/README.md#openai-decisions-provider-openai-decisions)
+for the privacy boundary, regional endpoints, and cost.
+
 ## Supported models
 
 The router rejects any other model locally. Whether your upstream account can
@@ -148,36 +178,6 @@ See [docs/behavior.md](docs/behavior.md) and
 [docs/classification-policy.md](docs/classification-policy.md). The registry
 lives in
 [`packages/core/src/models.ts`](packages/core/src/models.ts).
-
-## Kev
-
-[Kev](https://github.com/jaredpalmer/kev) is an open-source, Jev-compatible
-family of decision models that you run yourself with its `kev.serve`. The
-router only calls it over HTTP:
-
-```bash
-uv run --extra serve python -m kev.serve --run jaredpalmer/kev-4b@v1.0   # http://127.0.0.1:8008
-REASONING_ROUTER_CLASSIFIER=kev reasoning-router
-```
-
-See [docs/proposals/kev.md](docs/proposals/kev.md) for the pinned version,
-the confirmed HTTP contract, auth, limits, and what is not yet verified.
-
-## OpenAI Decisions
-
-The `openai-decisions` classifier calls OpenAI's Decisions API (public beta,
-model `gpt-6-luna`) with your own OpenAI API key:
-
-```bash
-REASONING_ROUTER_CLASSIFIER=openai-decisions \
-REASONING_ROUTER_CLASSIFIER_API_KEY="$OPENAI_API_KEY" \
-reasoning-router
-```
-
-It is tested against mocked responses only; live compatibility and
-effort-selection quality are unverified. See
-[packages/classifiers](packages/classifiers/README.md#openai-decisions-provider-openai-decisions)
-for the privacy boundary, regional endpoints, and cost.
 
 ## Development
 
