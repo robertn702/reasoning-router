@@ -50,6 +50,18 @@ REASONING_ROUTER_UPSTREAM_API_KEY=<openai-key> \
 npx @reasoning-router/proxy
 ```
 
+Codex에서는 `~/.codex/config.toml`에 프록시를 프로바이더로 추가합니다. 추론 수준은 분류기가 선택하므로 Codex 자체의 추론 수준 설정은 무시됩니다:
+
+```toml
+model = "gpt-6-astra"
+model_provider = "reasoning-router"
+
+[model_providers.reasoning-router]
+name = "reasoning-router"
+base_url = "http://127.0.0.1:4320/v1"
+wire_api = "responses"
+```
+
 분류기가 느리거나 사용할 수 없는 경우에도 요청은 폴백 추론 수준(기본값은 `high`)으로 실행됩니다.
 
 ## 동작 방식

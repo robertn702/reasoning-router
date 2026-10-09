@@ -55,6 +55,18 @@ REASONING_ROUTER_UPSTREAM_API_KEY=<openai-key> \
 npx @reasoning-router/proxy
 ```
 
+对于 Codex，在 `~/.codex/config.toml` 中将代理添加为 provider。推理强度由分类器选择，因此 Codex 自身的推理强度设置会被忽略：
+
+```toml
+model = "gpt-6-astra"
+model_provider = "reasoning-router"
+
+[model_providers.reasoning-router]
+name = "reasoning-router"
+base_url = "http://127.0.0.1:4320/v1"
+wire_api = "responses"
+```
+
 如果分类器响应缓慢或不可用，请求仍会照常执行，使用回退强度（默认为 `high`）。
 
 ## 工作原理
