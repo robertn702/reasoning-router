@@ -66,7 +66,7 @@
 | `maxRetries` | `1` | 遇到暂时性分类器错误后的额外尝试次数。 |
 | `fallbackMode` | `fixed` | `fixed`、`previous` 或 `error`。 |
 | `fallbackEffort` | `high` | 分类失败时使用的强度。 |
-| `maxRequestBytes` | `1048576` | 请求体大小上限。 |
+| `maxRequestBytes` | `33554432` | 请求体大小上限。 |
 | `maxInFlight` | `32` | 并发请求数。 |
 | `upstreamHeaderTimeoutMs` | `10000` | 等待端点响应头的时间。 |
 | `upstreamIdleTimeoutMs` | `60000` | 流式数据块之间的最长间隔。 |

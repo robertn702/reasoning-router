@@ -393,7 +393,7 @@ async function handle(
           : undefined;
       if (
         Number(request.headers["content-length"]) >
-        (options.maxRequestBytes ?? 1_048_576)
+        (options.maxRequestBytes ?? 33_554_432)
       ) {
         request.pause();
         response.setHeader("connection", "close");
@@ -412,7 +412,7 @@ async function handle(
       }
       let raw: string;
       try {
-        raw = await readBody(request, options.maxRequestBytes ?? 1_048_576);
+        raw = await readBody(request, options.maxRequestBytes ?? 33_554_432);
       } catch (error) {
         if (!(error instanceof BodyTooLargeError)) throw error;
         response.setHeader("connection", "close");

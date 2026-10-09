@@ -74,7 +74,7 @@ example.
 | `maxRetries` | `1` | Extra attempts after transient classifier errors. |
 | `fallbackMode` | `fixed` | `fixed`, `previous`, or `error`. |
 | `fallbackEffort` | `high` | Effort used when classification fails. |
-| `maxRequestBytes` | `1048576` | Largest request body. |
+| `maxRequestBytes` | `33554432` | Largest request body. |
 | `maxInFlight` | `32` | Concurrent requests. |
 | `upstreamHeaderTimeoutMs` | `10000` | Wait for endpoint response headers. |
 | `upstreamIdleTimeoutMs` | `60000` | Longest gap between streamed chunks. |
