@@ -2,7 +2,7 @@
 
 [English](README.md) | [简体中文](README_CN.md) | [日本語](README_JA.md) | 한국어
 
-각 단계에 얼마나 많은 추론이 필요한지 분류기에 물어본 뒤, 프롬프트 캐시를 깨뜨리지 않고 그 강도를 나가는 모델 요청에 적용하는 [OpenCode](https://opencode.ai) V2 플러그인입니다. [`@reasoning-router/classifiers`](../classifiers/README_KO.md)의 모든 분류기(Jev, Cloudflare Clef, Laya, Kev, OpenAI Decisions)를 사용할 수 있습니다.
+각 단계에 얼마나 많은 추론이 필요한지 분류기에 물어본 뒤, 프롬프트 캐시를 깨뜨리지 않고 그 추론 수준을 나가는 모델 요청에 적용하는 [OpenCode](https://opencode.ai) V2 플러그인입니다. [`@reasoning-router/classifiers`](../classifiers/README_KO.md)의 모든 분류기(Jev, Cloudflare Clef, Laya, Kev, OpenAI Decisions)를 사용할 수 있습니다.
 
 > **Alpha.** OpenCode는 패키지 이름으로 npm에서 플러그인을 설치합니다. 아래와 같이 `plugins`에 나열하세요.
 
@@ -28,7 +28,7 @@
 }
 ```
 
-플러그인은 `wrap`에 나열된 소스 모델(`provider/model` 참조로 이루어진 `openai` 및/또는 `anthropic` 배열)에 대해서만 `reasoning-router/<profile>` 별칭을 등록합니다. 소스 모델 자체는 건드리지 않습니다. 별칭으로 가는 각 기본(primary) 요청은 한 번 분류되며, 분류기가 실패하면 요청은 폴백 강도(기본값 `high`)로 계속됩니다. `decisionsLogPath`를 지정하면, 라우팅된 각 요청이 결정을 내린 `classifier`를 기록하는, 메타데이터만 담은 `ReasoningDecision` 이벤트를 추가합니다.
+플러그인은 `wrap`에 나열된 소스 모델(`provider/model` 참조로 이루어진 `openai` 및/또는 `anthropic` 배열)에 대해서만 `reasoning-router/<profile>` 별칭을 등록합니다. 소스 모델 자체는 건드리지 않습니다. 별칭으로 가는 각 기본(primary) 요청은 한 번 분류되며, 분류기가 실패하면 요청은 폴백 추론 수준(기본값 `high`)으로 계속됩니다. `decisionsLogPath`를 지정하면, 라우팅된 각 요청이 결정을 내린 `classifier`를 기록하는, 메타데이터만 담은 `ReasoningDecision` 이벤트를 추가합니다.
 
 OpenAI Decisions(공개 베타)를 사용하려면 `classifier` 블록을 다음으로 바꾸세요.
 
@@ -50,11 +50,11 @@ OpenAI Decisions(공개 베타)를 사용하려면 `classifier` 블록을 다음
 | `classifier.timeoutMs` | `4000` | 재시도를 포함한 전체 분류 시간 예산. |
 | `wrap` | 없음 | `openai`/`anthropic` 소스 참조로 이루어진, 비어 있지 않은 필수 객체. |
 | `decisionsLogPath` | 꺼짐 | `ReasoningDecision` JSONL의 절대 경로. |
-| `baseEffort` | 프로필 기본값 | 응답이 보고하는 요청 수준 강도. |
-| `fixedEffort` | 없음 | 분류기를 건너뛰고 항상 이 강도를 사용. |
+| `baseEffort` | 프로필 기본값 | 응답이 보고하는 요청 단위 추론 수준. |
+| `fixedEffort` | 없음 | 분류기를 건너뛰고 항상 이 추론 수준을 사용. |
 | `maxRetries` | `1` | 일시적인 분류기 오류 후의 추가 시도 횟수. |
 | `fallbackMode` | `fixed` | `fixed`, `previous` 또는 `error`. |
-| `fallbackEffort` | `high` | 분류에 실패했을 때 사용하는 강도. |
+| `fallbackEffort` | `high` | 분류에 실패했을 때 사용하는 추론 수준. |
 | `maxRequestBytes` | `1048576` | 요청 본문의 최대 크기. |
 | `maxInFlight` | `32` | 동시 요청 수. |
 | `upstreamHeaderTimeoutMs` | `10000` | 엔드포인트 응답 헤더를 기다리는 시간. |

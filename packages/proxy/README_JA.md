@@ -2,7 +2,7 @@
 
 [English](README.md) | [简体中文](README_CN.md) | 日本語 | [한국어](README_KO.md)
 
-各リクエストにどれだけの推論が必要かを分類器に尋ね、そのエフォートを、プロンプトキャッシュを壊すことなく送信する Responses（`POST
+各リクエストにどれだけの推論が必要かを分類器に尋ね、その推論強度を、プロンプトキャッシュを壊すことなく送信する Responses（`POST
 /v1/responses`）または Anthropic Messages（`POST /v1/messages`）リクエストに適用する、スタンドアロンの HTTP プロキシです。Node.js 24.x が必要です。
 
 > **Alpha。** 信頼できるローカル環境での使用に限ります。まず[信頼モデル](#trust-model)をお読みください。
@@ -62,7 +62,7 @@ Codex は認証情報を送信しません。プロキシが `REASONING_ROUTER_U
 
 - 使えるのは OpenAI API キーのみです。ChatGPT サブスクリプションでのログインはサポートされません。
 - `gpt-6-astra`、`gpt-6-luna`、`gpt-6-sol`、`gpt-6.1-sol` を使用してください。それ以外のモデルはローカルで `400` になります。
-- エフォートは分類器が選びます。Codex の `model_reasoning_effort` と `/model` のエフォートは、Codex 上には表示されますが無視されます。
+- 推論強度は分類器が選びます。Codex の `model_reasoning_effort` と `/model` の推論強度は、Codex 上には表示されますが無視されます。
 - Codex 0.159.0 は `gpt-6.1-sol` を認識せず、`model_catalog_json` を指定しない限り汎用メタデータで実行します。
 - プロキシは、60 秒間データがないアップストリームのストリームを閉じます。長いターンが途中で切れる場合は、`REASONING_ROUTER_UPSTREAM_IDLE_TIMEOUT_MS` を引き上げてください。
 

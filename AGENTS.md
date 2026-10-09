@@ -98,3 +98,7 @@ before starting an agent. The script runs `npm ci`, copies local `.env*` files
   In a translation, put `<a id="..."></a>` with the English anchor above any
   heading that is linked to, so `#fragment` links keep working, and point
   links to a package directory at that directory's translated README.
+  Use the terms from OpenAI's and Anthropic's localized docs: effort is
+  推理强度 / 推論強度 / 추론 수준, classifier is 分类器 / 分類器 / 분류기, and
+  prompt cache is 提示缓存 / プロンプトキャッシュ / 프롬프트 캐시 (CN / JA /
+  KO). Chinese writes "token", not 令牌.

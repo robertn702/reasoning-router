@@ -2,7 +2,7 @@
 
 [English](README.md) | 简体中文 | [日本語](README_JA.md) | [한국어](README_KO.md)
 
-一个 [OpenCode](https://opencode.ai) V2 插件，它会向分类器询问每一步需要多少推理强度，然后在不破坏提示词缓存的前提下，
+一个 [OpenCode](https://opencode.ai) V2 插件，它会向分类器询问每一步需要多少推理强度，然后在不破坏提示缓存的前提下，
 将该强度应用到发出的模型请求上。[`@reasoning-router/classifiers`](../classifiers/README_CN.md) 中的所有分类器
 （Jev、Cloudflare Clef、Laya、Kev 和 OpenAI Decisions）均可使用。
 
@@ -16,7 +16,7 @@
 - 一个分类器密钥。对于 Jev：一个 [TypeSafe](https://typesafe.ai/) 密钥，或配合
   `baseUrl: "https://ai-gateway.vercel.sh/typesafe"` 使用的
   [Vercel AI Gateway](https://vercel.com/docs/ai-gateway/sdks-and-apis/typesafe) 密钥。对于 Clef：
-  Cloudflare Workers AI API 令牌和账户 ID。对于 Laya 或 Kev：一台你自行运行的服务器
+  Cloudflare Workers AI API token 和账户 ID。对于 Laya 或 Kev：一台你自行运行的服务器
   （请参阅 [`docs/environment.md`](../../docs/environment.md)）。对于 OpenAI Decisions：
   具有 Decisions 访问权限的 OpenAI API 密钥。
 - 一个提供 GPT-6 Astra、Luna 或 Sol 的 Responses API 端点，或一个启用了对话中途 output-config beta 的
