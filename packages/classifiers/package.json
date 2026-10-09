@@ -1,6 +1,6 @@
 {
   "name": "@reasoning-router/classifiers",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Reasoning-effort classifiers (Jev, Clef, Laya) for reasoning-router",
   "type": "module",
   "license": "MIT",
@@ -39,7 +39,7 @@
     "prepack": "npm run build"
   },
   "dependencies": {
-    "@reasoning-router/core": "^0.1.0",
+    "@reasoning-router/core": "^0.2.0",
     "zod": "^4.6.5"
   }
 }

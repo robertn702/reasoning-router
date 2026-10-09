@@ -1,6 +1,6 @@
 {
   "name": "@reasoning-router/pi",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Adaptive per-step reasoning effort for the Pi coding agent",
   "type": "module",
   "license": "MIT",
@@ -40,8 +40,8 @@
     "prepack": "npm run build"
   },
   "dependencies": {
-    "@reasoning-router/classifiers": "^0.1.0",
-    "@reasoning-router/core": "^0.1.0",
+    "@reasoning-router/classifiers": "^0.1.1",
+    "@reasoning-router/core": "^0.2.0",
     "zod": "^4.6.5"
   },
   "peerDependencies": {

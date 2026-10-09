@@ -1,6 +1,6 @@
 {
   "name": "@reasoning-router/opencode",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Adaptive per-step reasoning effort for OpenCode V2",
   "type": "module",
   "license": "MIT",
@@ -40,8 +40,8 @@
     "prepack": "npm run build"
   },
   "dependencies": {
-    "@reasoning-router/classifiers": "^0.1.0",
-    "@reasoning-router/core": "^0.1.0",
+    "@reasoning-router/classifiers": "^0.1.1",
+    "@reasoning-router/core": "^0.2.0",
     "zod": "^4.6.5"
   },
   "devDependencies": {
