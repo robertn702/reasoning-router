@@ -1,0 +1,34 @@
+{
+  "tasks": [
+    {
+      "id": "sympy__sympy-13878",
+      "repo": "https://github.com/sympy/sympy.git",
+      "commit": "7b127bdf71a36d85216315f80c1b54d22b060818",
+      "grade": "swebench"
+    },
+    {
+      "id": "sphinx-doc__sphinx-7590",
+      "repo": "https://github.com/sphinx-doc/sphinx.git",
+      "commit": "2e506c5ab457cba743bb47eb5b8c8eb9dd51d23d",
+      "grade": "swebench"
+    },
+    {
+      "id": "scikit-learn__scikit-learn-25102",
+      "repo": "https://github.com/scikit-learn/scikit-learn.git",
+      "commit": "f9a1cf072da9d7375d6c2163f68a6038b13b310f",
+      "grade": "swebench"
+    },
+    {
+      "id": "sphinx-doc__sphinx-11510",
+      "repo": "https://github.com/sphinx-doc/sphinx.git",
+      "commit": "6cb783c0024a873722952a67ebb9f41771c8eb6d",
+      "grade": "swebench"
+    },
+    {
+      "id": "pytest-dev__pytest-6197",
+      "repo": "https://github.com/pytest-dev/pytest.git",
+      "commit": "e856638ba086fcf5bebf1bebea32d5cf78de87b4",
+      "grade": "swebench"
+    }
+  ]
+}
