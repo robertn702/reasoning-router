@@ -1,6 +1,6 @@
 # 評価
 
-[English](README.md) | [简体中文](README_CN.md) | 日本語
+[English](README.md) | [简体中文](README_CN.md) | 日本語 | [한국어](README_KO.md)
 
 分類器でルーティングしたエフォートは、固定エフォートより推論の消費を抑えながら、解決率を維持できるのでしょうか。これらのレポートは、[SWE-bench Verified](https://huggingface.co/datasets/SWE-bench/SWE-bench_Verified) の実際のコーディングタスクでそれを測定しています。各試行ではクリーンなチェックアウト上でコーディングエージェントを実行し、結果を公式の SWE-bench テストハーネスで採点します。
 

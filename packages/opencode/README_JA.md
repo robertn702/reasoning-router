@@ -1,6 +1,6 @@
 # @reasoning-router/opencode
 
-[English](README.md) | [简体中文](README_CN.md) | 日本語
+[English](README.md) | [简体中文](README_CN.md) | 日本語 | [한국어](README_KO.md)
 
 各ステップにどれだけの推論が必要かを分類器に尋ね、そのエフォートを、プロンプトキャッシュを壊すことなく送信するモデルリクエストに適用する [OpenCode](https://opencode.ai) V2 プラグインです。[`@reasoning-router/classifiers`](../classifiers/README_JA.md) のすべての分類器（Jev、Cloudflare Clef、Laya、Kev、OpenAI Decisions）を利用できます。
 

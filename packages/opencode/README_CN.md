@@ -1,6 +1,6 @@
 # @reasoning-router/opencode
 
-[English](README.md) | 简体中文 | [日本語](README_JA.md)
+[English](README.md) | 简体中文 | [日本語](README_JA.md) | [한국어](README_KO.md)
 
 一个 [OpenCode](https://opencode.ai) V2 插件，它会向分类器询问每一步需要多少推理强度，然后在不破坏提示词缓存的前提下，
 将该强度应用到发出的模型请求上。[`@reasoning-router/classifiers`](../classifiers/README_CN.md) 中的所有分类器

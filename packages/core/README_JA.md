@@ -1,6 +1,6 @@
 # @reasoning-router/core
 
-[English](README.md) | [简体中文](README_CN.md) | 日本語
+[English](README.md) | [简体中文](README_CN.md) | 日本語 | [한국어](README_KO.md)
 
 reasoning-router のうち、ハーネスにも分類器にも依存しない共有部分です。リクエストの検証、モデルレジストリ、Responses と Anthropic Messages に対するキャッシュを保つエフォートの書き換え、キャッシュのリネージ、リトライとフォールバックを備えた分類器の選択、アップストリームへの転送ヘルパー、使用量の観測、判断のログ記録を提供します。
 

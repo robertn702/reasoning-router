@@ -154,8 +154,8 @@ server to run), describe those the way the README's Laya section does.
 - `packages/opencode/README.md` and `packages/pi/README.md`: the provider
   lists in their settings tables.
 - `packages/classifiers/package.json`: the description and `keywords`.
-- The `README_CN.md` and `README_JA.md` beside every README edited above:
-  make the same change in Chinese and Japanese.
+- The `README_CN.md`, `README_JA.md`, and `README_KO.md` beside every README
+  edited above: make the same change in Chinese, Japanese, and Korean.
 
 ### 6. Sweep for missed spots
 

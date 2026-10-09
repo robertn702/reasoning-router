@@ -1,6 +1,6 @@
 # @reasoning-router/pi
 
-[English](README.md) | 简体中文 | [日本語](README_JA.md)
+[English](README.md) | 简体中文 | [日本語](README_JA.md) | [한국어](README_KO.md)
 
 一个 [Pi](https://pi.dev) 扩展，它会向分类器询问每个 Claude 请求需要多少推理强度，并让 Pi 在不破坏提示词缓存的前提下
 放置该强度。需要 Pi 1.0.0 或更高版本以及 Node.js 24.x。

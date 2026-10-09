@@ -1,6 +1,6 @@
 # @reasoning-router/proxy
 
-English | [简体中文](README_CN.md) | [日本語](README_JA.md)
+English | [简体中文](README_CN.md) | [日本語](README_JA.md) | [한국어](README_KO.md)
 
 A standalone HTTP proxy that asks a classifier how much reasoning each request
 needs, then applies that effort to the outgoing Responses (`POST

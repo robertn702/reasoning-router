@@ -1,6 +1,6 @@
 # @reasoning-router/proxy
 
-[English](README.md) | [简体中文](README_CN.md) | 日本語
+[English](README.md) | [简体中文](README_CN.md) | 日本語 | [한국어](README_KO.md)
 
 各リクエストにどれだけの推論が必要かを分類器に尋ね、そのエフォートを、プロンプトキャッシュを壊すことなく送信する Responses（`POST
 /v1/responses`）または Anthropic Messages（`POST /v1/messages`）リクエストに適用する、スタンドアロンの HTTP プロキシです。Node.js 24.x が必要です。

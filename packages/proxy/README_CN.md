@@ -1,6 +1,6 @@
 # @reasoning-router/proxy
 
-[English](README.md) | 简体中文 | [日本語](README_JA.md)
+[English](README.md) | 简体中文 | [日本語](README_JA.md) | [한국어](README_KO.md)
 
 一个独立的 HTTP 代理，它会向分类器询问每个请求需要多少推理强度，然后在不破坏提示词缓存的前提下，将该强度应用到发出的
 Responses（`POST /v1/responses`）或 Anthropic Messages（`POST /v1/messages`）请求上。需要 Node.js 24.x。

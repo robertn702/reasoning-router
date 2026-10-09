@@ -1,6 +1,6 @@
 # @reasoning-router/classifiers
 
-English | [简体中文](README_CN.md) | [日本語](README_JA.md)
+English | [简体中文](README_CN.md) | [日本語](README_JA.md) | [한국어](README_KO.md)
 
 The reasoning-effort classifiers for reasoning-router. Each one asks a decision
 model one `choice` question, limited to the target model's supported efforts,
