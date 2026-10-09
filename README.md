@@ -52,7 +52,7 @@ The packages are:
   classifier-independent router.
 - [`@reasoning-router/opencode`](packages/opencode): the OpenCode V2 plugin.
 - [`@reasoning-router/classifiers`](packages/classifiers): the
-  classifiers (Jev, Cloudflare Clef, Laya, and Kev), selected by
+  classifiers (Jev, Cloudflare Clef, Laya, Kev, and OpenAI Decisions), selected by
   `classifier.provider`.
 - [`@reasoning-router/pi`](packages/pi): the Pi extension (Claude models
   only, for now).
@@ -163,6 +163,22 @@ REASONING_ROUTER_CLASSIFIER=kev reasoning-router
 See [docs/proposals/kev.md](docs/proposals/kev.md) for the pinned version,
 the confirmed HTTP contract, auth, limits, and what is not yet verified.
 
+## OpenAI Decisions
+
+The `openai-decisions` classifier calls OpenAI's Decisions API (public beta,
+model `gpt-6-luna`) with your own OpenAI API key:
+
+```bash
+REASONING_ROUTER_CLASSIFIER=openai-decisions \
+REASONING_ROUTER_CLASSIFIER_API_KEY="$OPENAI_API_KEY" \
+reasoning-router
+```
+
+It is tested against mocked responses only; live compatibility and
+effort-selection quality are unverified. See
+[packages/classifiers](packages/classifiers/README.md#openai-decisions-provider-openai-decisions)
+for the privacy boundary, regional endpoints, and cost.
+
 ## Development
 
 Requires Node.js 24.x.
@@ -216,6 +232,10 @@ These are reversible:
 - **Kev is its own `kev` preset** with Laya's connection rules, so decision
   logs name the right service. Its default base URL is `kev.serve`'s
   `http://127.0.0.1:8008`.
+- **OpenAI Decisions base URLs are an allowlist** (the global, `us.`, and
+  `eu.` OpenAI API roots), so a base URL left over from another classifier
+  cannot receive the OpenAI key. `model` accepts only `gpt-6-luna` until
+  OpenAI adds models.
 
 ## License
 

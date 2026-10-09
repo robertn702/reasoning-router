@@ -900,6 +900,44 @@ describe("V2 wrap aliases", () => {
       h.cleanup();
     }));
 
+  it("selects OpenAI Decisions from the classifier environment variables", async () =>
+    withLog(async (path) => {
+      const classifierRequests: Request[] = [];
+      mockFetch(async (request) => {
+        if (!request.url.endsWith("/v1/decisions"))
+          return new Response("{}", {
+            headers: { "content-type": "application/json" },
+          });
+        classifierRequests.push(request);
+        return new Response(
+          JSON.stringify({
+            answers: [{ type: "choice", name: "effort", choice: "high" }],
+          }),
+        );
+      });
+      vi.stubEnv("REASONING_ROUTER_CLASSIFIER", "openai-decisions");
+      vi.stubEnv("REASONING_ROUTER_CLASSIFIER_API_KEY", "sk-classifier");
+      vi.stubEnv(
+        "REASONING_ROUTER_CLASSIFIER_BASE_URL",
+        "https://eu.api.openai.com/v1",
+      );
+      const h = await host({ wrap: base.wrap, decisionsLogPath: path });
+      await (await h.exchange()).response.text();
+      expect(classifierRequests.map((request) => request.url)).toEqual([
+        "https://eu.api.openai.com/v1/decisions",
+      ]);
+      expect(classifierRequests[0]!.headers.get("authorization")).toBe(
+        "Bearer sk-classifier",
+      );
+      expect((await classifierRequests[0]!.json()).model).toBe("gpt-6-luna");
+      expect((await decisions(path))[0]).toMatchObject({
+        classifier: "openai-decisions",
+        effort: "high",
+        fallback: null,
+      });
+      h.cleanup();
+    }));
+
   it("session cancellation aborts classification without starting upstream generation", async () => {
     const upstream = vi.fn<(request: Request) => Promise<Response>>();
     mockFetch((request) =>
