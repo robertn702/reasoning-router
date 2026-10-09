@@ -1,5 +1,12 @@
 # @reasoning-router/opencode
 
+## 0.1.4
+
+### Patch Changes
+
+- Updated dependencies [7adde1f]
+  - @reasoning-router/classifiers@0.3.0
+
 ## 0.1.3
 
 ### Patch Changes
