@@ -23,9 +23,8 @@ edits and tool calls and save high or max for architecture and hard debugging.
 
 - **Tested with:** Node.js 24.x, OpenCode V2 2.0.18, Pi 1.0.4, and Codex CLI
   0.159.0 (through the proxy). Other versions may work but are untested.
-- **Models:** GPT-6 Astra, Luna, Sol, and 6.1 Sol on Responses APIs, and the
-  Claude models listed in [docs/behavior.md](docs/behavior.md) on Anthropic
-  Messages. Other models are rejected locally. Pi routes Claude models only.
+- **Models:** only those listed under [Supported models](#supported-models).
+  Other models are rejected locally. Pi routes Claude models only.
 - **Classifiers:** the router asks the configured classifier and applies its
   answer; it makes no claim about how well any classifier picks effort for
   your workload.
@@ -64,7 +63,48 @@ See [docs/architecture.md](docs/architecture.md) for the problem statement,
 the package plan, and the open questions, and
 [docs/behavior.md](docs/behavior.md) for the router's wire behavior.
 
-## Laya
+## Classifiers
+
+Pick a classifier with `REASONING_ROUTER_CLASSIFIER` (proxy and Pi) or the
+plugin's `classifier.provider` option (OpenCode). The examples below use the
+proxy; the OpenCode plugin takes the same settings as `classifier.apiKey`,
+`classifier.baseUrl`, `classifier.accountId`, and `classifier.model`, and
+falls back to these environment variables. See
+[docs/environment.md](docs/environment.md) and
+[`@reasoning-router/classifiers`](packages/classifiers) for every setting.
+
+### Jev (default)
+
+[Jev](https://typesafe.ai/) is a hosted decision model from TypeSafe. Get a
+TypeSafe API key, then:
+
+```bash
+REASONING_ROUTER_CLASSIFIER=jev \
+REASONING_ROUTER_CLASSIFIER_API_KEY=<typesafe-key> \
+reasoning-router
+```
+
+To use a Vercel AI Gateway key instead, also set
+`REASONING_ROUTER_CLASSIFIER_BASE_URL=https://ai-gateway.vercel.sh/typesafe`.
+
+### Cloudflare Clef
+
+[Clef](https://developers.cloudflare.com/workers-ai/models/clef/) runs on
+Cloudflare Workers AI. Create a Cloudflare API token with Workers AI
+permissions, then:
+
+```bash
+REASONING_ROUTER_CLASSIFIER=clef \
+REASONING_ROUTER_CLASSIFIER_API_KEY=<cloudflare-token> \
+REASONING_ROUTER_CLASSIFIER_ACCOUNT_ID=<cloudflare-account-id> \
+REASONING_ROUTER_CLASSIFIER_MODEL=clef \
+reasoning-router
+```
+
+Set `REASONING_ROUTER_CLASSIFIER_MODEL` to `clef` or `clef-flash`. It is
+required.
+
+### Laya
 
 [Laya](https://huggingface.co/convaiinnovations/laya) is an open-source,
 Jev-compatible decision model that you run yourself. The router only calls
@@ -77,9 +117,37 @@ LAYA_HOST=127.0.0.1 LAYA_PRELOAD=1 laya-serve   # http://127.0.0.1:8000
 REASONING_ROUTER_CLASSIFIER=laya reasoning-router
 ```
 
-The default base URL is `http://127.0.0.1:8000`. See
-[docs/environment.md](docs/environment.md) for a remote server, a key, or a
-checkpoint.
+The default base URL is `http://127.0.0.1:8000`. A remote server must use
+HTTPS. Set `REASONING_ROUTER_CLASSIFIER_API_KEY` only if the server sets
+`LAYA_API_KEY`, and set `REASONING_ROUTER_CLASSIFIER_MODEL` to choose a
+checkpoint (`english`, `multilingual`, or `typed-decisions`).
+
+## Supported models
+
+The router rejects any other model locally. Whether your upstream account can
+use a model is a separate question.
+
+| Model | ID | API | Efforts | Base effort | Pi |
+| --- | --- | --- | --- | --- | --- |
+| GPT-6 Astra | `gpt-6-astra` | Responses | low–max | medium | No |
+| GPT-6 Luna | `gpt-6-luna` | Responses | none–max | medium | No |
+| GPT-6 Sol | `gpt-6-sol` | Responses | none–max | medium | No |
+| GPT-6.1 Sol | `gpt-6.1-sol` | Responses | low–max | medium | No |
+| Claude Fable 5.1 | `claude-fable-5-1` | Messages | low–max | high | Yes |
+| Claude Mythos 5.1 | `claude-mythos-5-1` | Messages | low–max | high | No (Pi 1.0.4) |
+| Claude Opus 5.5 | `claude-opus-5-5` | Messages | low–max | medium | Yes |
+| Claude Opus 5 | `claude-opus-5` | Messages | low–max | high | Yes |
+| Claude Sonnet 5.5 | `claude-sonnet-5-5` | Messages | low–max | medium | Yes |
+
+Efforts run in the order none, low, medium, high, xhigh, max. Base effort is
+the model's default request-level effort, which `REASONING_ROUTER_BASE_EFFORT`
+overrides. When classification fails, the router uses the fallback effort,
+`high` by default for every model; set it with
+`REASONING_ROUTER_FALLBACK_EFFORT` or the plugin's `fallbackEffort` option.
+See [docs/behavior.md](docs/behavior.md) and
+[docs/classification-policy.md](docs/classification-policy.md). The registry
+lives in
+[`packages/core/src/models.ts`](packages/core/src/models.ts).
 
 ## Development
 

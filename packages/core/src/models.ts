@@ -19,7 +19,6 @@ export interface ModelProfile {
   readonly name: string;
   readonly supportedEfforts: readonly Effort[];
   readonly defaultBaseEffort: Effort;
-  readonly fallbackEffort: Effort;
   readonly supportsConfigurationUpdate: boolean;
 }
 
@@ -36,7 +35,6 @@ function profile(
     provider,
     supportedEfforts: Object.freeze(supportedEfforts),
     defaultBaseEffort,
-    fallbackEffort: "medium",
     supportsConfigurationUpdate: true,
   });
 }
