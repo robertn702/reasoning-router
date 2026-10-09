@@ -75,7 +75,6 @@ describe("registered model isolation", () => {
     for (const model of MODELS) {
       expect(Object.isFrozen(model)).toBe(true);
       expect(Object.isFrozen(model.supportedEfforts)).toBe(true);
-      expect(model.fallbackEffort).toBe("medium");
     }
     expect(
       modelsFor("anthropic").every(

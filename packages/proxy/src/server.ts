@@ -8,6 +8,7 @@ import {
 import {
   anthropicVersion,
   buildEvidence,
+  classificationPolicy,
   type Effort,
   type EffortSelector,
   type Evidence,
@@ -217,8 +218,8 @@ export function createAppServer(options: AppServerOptions): Server {
   };
   const selectEffort: EffortSelector =
     options.selectEffort ??
-    (async ({ model }) => ({
-      effort: model.fallbackEffort,
+    (async () => ({
+      effort: classificationPolicy({}).fallbackEffort,
       classifierLatencyMs: 0,
       fallback: null,
     }));
