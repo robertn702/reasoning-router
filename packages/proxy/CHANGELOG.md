@@ -1,5 +1,13 @@
 # @reasoning-router/proxy
 
+## 0.1.3
+
+### Patch Changes
+
+- 7adde1f: Add the OpenAI Decisions classifier (`provider: "openai-decisions"`), which calls OpenAI's public-beta `POST /v1/decisions` with model `gpt-6-luna`. Base URLs are limited to the global, `us.`, and `eu.` OpenAI API roots. The proxy's `--help` lists the new provider.
+- Updated dependencies [7adde1f]
+  - @reasoning-router/classifiers@0.3.0
+
 ## 0.1.2
 
 ### Patch Changes
