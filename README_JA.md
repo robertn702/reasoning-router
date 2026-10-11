@@ -145,7 +145,7 @@ REASONING_ROUTER_CLASSIFIER_MODEL=clef \
 reasoning-router
 ```
 
-`REASONING_ROUTER_CLASSIFIER_MODEL` は `clef` または `clef-flash` に設定します。この設定は必須です。
+`REASONING_ROUTER_CLASSIFIER_MODEL` は `clef`、`clef-omni`、または `clef-flash` に設定します。この設定は必須です。
 
 ### Laya
 

@@ -27,7 +27,7 @@ Cloudflare の [Clef](https://developers.cloudflare.com/workers-ai/models/clef/)
 | --- | --- | --- |
 | `apiKey` | なし | Workers AI の権限を持つ Cloudflare API トークン。必須。 |
 | `accountId` | なし | Cloudflare アカウント ID。必須。 |
-| `model` | なし | `clef` または `clef-flash`。必須。 |
+| `model` | なし | `clef`、`clef-omni`、または `clef-flash`。必須。 |
 | `timeoutMs` | `4000` | リトライを含む、分類全体の時間予算。 |
 
 キーはアカウント ID とともに、Workers AI の

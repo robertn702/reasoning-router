@@ -28,7 +28,7 @@ Cloudflare 的 [Clef](https://developers.cloudflare.com/workers-ai/models/clef/)
 | --- | --- | --- |
 | `apiKey` | 无 | 具有 Workers AI 权限的 Cloudflare API token。必填。 |
 | `accountId` | 无 | Cloudflare 账户 ID。必填。 |
-| `model` | 无 | `clef` 或 `clef-flash`。必填。 |
+| `model` | 无 | `clef`、`clef-omni` 或 `clef-flash`。必填。 |
 | `timeoutMs` | `4000` | 分类的总预算，含重试。 |
 
 该密钥与账户 ID 一起用于调用 Workers AI：

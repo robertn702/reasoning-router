@@ -129,9 +129,9 @@ that Jev-specific names become provider-neutral.
   Workers AI at `/client/v4/accounts/{accountId}/ai/run/@cf/cloudflare/clef`
   with the System One request and a `{ result, success, errors }` envelope
   around the answer. It cannot reuse the Jev endpoint, which is fixed at
-  `{baseUrl}/v1/systemone`. `model` (`clef` or `clef-flash`) is required
-  until effort selection is evaluated. Running Clef locally is out of scope;
-  its backbones need a GPU.
+  `{baseUrl}/v1/systemone`. `model` (`clef`, `clef-omni`, or `clef-flash`)
+  is required until effort selection is evaluated. Running Clef locally is out
+  of scope; its backbones need a GPU.
 - **OpenAI Decisions:** OpenAI's public-beta
   [`POST /v1/decisions`](https://developers.openai.com/api/docs/guides/decisions), with
   classifier model `gpt-6-luna`. It is not System One: it takes text `input`

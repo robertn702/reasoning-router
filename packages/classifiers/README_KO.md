@@ -27,7 +27,7 @@ Cloudflare의 [Clef](https://developers.cloudflare.com/workers-ai/models/clef/)�
 | --- | --- | --- |
 | `apiKey` | 없음 | Workers AI 권한이 있는 Cloudflare API 토큰. 필수. |
 | `accountId` | 없음 | Cloudflare 계정 ID. 필수. |
-| `model` | 없음 | `clef` 또는 `clef-flash`. 필수. |
+| `model` | 없음 | `clef`, `clef-omni` 또는 `clef-flash`. 필수. |
 | `timeoutMs` | `4000` | 재시도를 포함한 전체 분류 시간 예산. |
 
 키는 계정 ID와 함께 Workers AI를

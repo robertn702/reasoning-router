@@ -5,6 +5,7 @@ import {
 } from "@reasoning-router/core";
 import { describe, expect, it } from "vitest";
 import {
+  type ClefConnection,
   classifierProviders,
   createClefTransport,
   resolveClefConnection,
@@ -32,12 +33,15 @@ const answer = (choice: string) => ({
   usage: { input_tokens: 1, output_tokens: 1 },
 });
 
-function clef(fetch: (url: string, init?: RequestInit) => Promise<Response>) {
+function clef(
+  fetch: (url: string, init?: RequestInit) => Promise<Response>,
+  model: ClefConnection["model"] = "clef-flash",
+) {
   return createClassifierSelector({
     classifier: createClefTransport({
       accountId: ACCOUNT_ID,
       apiKey: "cf-token",
-      model: "clef-flash",
+      model,
       fetch,
     }),
     timeoutMs: 1000,
@@ -78,6 +82,23 @@ describe("Clef classifier", () => {
     expect(Object.keys(body.questions.effort.criteria)).toEqual(
       MODELS[0]!.supportedEfforts,
     );
+  });
+
+  it("sends clef-omni in the URL and body", async () => {
+    let sent: [string, RequestInit | undefined] | undefined;
+    const select = clef(async (url, init) => {
+      sent = [url, init];
+      return envelope(answer("high"));
+    }, "clef-omni");
+
+    expect(await select(args())).toMatchObject({
+      effort: "high",
+      fallback: null,
+    });
+    expect(sent?.[0]).toBe(
+      `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/ai/run/@cf/cloudflare/clef-omni`,
+    );
+    expect(JSON.parse(String(sent?.[1]?.body)).model).toBe("clef-omni");
   });
 
   it("treats an unsuccessful or unwrapped body as invalid output", async () => {
@@ -197,7 +218,10 @@ describe("Clef connection", () => {
     [{ ...valid, apiKey: " " }, /apiKey is required/],
     [{ ...valid, accountId: undefined }, /accountId must be/],
     [{ ...valid, accountId: "../other" }, /accountId must be/],
-    [{ ...valid, model: undefined }, /model must be one of clef, clef-flash/],
+    [
+      { ...valid, model: undefined },
+      /model must be one of clef, clef-omni, clef-flash/,
+    ],
     [{ ...valid, model: "jev-latest" }, /model must be one of/],
   ])("rejects %o", (config, message) => {
     expect(() => resolveClefConnection(config)).toThrow(message);
