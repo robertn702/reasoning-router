@@ -52,7 +52,7 @@ REASONING_ROUTER_UPSTREAM_API_KEY=<openai-key> \
 npx @reasoning-router/proxy
 ```
 
-Codex에서는 `~/.codex/config.toml`에 프록시를 프로바이더로 추가합니다. 추론 수준은 분류기가 선택하므로 Codex 자체의 추론 수준 설정은 무시됩니다:
+Codex에서는 모델은 그대로 두고 프로바이더만 바꾸는 프로필을 `~/.codex/reasoning-router.config.toml`에 추가한 다음 `codex -p reasoning-router` 명령을 실행합니다(Codex 0.161.0 이상). 기본 모델 대신 다른 모델을 쓰려면 `-m gpt-6-sol`처럼 추가하세요. 일반 `codex`는 그대로입니다. 추론 수준은 분류기가 선택하므로 Codex 자체의 추론 수준 설정은 무시됩니다. API 키 대신 ChatGPT 구독을 사용하려면 프록시를 CLIProxyAPI에 연결하세요([가이드](packages/proxy/README_KO.md#chatgpt-subscription-through-cliproxyapi)):
 
 ```toml
 model = "gpt-6-astra"
@@ -92,7 +92,7 @@ wire_api = "responses"
 
 ## alpha 제한 사항
 
-- **테스트 환경:** Node.js 24.x, OpenCode V2 2.0.18, Pi 1.0.4, Codex CLI 0.159.0(프록시 경유). 다른 버전도 동작할 수 있지만 테스트되지 않았습니다.
+- **테스트 환경:** Node.js 24.x, OpenCode V2 2.0.18, Pi 1.0.4, Codex CLI 0.159.0 및 0.161.0(프록시 경유). 다른 버전도 동작할 수 있지만 테스트되지 않았습니다.
 - **모델:** [지원 모델](#supported-models)에 나열된 모델만 지원합니다. 그 외 모델은 로컬에서 거부됩니다. Pi는 Claude 모델만 라우팅합니다.
 - **분류기:** 라우터는 설정된 분류기에 물어보고 그 답을 적용할 뿐이며, 사용자의 워크로드에서 분류기가 추론 수준을 얼마나 잘 선택하는지에 대해서는 어떠한 보장도 하지 않습니다.
 - **프록시:** 신뢰할 수 있는 로컬 환경에서만 사용해야 합니다. 자세한 내용은 [신뢰 모델](packages/proxy/README_KO.md#trust-model)을 참조하세요.

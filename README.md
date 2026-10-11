@@ -63,8 +63,12 @@ REASONING_ROUTER_UPSTREAM_API_KEY=<openai-key> \
 npx @reasoning-router/proxy
 ```
 
-For Codex, add the proxy as a provider in `~/.codex/config.toml`. The
-classifier picks the effort, so Codex's own effort setting is ignored:
+For Codex, add a profile at `~/.codex/reasoning-router.config.toml` that keeps the
+model and swaps only the provider, then run `codex -p reasoning-router` (Codex 0.161.0
+or later), adding `-m gpt-6-sol` or another model to override the default. Plain `codex` is unchanged. The classifier picks the effort, so
+Codex's own effort setting is ignored. To use a ChatGPT subscription instead
+of an API key, chain the proxy to CLIProxyAPI
+([guide](packages/proxy#chatgpt-subscription-through-cliproxyapi)):
 
 ```toml
 model = "gpt-6-astra"
@@ -122,7 +126,7 @@ edits and tool calls and save high or max for architecture and hard debugging.
 ## Alpha limitations
 
 - **Tested with:** Node.js 24.x, OpenCode V2 2.0.18, Pi 1.0.4, and Codex CLI
-  0.159.0 (through the proxy). Other versions may work but are untested.
+  0.159.0 and 0.161.0 (through the proxy). Other versions may work but are untested.
 - **Models:** only those listed under [Supported models](#supported-models).
   Other models are rejected locally. Pi routes Claude models only.
 - **Classifiers:** the router asks the configured classifier and applies its

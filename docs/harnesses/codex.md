@@ -1,17 +1,47 @@
 # Codex CLI
 
 Status: findings for [#11](https://github.com/robertn702/reasoning-router/issues/11).
-Recommends the standalone proxy behind a custom Codex model provider, with
-no Codex adapter package.
+Recommends the standalone proxy behind a custom Codex model provider, selected
+with a Codex profile, and no Codex adapter package.
 
-Sources are [Codex CLI](https://github.com/openai/codex) at tag
-`rust-v0.159.0` (`687a119`, released 2026-09-29; `0.160.0` is the latest
-release). Paths below are under
-[`codex-rs/`](https://github.com/openai/codex/tree/rust-v0.159.0/codex-rs)
-at that tag. **Verified** means run locally with `codex-cli 0.159.0`
-against a fake upstream that served SSE replies, using a throwaway
-`CODEX_HOME`, a dummy API key, and no paid requests. Everything else is from
-source, or from third-party reports, which are marked as such.
+## Last checked
+
+Codex ships stable releases most weeks, so everything below is tied to the
+versions in this table. Update the table, not the body, when you re-check.
+
+| What | Version | Date | How |
+| --- | --- | --- | --- |
+| Codex CLI | `rust-v0.159.0` (`687a119`) | 2026-09-29 | Source, plus local runs against a fake upstream |
+| Codex CLI | `rust-v0.161.0` | 2026-10-11 | Source (profiles, catalog), plus a live run |
+| CLIProxyAPI | 8.0.23 (`d318bcc3`) | 2026-10-11 | Source, plus a live run on a ChatGPT Pro login |
+
+Code links are permalinks to the tag or commit they were read at, so they
+keep pointing at the code that was checked; on newer versions, paths and line
+numbers may have moved.
+
+Evidence labels:
+
+- **Verified (fake upstream):** run locally against a fake upstream that
+  served SSE replies, with a throwaway `CODEX_HOME`, a dummy API key, and no
+  paid requests.
+- **Verified (live):** run through the proxy and CLIProxyAPI against the
+  ChatGPT backend with a real login.
+- **Source:** read in code, not run.
+- **Third-party report:** someone else's report, not reproduced here.
+
+### Re-checking after a Codex release
+
+1. Run `codex -p reasoning-router exec "Reply with exactly: pong"` and a
+   multi-turn `codex exec resume --last` session through the proxy.
+2. In the decision log, confirm `outcome: completed`, `lineage_status:
+   preserved`, and high `cached_input_tokens` on the request after an effort
+   change.
+3. Check that the bundled catalog (`codex-rs/models-manager/models.json`)
+   still lists the GPT-6 models the proxy registers, and whether they still
+   use the Responses Lite shape.
+4. Skim the release notes for changes to `model_providers`, profiles (`-p`),
+   or the Responses request body.
+5. Update the "Last checked" table.
 
 ## Summary
 
@@ -19,28 +49,29 @@ source, or from third-party reports, which are marked as such.
   Its hooks, plugins, and MCP servers never see the request body or the
   reasoning effort.
 - A custom `[model_providers.<id>]` entry with a `base_url` sends every
-  request to the existing `@reasoning-router/proxy` over plain HTTP
-  Responses. The unmodified proxy already routes Codex 0.159.0 requests:
-  it pins the request-level effort, inserts a `configuration_update`, and
-  replays it on later turns, including after Codex restarts (verified).
+  request to `@reasoning-router/proxy` over plain HTTP Responses. The
+  unmodified proxy routes Codex requests: it pins the request-level effort,
+  inserts a `configuration_update`, and replays it on later turns, including
+  after Codex restarts (verified, fake upstream).
+- A Codex profile keeps that provider out of the default setup:
+  `codex -p reasoning-router -m <model>` routes, plain `codex` does not.
+- ChatGPT subscriptions work by chaining the proxy to CLIProxyAPI, which holds
+  the Codex login. Effort changes kept the prompt cache (verified, live). The
+  proxy still cannot talk to the ChatGPT backend directly.
 - Codex has an under-development `reasoning_effort_override` feature that
   emits its own `configuration_update` items. It does not pick the effort; it
   only makes manual `/model` changes keep the cache. Custom providers never
   get it.
-- ChatGPT-subscription login works through a custom provider in source, but
-  the proxy does not yet forward the headers the ChatGPT backend needs, and
-  subscription routes may reject `configuration_update`. This is the main
-  open item.
 
 ## Extension points
 
 ### Mechanism
 
-Provider configuration in `~/.codex/config.toml` (or `-c` overrides) is the
-only surface that reaches the model request:
+Provider configuration is the only surface that reaches the model request.
+Put it in a profile, `~/.codex/reasoning-router.config.toml`:
 
 ```toml
-model = "gpt-6.1-sol"
+model = "gpt-6-astra"
 model_provider = "reasoning-router"
 
 [model_providers.reasoning-router]
@@ -49,19 +80,24 @@ base_url = "http://127.0.0.1:4320/v1"
 wire_api = "responses"
 ```
 
-Codex sends no credential here, and the proxy adds its own in
-`REASONING_ROUTER_UPSTREAM_AUTH=bearer` mode (verified). `forward` mode
-requires a loopback upstream, so it does not apply to `api.openai.com`.
-
-Codex posts to `{base_url}/responses`
-([`codex-api/src/endpoint/responses.rs`](https://github.com/openai/codex/blob/rust-v0.159.0/codex-rs/codex-api/src/endpoint/responses.rs)),
-which matches the proxy's `/v1/responses` route. The provider fields are in
-`ModelProviderInfo`
-([`model-provider-info/src/lib.rs:135-199`](https://github.com/openai/codex/blob/rust-v0.159.0/codex-rs/model-provider-info/src/lib.rs#L135-L199)).
-`wire_api = "chat"` was removed, so Responses is the only wire API
-([`lib.rs:96`](https://github.com/openai/codex/blob/rust-v0.159.0/codex-rs/model-provider-info/src/lib.rs#L96)).
-A provider cannot reuse a built-in ID such as `openai`
-([`config/src/config_toml.rs:66-72`](https://github.com/openai/codex/blob/rust-v0.159.0/codex-rs/config/src/config_toml.rs#L66-L72)).
+- **Profiles:** `codex -p <name>` layers `$CODEX_HOME/<name>.config.toml` on
+  top of `config.toml`
+  ([`config/src/loader/mod.rs:289-337`](https://github.com/openai/codex/blob/rust-v0.161.0/codex-rs/config/src/loader/mod.rs#L289-L337)).
+  The profile is a user layer, so it may define `model_providers`; only
+  project-local layers deny that key
+  ([`loader/mod.rs:88-101`](https://github.com/openai/codex/blob/rust-v0.161.0/codex-rs/config/src/loader/mod.rs#L88-L101)).
+  `-p` names the profile file, not the provider. The profile is not tied to a
+  model: `-m` overrides it (verified, live). Older Codex versions without
+  `-p` profiles need the same lines in `config.toml` (or `-c` overrides).
+- **Endpoint:** Codex posts to `{base_url}/responses`
+  ([`codex-api/src/endpoint/responses.rs`](https://github.com/openai/codex/blob/rust-v0.159.0/codex-rs/codex-api/src/endpoint/responses.rs)),
+  which matches the proxy's `/v1/responses` route. The provider fields are in
+  `ModelProviderInfo`
+  ([`model-provider-info/src/lib.rs:135-199`](https://github.com/openai/codex/blob/rust-v0.159.0/codex-rs/model-provider-info/src/lib.rs#L135-L199)).
+  `wire_api = "chat"` was removed, so Responses is the only wire API
+  ([`lib.rs:96`](https://github.com/openai/codex/blob/rust-v0.159.0/codex-rs/model-provider-info/src/lib.rs#L96)).
+- **Provider ID:** a provider cannot reuse a built-in ID such as `openai`
+  ([`config/src/config_toml.rs:66-72`](https://github.com/openai/codex/blob/rust-v0.159.0/codex-rs/config/src/config_toml.rs#L66-L72)).
 
 Two other ways to redirect requests exist, but the custom provider is
 simpler:
@@ -70,9 +106,10 @@ simpler:
   provider
   ([`core/src/config/mod.rs:3799-3805`](https://github.com/openai/codex/blob/rust-v0.159.0/codex-rs/core/src/config/mod.rs#L3799-L3805)).
   The provider keeps its OpenAI behaviors:
-  - **WebSockets:** it opens a Responses WebSocket first. Verified: a `426`
-    on the upgrade makes Codex fall back to HTTP for the rest of the session
-    ([`core/src/client.rs:1505-1510`](https://github.com/openai/codex/blob/rust-v0.159.0/codex-rs/core/src/client.rs#L1505-L1510)).
+  - **WebSockets:** it opens a Responses WebSocket first. A `426` on the
+    upgrade makes Codex fall back to HTTP for the rest of the session
+    (verified, fake upstream;
+    [`core/src/client.rs:1505-1510`](https://github.com/openai/codex/blob/rust-v0.159.0/codex-rs/core/src/client.rs#L1505-L1510)).
   - **zstd request bodies** under ChatGPT login
     ([`client.rs:1617-1626`](https://github.com/openai/codex/blob/rust-v0.159.0/codex-rs/core/src/client.rs#L1617-L1626)).
   - **Remote model catalog** under ChatGPT login
@@ -86,16 +123,16 @@ simpler:
 
 Surfaces ruled out:
 
-- **Hooks** (`hooks.json` or `[hooks]`, stable and on by default) offer 12
-  events: tool, permission, compaction, session, prompt-submit, sub-agent,
-  stop, and interrupt
+- **Hooks** (`hooks.json` or `[hooks]`, stable and on by default) cover tool,
+  permission, compaction, session, prompt-submit, sub-agent, stop, and
+  interrupt events
   ([`hooks/src/lib.rs:23-36`](https://github.com/openai/codex/blob/rust-v0.159.0/codex-rs/hooks/src/lib.rs#L23-L36)).
   - None of them runs before a model request.
   - Their inputs carry `session_id`, `turn_id`, `model`, a `transcript_path`,
     and event data such as tool input/output, but no effort and no request
     body ([`hooks/src/schema.rs`](https://github.com/openai/codex/blob/rust-v0.159.0/codex-rs/hooks/src/schema.rs)).
-  - No hook output can change the model or effort. An upstream proposal to
-    let `PostToolUse` request an effort change is open
+  - No hook output can change the model or effort. See the upstream proposal
+    to let `PostToolUse` request an effort change
     ([openai/codex#47395](https://github.com/openai/codex/issues/47395)).
 - **Plugins** (`.codex-plugin/plugin.json`) bundle skills, MCP servers, apps,
   and hooks
@@ -126,14 +163,15 @@ The proxy sees the full request body.
 - **History:** every HTTP request replays the full `input`, with no
   `previous_response_id`. That covers tool calls and results, and the
   environment and `AGENTS.md` messages Codex injects as `developer` and
-  `user` items (verified).
-- **Two shapes**, depending on model metadata (both verified):
+  `user` items (verified, fake upstream).
+- **Two shapes**, chosen by the model's catalog metadata (both verified, fake
+  upstream):
   - *Standard:* top-level `instructions` and `tools`.
-  - *Responses Lite* (`use_responses_lite`, for example bundled
-    `gpt-6-astra`): empty `instructions`, no top-level `tools`, a leading
-    `additional_tools` input item with `role: "developer"`, and
-    `reasoning.context: "all_turns"`
+  - *Responses Lite* (`use_responses_lite`): empty `instructions`, no
+    top-level `tools`, a leading `additional_tools` input item with
+    `role: "developer"`, and `reasoning.context: "all_turns"`
     ([`client.rs:885-938`](https://github.com/openai/codex/blob/rust-v0.159.0/codex-rs/core/src/client.rs#L885-L938)).
+    The GPT-6 models used Responses Lite at the last check.
 
   The proxy passes `additional_tools` through as an opaque typed item.
 - **Session identity:**
@@ -141,18 +179,19 @@ The proxy sees the full request body.
     `{source}:{parent_thread_id}`;
     [`client.rs:575-586`](https://github.com/openai/codex/blob/rust-v0.159.0/codex-rs/core/src/client.rs#L575-L586)).
   - The headers `session-id`, `thread-id`, and `x-client-request-id`
-    (verified).
+    (verified, fake upstream).
   - `client_metadata["x-codex-turn-metadata"]`, a JSON string with
-    `session_id`, `turn_id`, `model`, and `reasoning_effort` (verified).
+    `session_id`, `turn_id`, `model`, and `reasoning_effort` (verified, fake
+    upstream).
 
   The proxy keys lineage on `prompt_cache_key`. It does not read Codex's
-  headers, so decision events log `session: null` (verified).
+  headers, so decision events log `session: null`.
 
 ### Control
 
 The proxy can rewrite the body, set the effort, and reject requests with a
-local `400`. Codex shows the upstream error message to the user. Verified:
-the proxy pinned `reasoning.effort` to `medium` and inserted
+local `400`. Codex shows the upstream error message to the user. Verified
+(fake upstream): the proxy pinned `reasoning.effort` to `medium` and inserted
 `{"type":"configuration_update","reasoning":{"effort":"high"}}` before the
 newest user message.
 
@@ -172,45 +211,61 @@ The proxy forwards only allowlisted response headers
 sticky-routing token the ChatGPT backend expects to see echoed within a turn
 ([`client.rs:284-297`](https://github.com/openai/codex/blob/rust-v0.159.0/codex-rs/core/src/client.rs#L284-L297)),
 and the rate-limit headers Codex shows to users. This is harmless for API-key
-upstreams, but matters for the ChatGPT backend.
+upstreams and for CLIProxyAPI, but would matter if the proxy talked to the
+ChatGPT backend directly.
 
 ### Auth
 
-- **API key (works today):**
+- **API key:**
   - In `bearer` mode the proxy adds its own key, so the provider needs no
     `env_key`. If the provider sets `env_key`, Codex sends
     `Authorization: Bearer`, which the proxy replaces in `bearer` mode or
     forwards to a loopback upstream in `forward` mode.
-  - Verified end to end through the proxy against a fake upstream, with
-    `gpt-6.1-sol` (standard shape) and `gpt-6-astra` (Responses Lite).
-- **ChatGPT login (source only, not verified):**
+  - Verified (fake upstream) with both request shapes.
+- **ChatGPT subscription through CLIProxyAPI (verified, live):**
+  - Chain: Codex → proxy in `forward` mode → CLIProxyAPI on loopback → ChatGPT
+    backend. The provider's `env_key` carries the CLIProxyAPI client key,
+    which the proxy forwards unchanged; CLIProxyAPI holds the Codex login.
+  - CLIProxyAPI passes the top-level effort and `configuration_update` items
+    through unchanged for models its registry marks
+    `support_configuration_update`, and strips the updates otherwise
+    ([`internal/thinking/apply.go:243-288`](https://github.com/router-for-me/CLIProxyAPI/blob/d318bcc3/internal/thinking/apply.go#L243-L288)).
+    At the last check that flag covered the GPT-6 models on Plus, Pro, and
+    Team plans, and only `gpt-6-luna` on Free. Credentials with an
+    unrecognized plan type get the Pro list. Where updates are stripped,
+    routing silently has no effect.
+  - CLIProxyAPI keeps the client's `prompt_cache_key` (source; see
+    [`hermes.md`](hermes.md)).
+- **ChatGPT login direct to the proxy (source only, not verified):**
   - A custom provider with `requires_openai_auth = true` uses the token
     from `auth.json` and sends it to the configured `base_url`
     ([`lib.rs:184-188`, `419-437`](https://github.com/openai/codex/blob/rust-v0.159.0/codex-rs/model-provider-info/src/lib.rs#L419-L437)).
-  - The proxy would forward it upstream to
-    `https://chatgpt.com/backend-api/codex`, but today it forwards only
-    `authorization`. Existing ChatGPT proxies also send
-    `ChatGPT-Account-ID` and Codex's identity headers (see codex-lb and
-    codex-openai-proxy below).
-  - The local test of this path was not run, to avoid copying `auth.json`
-    and risking a refresh-token rotation.
+  - The proxy would have to forward it to
+    `https://chatgpt.com/backend-api/codex`, but it forwards only
+    `authorization`. Existing ChatGPT proxies also send `ChatGPT-Account-ID`
+    and Codex's identity headers (see codex-lb and codex-openai-proxy below).
+  - Not tested, to avoid copying `auth.json` and risking a refresh-token
+    rotation.
 - **Subscription limits** (third-party report): ChatGPT-subscription
   requests through `api.openai.com` reject `configuration_update` with
-  `subscription_sharing_unsupported_capability`. The same report says
-  `chatgpt.com/backend-api/codex` accepted it and kept the cache
+  `subscription_sharing_unsupported_capability`, while
+  `chatgpt.com/backend-api/codex` accepts it and keeps the cache
   ([comment on openai/codex#42996](https://github.com/openai/codex/issues/42996)).
-  Unverified here.
+  The live CLIProxyAPI run matches the second half.
 
 ### Stability
 
 - **Stable surfaces:**
   - `model_providers` with `base_url`, `env_key`, `wire_api`, and
     `requires_openai_auth`. These are documented by Codex and by LiteLLM's
-    [Codex setup guide](https://docs.litellm.ai/docs/proxy/client_setup/codex_cli),
-    and have been stable for months.
-  - The Responses body shape. Its contents change often, though: Codex
-    released 20 stable `rust-v*` versions between 2026-09-01 and 2026-10-01.
-- **Internal or under development:**
+    [Codex setup guide](https://docs.litellm.ai/docs/proxy/client_setup/codex_cli).
+  - The Responses body shape. Its contents change often, which is why the
+    recommendation includes regression fixtures.
+- **Newer or internal:**
+  - `-p` profiles as `$CODEX_HOME/<name>.config.toml` (profile v2) replaced
+    the older `[profiles.<name>]` tables; Codex refuses a `-p` name that also
+    has a legacy table
+    ([`loader/mod.rs:302-323`](https://github.com/openai/codex/blob/rust-v0.161.0/codex-rs/config/src/loader/mod.rs#L302-L323)).
   - `reasoning_effort_override` is `UnderDevelopment` and off by default
     ([`features/src/lib.rs:1711-1714`](https://github.com/openai/codex/blob/rust-v0.159.0/codex-rs/features/src/lib.rs#L1711-L1714)).
   - The Responses Lite shape and the `x-codex-*` headers are internal.
@@ -218,29 +273,28 @@ upstreams, but matters for the ChatGPT backend.
 ### Distribution
 
 Nothing is installed into Codex. Users run `reasoning-router` and add a
-provider block, so there are no package name or format constraints. A Codex
-plugin could not carry the proxy, because plugins only bundle skills, MCP
-servers, apps, and hooks.
+profile, so there are no package name or format constraints. A Codex plugin
+could not carry the proxy, because plugins only bundle skills, MCP servers,
+apps, and hooks.
 
 ### Wire APIs and models
 
 - **Wire API:** Responses only, over HTTP (custom providers) or WebSocket
   (the built-in `openai` provider).
-- **Models with registered efforts:** `gpt-6-astra`, `gpt-6-luna`,
-  `gpt-6-sol`, and `gpt-6.1-sol` already have profiles in the proxy.
-  - Codex's bundled catalog also lists `gpt-5.6-*`, `gpt-5.5`, and hidden
-    models
-    ([`models-manager/models.json`](https://github.com/openai/codex/blob/rust-v0.159.0/codex-rs/models-manager/models.json)).
-    The proxy rejects these with a local `400`.
-  - Codex efforts include `ultra` and `persistent`
-    ([`protocol/src/openai_models.rs:59-90`](https://github.com/openai/codex/blob/rust-v0.159.0/codex-rs/protocol/src/openai_models.rs#L59-L90)).
-    The proxy does not offer them, which is harmless because it replaces the
-    request-level effort.
-- **Model metadata:** a custom provider never fetches the remote catalog. A
-  model missing from the bundled catalog, such as `gpt-6.1-sol` in 0.159.0,
-  runs on generic fallback metadata (standard shape, default context window)
-  unless the user supplies `model_catalog_json` (verified: no `/models`
-  request was made).
+- **Models:** the proxy accepts only models in its registry (see
+  [Supported models](../../README.md#supported-models)). Codex's bundled
+  catalog lists more, including hidden ones
+  ([`models-manager/models.json`](https://github.com/openai/codex/blob/rust-v0.161.0/codex-rs/models-manager/models.json));
+  those get a local `400`.
+- **Efforts:** Codex offers efforts the proxy does not (such as `ultra`;
+  [`protocol/src/openai_models.rs:59-90`](https://github.com/openai/codex/blob/rust-v0.159.0/codex-rs/protocol/src/openai_models.rs#L59-L90)).
+  This is harmless because the proxy replaces the request-level effort.
+- **Model metadata:** a custom provider never fetches the remote catalog
+  (verified, fake upstream: no `/models` request). Codex resolves metadata by
+  model ID from its bundled catalog, so keep the real ID. A model missing
+  from the bundled catalog, or a made-up alias, runs on generic fallback
+  metadata (standard shape, default context window) unless the user supplies
+  `model_catalog_json`; the proxy also has no aliases.
 
 ### Prompt cache
 
@@ -248,6 +302,18 @@ Codex's own `/model` effort changes alter the request-level
 `reasoning.effort`, which loses the cache
 ([openai/codex#42996](https://github.com/openai/codex/issues/42996)). The
 proxy avoids this by keeping the request-level effort fixed.
+
+Live result through CLIProxyAPI on `gpt-6-astra` (six requests in one
+session, all `completed`, no rejected updates):
+
+| Request | Effort | Input | Cached | Previous input |
+| --- | --- | ---: | ---: | ---: |
+| 1 | low | 11,674 | 0 | – |
+| 2 (low → high) | high | 13,324 | 11,520 | 11,674 |
+| 6 (high → low) | low | 22,297 | 21,376 | 21,510 |
+
+After each effort change, almost all of the previous request's input was a
+cache hit. This does not show whether the model reasoned at the new effort.
 
 Codex's native fix is `reasoning_effort_override`
 ([`core/src/session/reasoning_effort.rs`](https://github.com/openai/codex/blob/rust-v0.159.0/codex-rs/core/src/session/reasoning_effort.rs)).
@@ -264,10 +330,10 @@ Codex's native fix is `reasoning_effort_override`
   ([`client.rs:896-900`](https://github.com/openai/codex/blob/rust-v0.159.0/codex-rs/core/src/client.rs#L896-L900)),
   so the proxy never sees caller updates that conflict with its own.
 - **Not reproduced locally:** with the flag on and the built-in provider
-  pointed at the fake upstream, 0.159.0 emitted no update for `gpt-6-astra`.
+  pointed at the fake upstream, Codex emitted no update for `gpt-6-astra`.
   Codex's tests are the evidence for the placement above.
 
-Reported problems with the native path, all unverified here:
+Reported problems with the native path (third-party reports):
 
 - Codex sends updates to models that reject them
   ([#44751](https://github.com/openai/codex/issues/44751)).
@@ -281,8 +347,8 @@ against a live endpoint before trusting per-model support.
 
 ## Existing solutions
 
-- **[Soju06/codex-lb](https://github.com/Soju06/codex-lb)** (about 3.3k
-  stars) is a ChatGPT multi-account load balancer.
+- **[Soju06/codex-lb](https://github.com/Soju06/codex-lb)** is a ChatGPT
+  multi-account load balancer.
   - **How it hooks in:** a custom provider with `name = "openai"`,
     `base_url = …/backend-api/codex`, `requires_openai_auth = true`, and
     `supports_websockets = true`.
@@ -309,6 +375,9 @@ against a live endpoint before trusting per-model support.
     Codex-like `originator` and user agent.
   - **Lesson:** it shows which headers the ChatGPT backend expects. Taking
     over Codex's OAuth tokens is something to avoid.
+- **[CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI)** holds
+  ChatGPT/Codex logins and serves `/v1/responses` on loopback. It is the
+  subscription bridge the proxy chains to (see "Auth").
 - **[LiteLLM](https://docs.litellm.ai/docs/proxy/client_setup/codex_cli)**
   is the documented custom-provider gateway for Codex.
   - Its guide raises `stream_idle_timeout_ms` and retries for long turns,
@@ -321,7 +390,7 @@ against a live endpoint before trusting per-model support.
   - They choose the effort once per process, from the first prompt.
   - codex-auto-effort's README says true per-turn effort needs upstream
     support ([openai/codex#8649](https://github.com/openai/codex/issues/8649),
-    "Auto reasoning effort", still open).
+    "Auto reasoning effort").
   - The proxy already does better than this approach.
 - **Protocol translators,
   [codex-relay](https://github.com/lihuanshuai/codex-relay) and
@@ -336,39 +405,39 @@ against a live endpoint before trusting per-model support.
 ## Recommendation
 
 Use `@reasoning-router/proxy` behind a custom `model_providers` entry with
-`wire_api = "responses"` and the default `supports_websockets = false`. Do
-not add a `@reasoning-router/codex` package; no in-process surface could use
-one.
+`wire_api = "responses"` and the default `supports_websockets = false`,
+defined in a `reasoning-router` profile. For subscriptions, chain the proxy to
+CLIProxyAPI. Do not add a `@reasoning-router/codex` package; no in-process
+surface could use one.
 
 Limitations:
 
-- The user runs and supervises a separate process.
+- The user runs and supervises a separate process (two, with CLIProxyAPI).
 - The effort the user selects in Codex is ignored.
 - Lineage is in memory, so restarting the proxy loses it (restarting Codex
-  does not; verified).
+  does not; verified, fake upstream).
 - `session` is null in decision events.
-- ChatGPT-subscription use needs the header work below and may not accept
-  `configuration_update` at all.
 - Models outside the proxy registry get a local `400`.
 - Sub-agents share a `prompt_cache_key` across sibling threads, which may
   create ambiguous lineage branches. Unverified.
 - Codex's internal compaction requests also go through the proxy and are
   classified. Unverified.
 
-Smallest first slice, API keys only:
+Remaining work:
 
 1. **Setup docs:** done in the "Codex CLI" section of
    [`packages/proxy/README.md`](../../packages/proxy/README.md). Codex's own
    stream idle timeout defaults to 300 s, so the proxy's 60 s
    `REASONING_ROUTER_UPSTREAM_IDLE_TIMEOUT_MS` is the limit to raise.
-2. **Regression fixtures:** captured Codex 0.159.0 requests (standard and
-   Responses Lite, plus a tool-call continuation) as proxy tests. Codex
-   changes its body shape most weeks, and this is where codex-lb broke.
+2. **Regression fixtures:** capture Codex requests (standard and Responses
+   Lite, plus a tool-call continuation) as proxy tests, and refresh them when
+   re-checking. Codex changes its body shape often, and this is where codex-lb
+   broke.
 3. **Session ID:** read Codex's `session-id` header as the decision-log
    session, so events can be correlated. This is a small, Codex-agnostic
    header option, not Codex-specific code.
 
-A second slice, if Robert wants subscription support:
+Only if direct subscription support (without CLIProxyAPI) is wanted:
 
 - Forward an allowlist of Codex request headers upstream: `ChatGPT-Account-ID`,
   `session-id`, `originator`, `version`, and `x-codex-*`.
@@ -378,15 +447,14 @@ A second slice, if Robert wants subscription support:
 
 ## Open questions for Robert
 
-- **ChatGPT subscriptions:** is routing ChatGPT-subscription traffic through
-  the proxy in scope? It needs header passthrough, a live test with a real
-  account, and acceptance that `chatgpt.com/backend-api/codex` is an
-  undocumented, internal endpoint.
+- **Direct ChatGPT subscriptions:** is talking to the ChatGPT backend without
+  CLIProxyAPI in scope? It needs header passthrough and acceptance that
+  `chatgpt.com/backend-api/codex` is an undocumented, internal endpoint.
 - **The user's Codex effort:** should it be ignored (current behavior), or
   act as a floor or ceiling on the classifier's choice? Codex reports it in
   `x-codex-turn-metadata`, so the proxy could read it.
-- **Codex's model catalog:** should the proxy registry track it (`gpt-5.6-*`,
-  `ultra`)? This ties into the open registry question in `architecture.md`.
+- **Codex's model catalog:** should the proxy registry track more of it? This
+  ties into the open registry question in `architecture.md`.
 - **Effort updates on Luna and Sol:** before the proxy relies on them for
   `gpt-6-luna` and `gpt-6-sol`, should we measure whether these models apply
   a mid-conversation update

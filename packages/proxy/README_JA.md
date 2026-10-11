@@ -46,10 +46,10 @@ curl --fail http://127.0.0.1:4320/ready
 
 ## Codex CLI
 
-上記のとおりプロキシを起動し、`~/.codex/config.toml` にカスタムプロバイダーを追加します。
+上記のとおりプロキシを起動し、`~/.codex/reasoning-router.config.toml` に Codex のプロファイルを作成します。モデル名はそのままで、プロバイダーだけを変更するため、デフォルトの Codex 設定には影響しません。
 
 ```toml
-model = "gpt-6.1-sol"
+model = "gpt-6-astra"
 model_provider = "reasoning-router"
 
 [model_providers.reasoning-router]
@@ -58,13 +58,39 @@ base_url = "http://127.0.0.1:4320/v1"
 wire_api = "responses"
 ```
 
+`codex -p reasoning-router` を実行するとプロキシ経由でルーティングされ、通常の `codex` は変わりません。`-p` が指定するのはプロバイダーではなくプロファイルファイルの名前で、ここではどちらも `reasoning-router` です。プロファイルは 1 つのモデルに固定されません。`-m` で別のモデルを選べます（例: `codex -p reasoning-router -m gpt-6-sol`）。プロファイル（`-p`）には Codex 0.161.0 以降が必要です。それより古いバージョンでは、同じ行を代わりに `~/.codex/config.toml` に記述してください。
+
 Codex は認証情報を送信しません。プロキシが `REASONING_ROUTER_UPSTREAM_API_KEY` を付与します（`REASONING_ROUTER_UPSTREAM_AUTH=bearer`）。プロキシは HTTP のみを提供するため、`supports_websockets` は未設定のままにしてください。
 
-- 使えるのは OpenAI API キーのみです。ChatGPT サブスクリプションでのログインはサポートされません。
+- 実際のモデル ID を使ってください。Codex はモデルのメタデータを名前で参照し、プロキシにはエイリアスがないため、`astra-rr` のような独自の名前では Codex が汎用メタデータを使い、プロキシからローカルで `400` が返されます。
 - `gpt-6-astra`、`gpt-6-luna`、`gpt-6-sol`、`gpt-6.1-sol` を使用してください。それ以外のモデルはローカルで `400` になります。
 - 推論強度は分類器が選びます。Codex の `model_reasoning_effort` と `/model` の推論強度は、Codex 上には表示されますが無視されます。
-- Codex 0.159.0 は `gpt-6.1-sol` を認識せず、`model_catalog_json` を指定しない限り汎用メタデータで実行します。
 - プロキシは、60 秒間データがないアップストリームのストリームを閉じます。長いターンが途中で切れる場合は、`REASONING_ROUTER_UPSTREAM_IDLE_TIMEOUT_MS` を引き上げてください。
+
+<a id="chatgpt-subscription-through-cliproxyapi"></a>
+
+### ChatGPT サブスクリプションを CLIProxyAPI 経由で使う
+
+プロキシは ChatGPT ログインを直接は利用できません。サブスクリプションを使うには、Codex にログインした [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI) を実行し、プロキシの背後に置きます:
+
+```text
+codex -p reasoning-router → reasoning-router (127.0.0.1:4320) → CLIProxyAPI (127.0.0.1:8317) → ChatGPT
+```
+
+アップストリームのキーなしで、CLIProxyAPI を向く `forward` モードでプロキシを起動します:
+
+```dotenv
+REASONING_ROUTER_UPSTREAM_BASE_URL=http://127.0.0.1:8317/v1
+REASONING_ROUTER_UPSTREAM_AUTH=forward
+```
+
+次に、プロファイルのプロバイダーブロックに `env_key` を追加します。これにより Codex が CLIProxyAPI のクライアントキーを送信し、プロキシはそれをそのまま転送します:
+
+```toml
+env_key = "CLIPROXY_KEY"   # environment variable holding a CLIProxyAPI api-key
+```
+
+CLIProxyAPI は、Codex の Plus、Pro、Team プランでは GPT-6 モデル向けに `configuration_update` をそのまま通します。Free プランでは `gpt-6-luna` 以外のすべてのモデルでこれを取り除くため、ルーティングは効果を持ちません。Codex 0.161.0 と CLIProxyAPI 8.0.23 で検証済みで、バックエンドは推論強度の変更を受け付け、変更をまたいでプロンプトキャッシュを維持しました。
 
 詳細は [`docs/harnesses/codex.md`](../../docs/harnesses/codex.md) を参照してください。
 

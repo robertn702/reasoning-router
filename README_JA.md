@@ -52,7 +52,7 @@ REASONING_ROUTER_UPSTREAM_API_KEY=<openai-key> \
 npx @reasoning-router/proxy
 ```
 
-Codex では、`~/.codex/config.toml` にプロキシをプロバイダーとして追加します。推論強度は分類器が選ぶため、Codex 自身の推論強度設定は無視されます:
+Codex では、モデルはそのままにプロバイダーだけを差し替えるプロファイルを `~/.codex/reasoning-router.config.toml` に追加し、`codex -p reasoning-router` を実行します（Codex 0.161.0 以降）。既定のモデルを変えるには `-m gpt-6-sol` などを追加します。通常の `codex` は変わりません。推論強度は分類器が選ぶため、Codex 自身の推論強度設定は無視されます。API キーの代わりに ChatGPT サブスクリプションを使うには、プロキシを CLIProxyAPI に連結します（[ガイド](packages/proxy/README_JA.md#chatgpt-subscription-through-cliproxyapi)）:
 
 ```toml
 model = "gpt-6-astra"
@@ -92,7 +92,7 @@ wire_api = "responses"
 
 ## alpha 版の制限事項
 
-- **動作確認済み:** Node.js 24.x、OpenCode V2 2.0.18、Pi 1.0.4、Codex CLI 0.159.0（プロキシ経由）。他のバージョンでも動作する可能性はありますが、未検証です。
+- **動作確認済み:** Node.js 24.x、OpenCode V2 2.0.18、Pi 1.0.4、Codex CLI 0.159.0 と 0.161.0（プロキシ経由）。他のバージョンでも動作する可能性はありますが、未検証です。
 - **モデル:** [対応モデル](#supported-models)に記載のものだけです。それ以外のモデルはローカルで拒否されます。Pi がルーティングするのは Claude モデルのみです。
 - **分類器:** ルーターは設定された分類器に問い合わせ、その回答を適用します。ご利用のワークロードに対して分類器がどれだけ適切に推論強度を選べるかについては、何も保証しません。
 - **プロキシ:** 信頼できるローカル環境での使用に限ります。詳しくは[信頼モデル](packages/proxy/README_JA.md#trust-model)を参照してください。

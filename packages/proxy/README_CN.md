@@ -52,10 +52,10 @@ curl --fail http://127.0.0.1:4320/ready
 
 ## Codex CLI
 
-按上述方式启动代理，然后在 `~/.codex/config.toml` 中添加一个自定义提供方：
+按上述方式启动代理，然后在 `~/.codex/reasoning-router.config.toml` 创建一个 Codex 配置文件（profile）。它保留模型名称，只更改提供方，因此你的默认 Codex 设置不受影响：
 
 ```toml
-model = "gpt-6.1-sol"
+model = "gpt-6-astra"
 model_provider = "reasoning-router"
 
 [model_providers.reasoning-router]
@@ -64,15 +64,41 @@ base_url = "http://127.0.0.1:4320/v1"
 wire_api = "responses"
 ```
 
+运行 `codex -p reasoning-router` 即可通过代理路由；直接运行 `codex` 不受影响。`-p` 指定的是配置文件名，而不是提供方；这里两者都叫 `reasoning-router`。配置文件并不绑定单一模型：可用 `-m` 选择其他模型，例如 `codex -p reasoning-router -m gpt-6-sol`。配置文件（`-p`）需要 Codex 0.161.0 或更高版本。在更早的版本上，请将相同的几行放入 `~/.codex/config.toml`。
+
 Codex 不发送任何凭据；代理会添加 `REASONING_ROUTER_UPSTREAM_API_KEY`
 （`REASONING_ROUTER_UPSTREAM_AUTH=bearer`）。请不要设置 `supports_websockets`，因为代理只提供 HTTP 服务。
 
-- 仅支持 OpenAI API 密钥。不支持 ChatGPT 订阅登录。
+- 请使用真实的模型 ID。Codex 按名称读取模型元数据，而代理没有别名，因此像 `astra-rr` 这样自编的名称会让 Codex 使用通用元数据，并让代理在本地返回 `400`。
 - 使用 `gpt-6-astra`、`gpt-6-luna`、`gpt-6-sol` 或 `gpt-6.1-sol`。其他模型会在本地得到 `400`。
 - 由分类器选择强度。Codex 的 `model_reasoning_effort` 和 `/model` 强度会被忽略，尽管 Codex 仍会显示它们。
-- Codex 0.159.0 不认识 `gpt-6.1-sol`，除非你提供 `model_catalog_json`，否则会使用通用元数据运行它。
 - 代理会在上游流 60 秒没有数据后将其关闭。如果较长的轮次被截断，请调高
   `REASONING_ROUTER_UPSTREAM_IDLE_TIMEOUT_MS`。
+
+<a id="chatgpt-subscription-through-cliproxyapi"></a>
+
+### 通过 CLIProxyAPI 使用 ChatGPT 订阅
+
+代理无法直接使用 ChatGPT 登录。若要使用订阅，请运行已登录 Codex 的 [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI)，并将其置于代理之后：
+
+```text
+codex -p reasoning-router → reasoning-router (127.0.0.1:4320) → CLIProxyAPI (127.0.0.1:8317) → ChatGPT
+```
+
+以 `forward` 模式启动代理，指向 CLIProxyAPI，且不设置上游密钥：
+
+```dotenv
+REASONING_ROUTER_UPSTREAM_BASE_URL=http://127.0.0.1:8317/v1
+REASONING_ROUTER_UPSTREAM_AUTH=forward
+```
+
+然后在配置文件的提供方配置块中添加 `env_key`，让 Codex 发送你的 CLIProxyAPI 客户端密钥，代理会原样转发：
+
+```toml
+env_key = "CLIPROXY_KEY"   # environment variable holding a CLIProxyAPI api-key
+```
+
+CLIProxyAPI 会为 Codex Plus、Pro 和 Team 套餐上的 GPT-6 模型透传 `configuration_update`；在 Free 套餐上，除 `gpt-6-luna` 外，它会对所有模型剥离该项，因此路由在那里不起作用。已在 Codex 0.161.0 和 CLIProxyAPI 8.0.23 上验证：后端接受了推理强度变更，并在变更前后保持了提示缓存。
 
 详情请参阅 [`docs/harnesses/codex.md`](../../docs/harnesses/codex.md)。
 
