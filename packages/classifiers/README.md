@@ -19,6 +19,9 @@ Select one with `provider` in a `classifier` config block.
 | `model` | the endpoint's model | Optional. Must be `jev-latest` for TypeSafe or `typesafe-ai/jev` for Vercel. |
 | `timeoutMs` | `4000` | Total classification budget, including retries. |
 
+The key is not inspected and the endpoint is not detected automatically, so
+`baseUrl` must match the credential.
+
 ## Clef (`provider: "clef"`)
 
 Cloudflare's [Clef](https://developers.cloudflare.com/workers-ai/models/clef/),
@@ -31,18 +34,25 @@ on Workers AI.
 | `model` | none | `clef` or `clef-flash`. Required. |
 | `timeoutMs` | `4000` | Total classification budget, including retries. |
 
+The key is used with the account ID to call Workers AI at
+`https://api.cloudflare.com/client/v4/accounts/{accountId}/ai/run/@cf/cloudflare/{model}`.
+`baseUrl` is ignored.
+
 ## Laya (`provider: "laya"`)
 
 [Laya](https://huggingface.co/convaiinnovations/laya), an open-source
-Jev-compatible model served by a Laya server that you run. This package only
+Jev-compatible model served by a Laya server that you run, such as `laya-serve`. This package only
 calls it over HTTP.
 
 | Field | Default | Purpose |
 | --- | --- | --- |
 | `baseUrl` | `http://127.0.0.1:8000` | Laya server. HTTPS, or plain HTTP to a loopback host only. |
 | `apiKey` | none | Optional; set only when the server sets `LAYA_API_KEY`. |
-| `model` | server's choice | Optional checkpoint, e.g. `english` or `multilingual`. |
+| `model` | server's choice | Optional checkpoint: `english`, `multilingual`, or `typed-decisions`. When unset, the server chooses by the language of the state. |
 | `timeoutMs` | `4000` | Total classification budget, including retries. |
+
+Calls `{baseUrl}/v1/systemone`. The key is sent as a bearer token; a blank key
+counts as unset.
 
 ## Kev (`provider: "kev"`)
 
@@ -56,6 +66,10 @@ package only calls it over HTTP.
 | `apiKey` | none | Optional; set only when the server sets `KEV_API_KEY`. |
 | `model` | none | Optional. Only echoed back; the server picks the checkpoint at startup (`--run`). |
 | `timeoutMs` | `4000` | Total classification budget, including retries. |
+
+Calls `{baseUrl}/v1/systemone`, with the same key rules as Laya (a bearer
+token; a blank key counts as unset). See
+[the Kev proposal](../../docs/proposals/kev.md).
 
 ## OpenAI Decisions (`provider: "openai-decisions"`)
 
@@ -117,6 +131,9 @@ effort-decision quality.
 | `apiKey` | none | Optional; set only when the server sets `CLM_API_KEY`. |
 | `model` | server's `clm-latest` | Optional CLM head: `clm-latest`, `clm-raw`, or a head loaded with `--model NAME=PATH`. |
 | `timeoutMs` | `4000` | Total classification budget, including retries. |
+
+Calls `{baseUrl}/v1/systemone`, with the same key rules as Laya (a bearer
+token; a blank key counts as unset).
 
 ## Exports
 

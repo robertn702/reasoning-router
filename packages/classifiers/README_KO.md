@@ -17,6 +17,8 @@ reasoning-router의 추론 수준 분류기입니다. 각 분류기는 대상 �
 | `model` | 엔드포인트의 모델 | 선택 사항. TypeSafe는 `jev-latest`, Vercel은 `typesafe-ai/jev`여야 합니다. |
 | `timeoutMs` | `4000` | 재시도를 포함한 전체 분류 시간 예산. |
 
+키는 검사하지 않고 엔드포인트도 자동으로 감지하지 않으므로, `baseUrl`을 자격 증명에 맞게 설정해야 합니다.
+
 ## Clef (`provider: "clef"`)
 
 Cloudflare의 [Clef](https://developers.cloudflare.com/workers-ai/models/clef/)로, Workers AI에서 실행됩니다.
@@ -28,16 +30,22 @@ Cloudflare의 [Clef](https://developers.cloudflare.com/workers-ai/models/clef/)�
 | `model` | 없음 | `clef` 또는 `clef-flash`. 필수. |
 | `timeoutMs` | `4000` | 재시도를 포함한 전체 분류 시간 예산. |
 
+키는 계정 ID와 함께 Workers AI를
+`https://api.cloudflare.com/client/v4/accounts/{accountId}/ai/run/@cf/cloudflare/{model}`
+에서 호출하는 데 사용됩니다. `baseUrl`은 무시됩니다.
+
 ## Laya (`provider: "laya"`)
 
-[Laya](https://huggingface.co/convaiinnovations/laya)는 직접 실행하는 Laya 서버가 제공하는 오픈 소스 Jev 호환 모델입니다. 이 패키지는 HTTP로 호출만 합니다.
+[Laya](https://huggingface.co/convaiinnovations/laya)는 직접 실행하는 Laya 서버(예: `laya-serve`)가 제공하는 오픈 소스 Jev 호환 모델입니다. 이 패키지는 HTTP로 호출만 합니다.
 
 | 필드 | 기본값 | 용도 |
 | --- | --- | --- |
 | `baseUrl` | `http://127.0.0.1:8000` | Laya 서버. HTTPS, 또는 루프백 호스트에 대한 평문 HTTP만 허용. |
 | `apiKey` | 없음 | 선택 사항. 서버에서 `LAYA_API_KEY`를 설정한 경우에만 설정합니다. |
-| `model` | 서버가 선택 | 선택적 체크포인트. 예: `english` 또는 `multilingual`. |
+| `model` | 서버가 선택 | 선택적 체크포인트: `english`, `multilingual`, `typed-decisions`. 설정하지 않으면 서버가 상태의 언어에 따라 선택합니다. |
 | `timeoutMs` | `4000` | 재시도를 포함한 전체 분류 시간 예산. |
+
+`{baseUrl}/v1/systemone`을 호출합니다. 키는 bearer 토큰으로 전송되며, 빈 키는 설정되지 않은 것으로 간주합니다.
 
 ## Kev (`provider: "kev"`)
 
@@ -49,6 +57,8 @@ Cloudflare의 [Clef](https://developers.cloudflare.com/workers-ai/models/clef/)�
 | `apiKey` | 없음 | 선택 사항. 서버에서 `KEV_API_KEY`를 설정한 경우에만 설정합니다. |
 | `model` | 없음 | 선택 사항. 그대로 되돌려 보내기만 하며, 체크포인트는 서버가 시작 시(`--run`) 선택합니다. |
 | `timeoutMs` | `4000` | 재시도를 포함한 전체 분류 시간 예산. |
+
+`{baseUrl}/v1/systemone`을 호출하며, 키 규칙은 Laya와 같습니다(bearer 토큰, 빈 키는 설정되지 않은 것으로 간주). [Kev 제안서](../../docs/proposals/kev.md)를 참조하세요.
 
 <a id="openai-decisions-provider-openai-decisions"></a>
 
@@ -81,6 +91,8 @@ OpenAI는 다른 분류기와 동일하게 길이를 제한한 요약을 받습�
 | `apiKey` | 없음 | 선택 사항. 서버에서 `CLM_API_KEY`를 설정한 경우에만 설정합니다. |
 | `model` | 서버의 `clm-latest` | 선택적 CLM 헤드: `clm-latest`, `clm-raw`, 또는 `--model NAME=PATH`로 로드한 헤드. |
 | `timeoutMs` | `4000` | 재시도를 포함한 전체 분류 시간 예산. |
+
+`{baseUrl}/v1/systemone`을 호출하며, 키 규칙은 Laya와 같습니다(bearer 토큰, 빈 키는 설정되지 않은 것으로 간주).
 
 ## 내보내기(Exports)
 

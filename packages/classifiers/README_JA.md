@@ -17,6 +17,8 @@ reasoning-router の推論強度の分類器です。各分類器は、対象モ
 | `model` | エンドポイントのモデル | 省略可。TypeSafe の場合は `jev-latest`、Vercel の場合は `typesafe-ai/jev` にする必要があります。 |
 | `timeoutMs` | `4000` | リトライを含む、分類全体の時間予算。 |
 
+キーは検査されず、エンドポイントも自動検出されないため、`baseUrl` は認証情報に合わせて設定する必要があります。
+
 ## Clef（`provider: "clef"`）
 
 Cloudflare の [Clef](https://developers.cloudflare.com/workers-ai/models/clef/)。Workers AI 上で動作します。
@@ -28,16 +30,22 @@ Cloudflare の [Clef](https://developers.cloudflare.com/workers-ai/models/clef/)
 | `model` | なし | `clef` または `clef-flash`。必須。 |
 | `timeoutMs` | `4000` | リトライを含む、分類全体の時間予算。 |
 
+キーはアカウント ID とともに、Workers AI の
+`https://api.cloudflare.com/client/v4/accounts/{accountId}/ai/run/@cf/cloudflare/{model}`
+の呼び出しに使われます。`baseUrl` は無視されます。
+
 ## Laya（`provider: "laya"`）
 
-[Laya](https://huggingface.co/convaiinnovations/laya)。自分で動かす Laya サーバーが提供する、オープンソースの Jev 互換モデルです。このパッケージは HTTP 経由で呼び出すだけです。
+[Laya](https://huggingface.co/convaiinnovations/laya)。自分で動かす Laya サーバー（`laya-serve` など）が提供する、オープンソースの Jev 互換モデルです。このパッケージは HTTP 経由で呼び出すだけです。
 
 | フィールド | デフォルト | 用途 |
 | --- | --- | --- |
 | `baseUrl` | `http://127.0.0.1:8000` | Laya サーバー。HTTPS、またはループバックホスト宛ての平文 HTTP のみ。 |
 | `apiKey` | なし | 省略可。サーバー側で `LAYA_API_KEY` を設定している場合にのみ設定します。 |
-| `model` | サーバーの選択 | 省略可のチェックポイント。例: `english`、`multilingual`。 |
+| `model` | サーバーの選択 | 省略可のチェックポイント: `english`、`multilingual`、`typed-decisions`。未設定の場合、サーバーが状態の言語に応じて選びます。 |
 | `timeoutMs` | `4000` | リトライを含む、分類全体の時間予算。 |
+
+`{baseUrl}/v1/systemone` を呼び出します。キーは bearer トークンとして送信され、空白のキーは未設定として扱われます。
 
 ## Kev（`provider: "kev"`）
 
@@ -49,6 +57,8 @@ Cloudflare の [Clef](https://developers.cloudflare.com/workers-ai/models/clef/)
 | `apiKey` | なし | 省略可。サーバー側で `KEV_API_KEY` を設定している場合にのみ設定します。 |
 | `model` | なし | 省略可。そのままエコーバックされるだけで、チェックポイントは起動時にサーバーが選びます（`--run`）。 |
 | `timeoutMs` | `4000` | リトライを含む、分類全体の時間予算。 |
+
+`{baseUrl}/v1/systemone` を呼び出し、キーの規則は Laya と同じです（bearer トークン。空白のキーは未設定として扱われます）。[Kev の提案](../../docs/proposals/kev.md)を参照してください。
 
 <a id="openai-decisions-provider-openai-decisions"></a>
 
@@ -81,6 +91,8 @@ OpenAI には、他の分類器と同じ長さに上限を設けた要約が送�
 | `apiKey` | なし | 省略可。サーバー側で `CLM_API_KEY` を設定している場合にのみ設定します。 |
 | `model` | サーバーの `clm-latest` | 省略可の CLM ヘッド: `clm-latest`、`clm-raw`、または `--model NAME=PATH` で読み込んだヘッド。 |
 | `timeoutMs` | `4000` | リトライを含む、分類全体の時間予算。 |
+
+`{baseUrl}/v1/systemone` を呼び出し、キーの規則は Laya と同じです（bearer トークン。空白のキーは未設定として扱われます）。
 
 ## エクスポート
 

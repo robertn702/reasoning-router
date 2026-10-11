@@ -227,6 +227,13 @@ These are reversible:
   `http://127.0.0.1:8008`.
 - **CLM is likewise its own `clm` preset** with Laya's connection rules. Its
   default base URL is `clm-serve`'s `http://127.0.0.1:8700`.
+- **Presets for a System One server the user runs (Laya, Kev, CLM) share
+  `createServerPreset`** in `packages/classifiers/src/server.ts`, which takes a
+  name and a default base URL.
+- **Per-provider settings are documented only in
+  `packages/classifiers/README.md`.** Other docs describe the shared
+  `REASONING_ROUTER_CLASSIFIER*` variables generically and link there, so a new
+  classifier doesn't touch them.
 - **OpenAI Decisions base URLs are an allowlist** (the global, `us.`, and
   `eu.` OpenAI API roots), so a base URL left over from another classifier
   cannot receive the OpenAI key. `model` accepts only `gpt-6-luna` until
