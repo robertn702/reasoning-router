@@ -165,6 +165,34 @@ Verification used mocked HTTP contract tests only; no live or authenticated
 calls were made. Microsoft's accuracy and latency claims are its own, and
 effort-selection quality has not been evaluated, so Jev remains the default.
 
+## Liquid d1 (`provider: "liquid"`)
+
+[Liquid d1](https://docs.liquid.ai/lfm/models/d1), Liquid AI's hosted decision
+model, through Liquid's API or Vercel AI Gateway.
+
+| Field | Default | Purpose |
+| --- | --- | --- |
+| `apiKey` | none | Liquid key (`liquid_...`), or a Vercel AI Gateway key. Required. |
+| `baseUrl` | `https://api.liquid.ai` | Set to `https://ai-gateway.vercel.sh/typesafe` for a Vercel key. No other values are accepted. |
+| `model` | the endpoint's model | Optional. `d1` (default) or the text-only `d1:free` for Liquid; `liquid/d1` for Vercel. |
+| `timeoutMs` | `4000` | Total classification budget, including retries. |
+
+The provider calls `POST https://api.liquid.ai/decisions/v1/systemone` or
+`POST https://ai-gateway.vercel.sh/typesafe/v1/systemone` with the System One
+request and a bearer key, and reads `answers.effort.choice`. As with Jev, the
+key is not inspected, so `baseUrl` must match the credential. An unsupported
+or missing choice falls back as `classifier_invalid_output`. Error bodies are
+discarded. Authentication errors are not retried; 429 and 5xx responses retry
+within the deadline, honoring `Retry-After`. d1's `probabilities` and
+`confidence` are ignored.
+
+The contract was checked against Liquid's d1 guide and Vercel's TypeSafe API
+page and d1 changelog on 2026-10-11 (see
+[issue #68](https://github.com/robertn702/reasoning-router/issues/68)).
+Verification used mocked HTTP contract tests only; no live or authenticated
+calls were made. Liquid's quality claims are its own, and effort-selection
+quality has not been evaluated, so Jev remains the default.
+
 ## Exports
 
 - `classifierProviders`: every classifier, for `createConfiguredSelector` in
@@ -178,6 +206,8 @@ effort-selection quality has not been evaluated, so Jev remains the default.
 - `microsoftDecisionClassifierProvider`, `createMicrosoftDecisionTransport`,
   `resolveMicrosoftDecisionConnection`, and the `MicrosoftDecisionConnection`
   type.
+- `liquidClassifierProvider`, `createLiquidTransport`,
+  `resolveLiquidConnection`, and the `LiquidConnection` type.
 - `createJevClassifier`, `createJevTransport`, `createClefTransport`,
   `createLayaTransport`, `createKevTransport`, `resolveJevConnection`,
   `resolveClefConnection`, `resolveLayaConnection`, `resolveKevConnection`:

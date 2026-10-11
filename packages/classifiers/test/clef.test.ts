@@ -165,6 +165,7 @@ describe("Clef classifier", () => {
       "openai-decisions",
       "clm",
       "microsoft-decision",
+      "liquid",
     ]);
     expect(() =>
       createConfiguredSelector(

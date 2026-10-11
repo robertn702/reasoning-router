@@ -4,6 +4,7 @@ import { clmClassifierProvider } from "./clm.js";
 import { jevClassifierProvider } from "./jev.js";
 import { kevClassifierProvider } from "./kev.js";
 import { layaClassifierProvider } from "./laya.js";
+import { liquidClassifierProvider } from "./liquid.js";
 import { microsoftDecisionClassifierProvider } from "./microsoft-decision.js";
 import { openAIDecisionsClassifierProvider } from "./openai-decisions.js";
 
@@ -41,6 +42,12 @@ export {
   resolveLayaConnection,
 } from "./laya.js";
 export {
+  createLiquidTransport,
+  type LiquidConnection,
+  liquidClassifierProvider,
+  resolveLiquidConnection,
+} from "./liquid.js";
+export {
   createMicrosoftDecisionTransport,
   type MicrosoftDecisionConnection,
   microsoftDecisionClassifierProvider,
@@ -63,4 +70,5 @@ export const classifierProviders: readonly ClassifierProvider[] = [
   openAIDecisionsClassifierProvider,
   clmClassifierProvider,
   microsoftDecisionClassifierProvider,
+  liquidClassifierProvider,
 ];

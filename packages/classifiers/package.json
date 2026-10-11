@@ -1,7 +1,7 @@
 {
   "name": "@reasoning-router/classifiers",
   "version": "0.4.0",
-  "description": "Reasoning-effort classifiers (Jev, Clef, Laya, Kev, OpenAI Decisions, CLM, Microsoft-Decision-1) for reasoning-router",
+  "description": "Reasoning-effort classifiers (Jev, Clef, Laya, Kev, OpenAI Decisions, CLM, Microsoft-Decision-1, Liquid d1) for reasoning-router",
   "type": "module",
   "license": "MIT",
   "engines": {
@@ -25,7 +25,9 @@
     "decisions",
     "clm",
     "microsoft",
-    "foundry"
+    "foundry",
+    "liquid",
+    "d1"
   ],
   "exports": {
     ".": {

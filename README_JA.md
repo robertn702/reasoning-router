@@ -108,7 +108,7 @@ wire_api = "responses"
 
 - [`@reasoning-router/core`](packages/core/README_JA.md): ハーネスにも分類器にも依存しない、共有のルーター。
 - [`@reasoning-router/opencode`](packages/opencode/README_JA.md): OpenCode V2 プラグイン。
-- [`@reasoning-router/classifiers`](packages/classifiers/README_JA.md): 分類器（Jev、Cloudflare Clef、Laya、Kev、OpenAI Decisions、CLM、Microsoft-Decision-1）。`classifier.provider` で選択します。
+- [`@reasoning-router/classifiers`](packages/classifiers/README_JA.md): 分類器（Jev、Cloudflare Clef、Laya、Kev、OpenAI Decisions、CLM、Microsoft-Decision-1、Liquid d1）。`classifier.provider` で選択します。
 - [`@reasoning-router/pi`](packages/pi/README_JA.md): Pi 拡張機能（現時点では Claude モデルのみ）。
 - [`@reasoning-router/proxy`](packages/proxy/README_JA.md): スタンドアロンの Responses/Messages プロキシ（コマンド `reasoning-router`）。
 
@@ -210,6 +210,20 @@ reasoning-router
 
 3 つの設定はすべて必須です。サポートされるのは API キーのみで、Microsoft Entra ID トークンはサポートされません。モックしたレスポンスに対してのみテストされており、実環境での互換性と推論強度の選択品質は未検証です。詳細は
 [packages/classifiers](packages/classifiers/README_JA.md#microsoft-decision-1-provider-microsoft-decision)
+を参照してください。
+
+### Liquid d1
+
+[Liquid d1](https://docs.liquid.ai/lfm/models/d1) は、Liquid AI のホスト型の判断モデルです。[console.liquid.ai](https://console.liquid.ai) でキーを作成し、次のように実行します。
+
+```bash
+REASONING_ROUTER_CLASSIFIER=liquid \
+REASONING_ROUTER_CLASSIFIER_API_KEY=<liquid-key> \
+reasoning-router
+```
+
+代わりに Vercel AI Gateway のキーを使う場合は、`REASONING_ROUTER_CLASSIFIER_BASE_URL=https://ai-gateway.vercel.sh/typesafe` も設定します。Liquid の無料のテキスト専用モデルを使うには、`REASONING_ROUTER_CLASSIFIER_MODEL=d1:free` を設定します。モックしたレスポンスに対してのみテストされており、実環境での互換性と推論強度の選択品質は未検証です。詳細は
+[packages/classifiers](packages/classifiers/README_JA.md#liquid-d1-provider-liquid)
 を参照してください。
 
 <a id="supported-models"></a>
