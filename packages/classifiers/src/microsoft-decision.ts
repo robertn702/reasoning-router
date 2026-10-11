@@ -71,7 +71,7 @@ export function createMicrosoftDecisionTransport(
     name: "microsoft-decision",
     url: `${connection.baseURL}/providers/microsoft/v1/systemone`,
     apiKey: connection.apiKey,
-    apiKeyHeader: "api-key",
+    keyScheme: "api-key",
     model: connection.model,
     fetch: connection.fetch,
   });
