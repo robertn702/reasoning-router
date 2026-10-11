@@ -139,6 +139,31 @@ Microsoft 的 [Microsoft-Decision-1](https://learn.microsoft.com/azure/foundry/f
 验证仅使用了模拟的 HTTP 契约测试；没有进行任何实际调用或带认证的调用。
 Microsoft 关于准确率和延迟的说法是其自己的说法，强度选择质量尚未评估，因此 Jev 仍然是默认选项。
 
+<a id="liquid-d1-provider-liquid"></a>
+## Liquid d1（`provider: "liquid"`）
+
+[Liquid d1](https://docs.liquid.ai/lfm/models/d1)，Liquid AI 提供的托管决策模型，
+通过 Liquid 的 API 或 Vercel AI Gateway 访问。
+
+| 字段 | 默认值 | 用途 |
+| --- | --- | --- |
+| `apiKey` | 无 | Liquid 密钥（`liquid_...`），或 Vercel AI Gateway 密钥。必填。 |
+| `baseUrl` | `https://api.liquid.ai` | 使用 Vercel 密钥时设置为 `https://ai-gateway.vercel.sh/typesafe`。不接受其他值。 |
+| `model` | 端点的模型 | 可选。Liquid 使用 `d1`（默认）或纯文本的 `d1:free`；Vercel 使用 `liquid/d1`。 |
+| `timeoutMs` | `4000` | 分类的总预算，含重试。 |
+
+该提供方调用 `POST https://api.liquid.ai/decisions/v1/systemone` 或
+`POST https://ai-gateway.vercel.sh/typesafe/v1/systemone`，请求体为 System One 请求，并携带 bearer 密钥，
+然后读取 `answers.effort.choice`。与 Jev 一样，密钥不会被检查，因此 `baseUrl` 必须与凭据匹配。
+不受支持或缺失的选项会作为 `classifier_invalid_output` 回退。错误响应体会被丢弃。
+认证错误不会重试；429 和 5xx 响应会在截止时间内重试，并遵循 `Retry-After`。
+d1 的 `probabilities` 和 `confidence` 会被忽略。
+
+该契约已于 2026-10-11 对照 Liquid 的 d1 指南，以及 Vercel 的 TypeSafe API 页面和 d1 更新日志核对过（请参阅
+[issue #68](https://github.com/robertn702/reasoning-router/issues/68)）。
+验证仅使用了模拟的 HTTP 契约测试；没有进行任何实际调用或带认证的调用。
+Liquid 关于质量的说法是其自己的说法，强度选择质量尚未评估，因此 Jev 仍然是默认选项。
+
 ## 导出
 
 - `classifierProviders`：所有分类器，供 [`@reasoning-router/core`](../core/README_CN.md) 中的
@@ -150,6 +175,8 @@ Microsoft 关于准确率和延迟的说法是其自己的说法，强度选择�
 - `clmClassifierProvider`、`createClmTransport`、`resolveClmConnection`，以及 `ClmConnection` 类型。
 - `microsoftDecisionClassifierProvider`、`createMicrosoftDecisionTransport`、
   `resolveMicrosoftDecisionConnection`，以及 `MicrosoftDecisionConnection` 类型。
+- `liquidClassifierProvider`、`createLiquidTransport`、
+  `resolveLiquidConnection`，以及 `LiquidConnection` 类型。
 - `createJevClassifier`、`createJevTransport`、`createClefTransport`、
   `createLayaTransport`、`createKevTransport`、`resolveJevConnection`、
   `resolveClefConnection`、`resolveLayaConnection`、`resolveKevConnection`：

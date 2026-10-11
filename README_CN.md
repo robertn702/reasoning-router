@@ -129,7 +129,7 @@ wire_api = "responses"
 - [`@reasoning-router/core`](packages/core/README_CN.md)：共享的、与 harness 和分类器无关的路由器。
 - [`@reasoning-router/opencode`](packages/opencode/README_CN.md)：OpenCode V2 插件。
 - [`@reasoning-router/classifiers`](packages/classifiers/README_CN.md)：各分类器
-  （Jev、Cloudflare Clef、Laya、Kev、OpenAI Decisions、CLM 和 Microsoft-Decision-1），通过 `classifier.provider` 选择。
+  （Jev、Cloudflare Clef、Laya、Kev、OpenAI Decisions、CLM、Microsoft-Decision-1 和 Liquid d1），通过 `classifier.provider` 选择。
 - [`@reasoning-router/pi`](packages/pi/README_CN.md)：Pi 扩展（目前仅支持 Claude 模型）。
 - [`@reasoning-router/proxy`](packages/proxy/README_CN.md)：独立的
   Responses/Messages 代理（命令为 `reasoning-router`）。
@@ -250,6 +250,23 @@ reasoning-router
 这三项设置均为必填。仅支持 API 密钥，不支持 Microsoft Entra ID token。它只针对模拟响应进行过测试；
 实际兼容性和强度选择质量均未经验证。详情请参阅
 [packages/classifiers](packages/classifiers/README_CN.md#microsoft-decision-1-provider-microsoft-decision)。
+
+### Liquid d1
+
+[Liquid d1](https://docs.liquid.ai/lfm/models/d1) 是 Liquid AI 提供的托管决策模型。在
+[console.liquid.ai](https://console.liquid.ai) 创建密钥，然后：
+
+```bash
+REASONING_ROUTER_CLASSIFIER=liquid \
+REASONING_ROUTER_CLASSIFIER_API_KEY=<liquid-key> \
+reasoning-router
+```
+
+如果要改用 Vercel AI Gateway 密钥，还需设置
+`REASONING_ROUTER_CLASSIFIER_BASE_URL=https://ai-gateway.vercel.sh/typesafe`。
+将 `REASONING_ROUTER_CLASSIFIER_MODEL` 设置为 `d1:free` 可使用 Liquid 免费的纯文本模型。
+它只针对模拟响应进行过测试；实际兼容性和强度选择质量均未经验证。详情请参阅
+[packages/classifiers](packages/classifiers/README_CN.md#liquid-d1-provider-liquid)。
 
 <a id="supported-models"></a>
 ## 支持的模型

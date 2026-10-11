@@ -108,7 +108,7 @@ wire_api = "responses"
 
 - [`@reasoning-router/core`](packages/core/README_KO.md): 하네스와 분류기에 독립적인 공유 라우터.
 - [`@reasoning-router/opencode`](packages/opencode/README_KO.md): OpenCode V2 플러그인.
-- [`@reasoning-router/classifiers`](packages/classifiers/README_KO.md): 분류기(Jev, Cloudflare Clef, Laya, Kev, OpenAI Decisions, CLM, Microsoft-Decision-1). `classifier.provider`로 선택합니다.
+- [`@reasoning-router/classifiers`](packages/classifiers/README_KO.md): 분류기(Jev, Cloudflare Clef, Laya, Kev, OpenAI Decisions, CLM, Microsoft-Decision-1, Liquid d1). `classifier.provider`로 선택합니다.
 - [`@reasoning-router/pi`](packages/pi/README_KO.md): Pi 확장 프로그램(현재는 Claude 모델만 지원).
 - [`@reasoning-router/proxy`](packages/proxy/README_KO.md): 독립 실행형 Responses/Messages 프록시(명령어 `reasoning-router`).
 
@@ -210,6 +210,20 @@ reasoning-router
 
 세 가지 설정은 모두 필수입니다. API 키만 지원되며 Microsoft Entra ID 토큰은 지원되지 않습니다. 모킹된 응답에 대해서만 테스트되었으며, 실제 환경에서의 호환성과 추론 수준 선택 품질은 검증되지 않았습니다. 자세한 내용은
 [packages/classifiers](packages/classifiers/README_KO.md#microsoft-decision-1-provider-microsoft-decision)를
+참조하세요.
+
+### Liquid d1
+
+[Liquid d1](https://docs.liquid.ai/lfm/models/d1)은 Liquid AI가 제공하는 호스팅형 결정 모델입니다. [console.liquid.ai](https://console.liquid.ai)에서 키를 만든 뒤 다음과 같이 실행하세요.
+
+```bash
+REASONING_ROUTER_CLASSIFIER=liquid \
+REASONING_ROUTER_CLASSIFIER_API_KEY=<liquid-key> \
+reasoning-router
+```
+
+대신 Vercel AI Gateway 키를 사용하려면 `REASONING_ROUTER_CLASSIFIER_BASE_URL=https://ai-gateway.vercel.sh/typesafe`도 설정하세요. Liquid의 무료 텍스트 전용 모델을 사용하려면 `REASONING_ROUTER_CLASSIFIER_MODEL=d1:free`로 설정하세요. 모킹된 응답에 대해서만 테스트되었으며, 실제 환경에서의 호환성과 추론 수준 선택 품질은 검증되지 않았습니다. 자세한 내용은
+[packages/classifiers](packages/classifiers/README_KO.md#liquid-d1-provider-liquid)를
 참조하세요.
 
 <a id="supported-models"></a>

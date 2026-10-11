@@ -156,8 +156,8 @@ The packages are:
   classifier-independent router.
 - [`@reasoning-router/opencode`](packages/opencode): the OpenCode V2 plugin.
 - [`@reasoning-router/classifiers`](packages/classifiers): the
-  classifiers (Jev, Cloudflare Clef, Laya, Kev, OpenAI Decisions, CLM, and
-  Microsoft-Decision-1), selected by `classifier.provider`.
+  classifiers (Jev, Cloudflare Clef, Laya, Kev, OpenAI Decisions, CLM,
+  Microsoft-Decision-1, and Liquid d1), selected by `classifier.provider`.
 - [`@reasoning-router/pi`](packages/pi): the Pi extension (Claude models
   only, for now).
 - [`@reasoning-router/proxy`](packages/proxy): the standalone
@@ -295,6 +295,26 @@ All three settings are required. Only API keys are supported, not Microsoft
 Entra ID tokens. It is tested against mocked responses only; live
 compatibility and effort-selection quality are unverified. See
 [packages/classifiers](packages/classifiers/README.md#microsoft-decision-1-provider-microsoft-decision)
+for details.
+
+### Liquid d1
+
+[Liquid d1](https://docs.liquid.ai/lfm/models/d1) is Liquid AI's hosted
+decision model. Create a key at [console.liquid.ai](https://console.liquid.ai),
+then:
+
+```bash
+REASONING_ROUTER_CLASSIFIER=liquid \
+REASONING_ROUTER_CLASSIFIER_API_KEY=<liquid-key> \
+reasoning-router
+```
+
+To use a Vercel AI Gateway key instead, also set
+`REASONING_ROUTER_CLASSIFIER_BASE_URL=https://ai-gateway.vercel.sh/typesafe`.
+Set `REASONING_ROUTER_CLASSIFIER_MODEL=d1:free` for Liquid's free text-only
+model. It is tested against mocked responses only; live compatibility and
+effort-selection quality are unverified. See
+[packages/classifiers](packages/classifiers/README.md#liquid-d1-provider-liquid)
 for details.
 
 ## Supported models

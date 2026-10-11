@@ -111,6 +111,23 @@ Microsoft의 [Microsoft-Decision-1](https://learn.microsoft.com/azure/foundry/fo
 
 이 계약은 2026-10-11에 Microsoft의 하우투 가이드와 대조해 확인했습니다([issue #64](https://github.com/robertn702/reasoning-router/issues/64) 참조). 검증에는 모킹된 HTTP 계약 테스트만 사용했으며, 실제 호출이나 인증된 호출은 수행하지 않았습니다. 정확도와 지연 시간에 대한 Microsoft의 주장은 Microsoft 자체의 것이며, 추론 수준 선택 품질은 평가하지 않았으므로 기본값은 계속 Jev입니다.
 
+<a id="liquid-d1-provider-liquid"></a>
+
+## Liquid d1 (`provider: "liquid"`)
+
+Liquid AI의 호스팅형 결정 모델인 [Liquid d1](https://docs.liquid.ai/lfm/models/d1)로, Liquid의 API 또는 Vercel AI Gateway를 통해 사용합니다.
+
+| 필드 | 기본값 | 용도 |
+| --- | --- | --- |
+| `apiKey` | 없음 | Liquid 키(`liquid_...`) 또는 Vercel AI Gateway 키. 필수. |
+| `baseUrl` | `https://api.liquid.ai` | Vercel 키를 사용할 때는 `https://ai-gateway.vercel.sh/typesafe`로 설정합니다. 다른 값은 허용되지 않습니다. |
+| `model` | 엔드포인트의 모델 | 선택 사항. Liquid는 `d1`(기본값) 또는 텍스트 전용 `d1:free`, Vercel은 `liquid/d1`. |
+| `timeoutMs` | `4000` | 재시도를 포함한 전체 분류 시간 예산. |
+
+이 제공자는 System One 요청과 bearer 키를 함께 보내 `POST https://api.liquid.ai/decisions/v1/systemone` 또는 `POST https://ai-gateway.vercel.sh/typesafe/v1/systemone`를 호출하고 `answers.effort.choice`를 읽습니다. Jev와 마찬가지로 키는 검사하지 않으므로 `baseUrl`이 자격 증명과 일치해야 합니다. 지원되지 않거나 누락된 선택은 `classifier_invalid_output`으로 폴백합니다. 오류 본문은 버립니다. 인증 오류는 재시도하지 않으며, 429 및 5xx 응답은 `Retry-After`를 준수하면서 기한 내에서 재시도합니다. d1의 `probabilities`와 `confidence`는 무시합니다.
+
+이 계약은 2026-10-11에 Liquid의 d1 가이드, 그리고 Vercel의 TypeSafe API 페이지와 d1 변경 로그와 대조해 확인했습니다([issue #68](https://github.com/robertn702/reasoning-router/issues/68) 참조). 검증에는 모킹된 HTTP 계약 테스트만 사용했으며, 실제 호출이나 인증된 호출은 수행하지 않았습니다. 품질에 대한 Liquid의 주장은 Liquid 자체의 것이며, 추론 수준 선택 품질은 평가하지 않았으므로 기본값은 계속 Jev입니다.
+
 ## 내보내기(Exports)
 
 - `classifierProviders`: 모든 분류기. [`@reasoning-router/core`](../core/README_KO.md)의 `createConfiguredSelector`용.
@@ -118,6 +135,7 @@ Microsoft의 [Microsoft-Decision-1](https://learn.microsoft.com/azure/foundry/fo
 - `openAIDecisionsClassifierProvider`, `createOpenAIDecisionsTransport`, `resolveOpenAIDecisionsConnection`, 그리고 `OpenAIDecisionsConnection` 타입.
 - `clmClassifierProvider`, `createClmTransport`, `resolveClmConnection`, 그리고 `ClmConnection` 타입.
 - `microsoftDecisionClassifierProvider`, `createMicrosoftDecisionTransport`, `resolveMicrosoftDecisionConnection`, 그리고 `MicrosoftDecisionConnection` 타입.
+- `liquidClassifierProvider`, `createLiquidTransport`, `resolveLiquidConnection`, 그리고 `LiquidConnection` 타입.
 - `createJevClassifier`, `createJevTransport`, `createClefTransport`, `createLayaTransport`, `createKevTransport`, `resolveJevConnection`, `resolveClefConnection`, `resolveLayaConnection`, `resolveKevConnection`: 저수준 헬퍼.
 - `ClassifierRequestError`와 `Fetch` 타입. 트랜스포트에서 사용합니다.
 
