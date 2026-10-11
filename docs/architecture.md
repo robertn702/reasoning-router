@@ -247,7 +247,7 @@ These are reversible:
   cannot receive the OpenAI key. `model` accepts only `gpt-6-luna` until
   OpenAI adds models.
 - **Microsoft-Decision-1 takes an API key only**, sent in Foundry's `api-key`
-  header through an optional header name on the shared transport. Microsoft
+  header through the shared transport's `keyScheme` option. Microsoft
   Entra ID bearer tokens expire within hours and the router does not acquire
   or refresh them, so they are not accepted. `baseUrl` is any HTTPS URL
   without credentials, query, or fragment, not an Azure host allowlist,

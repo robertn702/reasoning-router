@@ -7,6 +7,8 @@ import { z } from "zod";
 
 export type Fetch = (input: string, init?: RequestInit) => Promise<Response>;
 
+export type KeyScheme = "bearer" | "api-key";
+
 /** A failed classifier request; carries only a category and advised delay, never a body or message. */
 export class ClassifierRequestError extends Error {
   constructor(
@@ -53,8 +55,8 @@ export async function postJson(request: {
   fetch: Fetch | undefined;
   url: string;
   apiKey: string | undefined;
-  /** Sends the key as-is in this header instead of as a bearer token. */
-  apiKeyHeader?: string;
+  /** How `apiKey` is sent: `Authorization: Bearer <key>` (default) or Azure's `api-key: <key>`. */
+  keyScheme?: KeyScheme;
   body: unknown;
   signal: AbortSignal;
 }): Promise<unknown> {
@@ -65,8 +67,8 @@ export async function postJson(request: {
       method: "POST",
       headers: {
         ...(request.apiKey !== undefined &&
-          (request.apiKeyHeader
-            ? { [request.apiKeyHeader]: request.apiKey }
+          (request.keyScheme === "api-key"
+            ? { "api-key": request.apiKey }
             : { authorization: `Bearer ${request.apiKey}` })),
         accept: "application/json",
         "content-type": "application/json",
@@ -104,10 +106,10 @@ export async function postJson(request: {
 export function createSystemOneClassifier(options: {
   name: string;
   url: string;
-  /** Sent as a bearer token, or in `apiKeyHeader`; no auth header when unset. */
+  /** Sent as `keyScheme` says; no auth header when unset. */
   apiKey?: string;
-  /** Sends the key as-is in this header instead of as a bearer token. */
-  apiKeyHeader?: string;
+  /** How `apiKey` is sent: `Authorization: Bearer <key>` (default) or Azure's `api-key: <key>`. */
+  keyScheme?: KeyScheme;
   /** The classifier model, sent as the request's `model` when set. */
   model?: string;
   fetch?: Fetch;
@@ -125,7 +127,7 @@ export function createSystemOneClassifier(options: {
         fetch: options.fetch,
         url: options.url,
         apiKey: options.apiKey,
-        apiKeyHeader: options.apiKeyHeader,
+        keyScheme: options.keyScheme,
         signal,
         body: {
           model: options.model,
