@@ -18,6 +18,8 @@ reasoning-router 的推理强度分类器。每个分类器都通过普通的 `f
 | `model` | 端点的模型 | 可选。TypeSafe 必须为 `jev-latest`，Vercel 必须为 `typesafe-ai/jev`。 |
 | `timeoutMs` | `4000` | 分类的总预算，含重试。 |
 
+不会检查密钥，也不会自动检测端点，因此 `baseUrl` 必须与凭据匹配。
+
 ## Clef（`provider: "clef"`）
 
 Cloudflare 的 [Clef](https://developers.cloudflare.com/workers-ai/models/clef/)，运行在 Workers AI 上。
@@ -29,17 +31,23 @@ Cloudflare 的 [Clef](https://developers.cloudflare.com/workers-ai/models/clef/)
 | `model` | 无 | `clef` 或 `clef-flash`。必填。 |
 | `timeoutMs` | `4000` | 分类的总预算，含重试。 |
 
+该密钥与账户 ID 一起用于调用 Workers AI：
+`https://api.cloudflare.com/client/v4/accounts/{accountId}/ai/run/@cf/cloudflare/{model}`。
+`baseUrl` 会被忽略。
+
 ## Laya（`provider: "laya"`）
 
 [Laya](https://huggingface.co/convaiinnovations/laya)，一个开源的、与 Jev 兼容的模型，由你自行运行的
-Laya 服务器提供服务。本软件包只通过 HTTP 调用它。
+Laya 服务器（例如 `laya-serve`）提供服务。本软件包只通过 HTTP 调用它。
 
 | 字段 | 默认值 | 用途 |
 | --- | --- | --- |
 | `baseUrl` | `http://127.0.0.1:8000` | Laya 服务器。使用 HTTPS，或仅限回环主机的纯 HTTP。 |
 | `apiKey` | 无 | 可选；仅当服务器设置了 `LAYA_API_KEY` 时才设置。 |
-| `model` | 由服务器决定 | 可选的检查点，例如 `english` 或 `multilingual`。 |
+| `model` | 由服务器决定 | 可选的检查点：`english`、`multilingual` 或 `typed-decisions`。未设置时，服务器根据状态的语言选择。 |
 | `timeoutMs` | `4000` | 分类的总预算，含重试。 |
+
+调用 `{baseUrl}/v1/systemone`。密钥作为 bearer token 发送；空白密钥视为未设置。
 
 ## Kev（`provider: "kev"`）
 
@@ -52,6 +60,8 @@ Laya 服务器提供服务。本软件包只通过 HTTP 调用它。
 | `apiKey` | 无 | 可选；仅当服务器设置了 `KEV_API_KEY` 时才设置。 |
 | `model` | 无 | 可选。仅原样回显；服务器在启动时（`--run`）选择检查点。 |
 | `timeoutMs` | `4000` | 分类的总预算，含重试。 |
+
+调用 `{baseUrl}/v1/systemone`，密钥规则与 Laya 相同（bearer token；空白密钥视为未设置）。参见 [Kev 提案](../../docs/proposals/kev.md)。
 
 <a id="openai-decisions-provider-openai-decisions"></a>
 ## OpenAI Decisions（`provider: "openai-decisions"`）
@@ -101,6 +111,8 @@ OpenAI 声称延迟比 Responses API 低约 10 倍，这是其自己的说法，
 | `apiKey` | 无 | 可选；仅当服务器设置了 `CLM_API_KEY` 时才设置。 |
 | `model` | 服务器的 `clm-latest` | 可选的 CLM head：`clm-latest`、`clm-raw`，或通过 `--model NAME=PATH` 加载的 head。 |
 | `timeoutMs` | `4000` | 分类的总预算，含重试。 |
+
+调用 `{baseUrl}/v1/systemone`，密钥规则与 Laya 相同（bearer token；空白密钥视为未设置）。
 
 ## 导出
 

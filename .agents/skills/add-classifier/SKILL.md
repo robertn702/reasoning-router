@@ -1,6 +1,6 @@
 ---
 name: add-classifier
-description: Add a new reasoning-effort classifier (decision model) to reasoning-router as a preset in @reasoning-router/classifiers, wired through the registry, tests, docs, env examples, proxy help, and a changeset. Use whenever the task is to support, integrate, or add a classifier or decision-model provider (for example "add a classifier for <service>", "support <model> as a decision model", "make X selectable via classifier.provider" or REASONING_ROUTER_CLASSIFIER), even if the user doesn't say "preset" or name this skill. Not for changing classification policy (retries, fallback) or adding a harness.
+description: Add a new reasoning-effort classifier (decision model) to reasoning-router as a preset in @reasoning-router/classifiers, wired through the registry, tests, the classifiers README, and a changeset. Use whenever the task is to support, integrate, or add a classifier or decision-model provider (for example "add a classifier for <service>", "support <model> as a decision model", "make X selectable via classifier.provider" or REASONING_ROUTER_CLASSIFIER), even if the user doesn't say "preset" or name this skill. Not for changing classification policy (retries, fallback) or adding a harness.
 ---
 
 # Add a classifier
@@ -30,9 +30,9 @@ classifier.
   or start a model, its weights, or its runtime, and add no runtime
   dependency.
 - **Protect the credential and the conversation summary.** Constrain where
-  the request can go: Jev allows only its known endpoints, and Laya allows
-  HTTPS or plain HTTP to loopback only, with no credentials, query, or
-  fragment in the URL. Don't accept an arbitrary base URL alongside an API
+  the request can go: Jev allows only its known endpoints, and the
+  server presets (`server.ts`) allow HTTPS or plain HTTP to loopback only,
+  with no credentials, query, or fragment in the URL. Don't accept an arbitrary base URL alongside an API
   key.
 - **Use a distinct provider name**, even if the wire protocol matches an
   existing preset. The name identifies the service in decision logs.
@@ -57,7 +57,8 @@ differ, and how to approach them:
   core's `ClassifierConfig` already passes extra fields through to the preset
   from the plugin's `classifier` option, but the proxy and Pi read only the
   variables mapped in `packages/classifiers/src/env.ts`. A new setting means
-  a new variable there, plus docs; propose it before building it.
+  a new variable there, plus a generic row in every doc that lists the
+  shared variables (step 5); propose it before building it.
 - **Different auth or endpoint.** Keep the credential safe: send it only to
   hosts the preset can vouch for.
 - **A different question or answer.** For example, scores or probabilities
@@ -77,8 +78,13 @@ already limits choices to the target model's supported efforts, refuses
 redirects, discards error bodies, categorizes errors, and honors
 `Retry-After`. Reuse it when the service fits:
 
-- **Same System One API** (`state` and `questions` in, `answers.effort.choice`
-  out): pass the URL, key, and model, as `laya.ts` does.
+- **A System One server the user runs** at `{baseUrl}/v1/systemone`, with an
+  optional bearer key and `model`: use `createServerPreset(name,
+  defaultBaseUrl)` from `server.ts`, as `laya.ts`, `kev.ts`, and `clm.ts` do.
+  The whole preset file is that call plus the four exports, and step 2 is
+  done.
+- **Same System One API at a fixed or credentialed endpoint**: pass the URL,
+  key, and model to `createSystemOneClassifier`, as `jev.ts` does.
 - **System One inside a provider envelope**: also pass `unwrap` to extract
   the System One response, as `clef.ts` does for Workers AI's
   `{ result, success, errors, messages }`.
@@ -90,8 +96,9 @@ redirects, discards error bodies, categorizes errors, and honors
 
 ### 2. Write `packages/classifiers/src/<name>.ts`
 
-`laya.ts` is the simplest model. Its shape is a convention, not a
-requirement; only the exported `ClassifierProvider` is required:
+Skip this step for a server preset (see step 1). Otherwise `clef.ts` is the
+simplest model. Its shape is a convention, not a requirement; only the
+exported `ClassifierProvider` is required:
 
 - a Zod connection schema validated with core's `parseConfig`, so every
   problem is reported in one error, with blank optional strings treated as
@@ -121,7 +128,9 @@ provider to `classifierProviders`. That array is what
 
 ### 4. Test it in `packages/classifiers/test/<name>.test.ts`
 
-Model it on `laya.test.ts`, or on `clef.test.ts` for an envelope.
+Model it on `laya.test.ts`, or on `clef.test.ts` for an envelope. A server
+preset shares Laya's request and URL rules, so `clm.test.ts` is enough: the
+default base URL, the provider name in the request, and selection.
 Inject a fake `fetch` that records the URL and `init`. Cover whichever of
 these apply, plus anything specific to the new contract:
 
@@ -140,22 +149,24 @@ Also update tests that list every provider name, such as the list in
 
 ### 5. Update the docs and examples
 
-These are the places that currently describe each classifier. Document the
-settings the new one actually uses; if it has setup steps (an account, a
-server to run), describe those the way the README's Laya section does.
+Per-provider settings (defaults, which settings are required, accepted
+`model` values) are documented in one place: `packages/classifiers/README.md`.
+Document the settings the new one actually uses; if it has setup steps (an
+account, a server to run), describe those the way the root README's Laya
+section does.
 
 - `packages/classifiers/README.md`: a section with a settings table.
 - Root `README.md`: a setup subsection under "Classifiers" and the provider
   list in the package description.
-- `docs/environment.md`: the `REASONING_ROUTER_CLASSIFIER` value list and
-  what each shared variable means for this provider.
-- `.env.example`: the provider list and per-provider comments.
-- `packages/proxy/src/index.ts`: the `--help` text.
-- `packages/opencode/README.md` and `packages/pi/README.md`: the provider
-  lists in their settings tables.
 - `packages/classifiers/package.json`: the description and `keywords`.
 - The `README_CN.md`, `README_JA.md`, and `README_KO.md` beside every README
   edited above: make the same change in Chinese, Japanese, and Korean.
+
+Leave `docs/environment.md`, `.env.example`, and the OpenCode and Pi READMEs
+alone: they describe the shared variables generically and link to the
+classifiers README. The proxy `--help` lists provider names from
+`classifierProviders` itself. Touch those only if the classifier adds a new
+shared variable, and then add a generic row, not per-provider details.
 
 ### 6. Sweep for missed spots
 
@@ -172,13 +183,16 @@ example the Clef cases in `packages/classifiers/test/env.test.ts`,
 `packages/pi/test/config.test.ts`), research notes in `docs/harnesses/`, and
 `docs/proposals/<provider>.md` describe a single provider; leave them alone.
 Update `AGENTS.md` and `docs/architecture.md` only where a provider list
-becomes stale.
+becomes stale. A hit in `docs/environment.md`, `.env.example`, or the
+OpenCode or Pi READMEs is an example value, not a list to extend; don't add
+per-provider details there (step 5).
 
 ### 7. Add a changeset
 
 Create `.changeset/<short-name>.md`. The classifiers package gets `minor`,
 because a new preset is a new feature. Bump other packages only if their
-published behavior changed, for example the proxy's help text (`patch`).
+published behavior changed; the proxy's help text updates on its own, so it
+usually needs no bump.
 
 ```md
 ---
