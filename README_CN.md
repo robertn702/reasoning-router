@@ -129,7 +129,7 @@ wire_api = "responses"
 - [`@reasoning-router/core`](packages/core/README_CN.md)：共享的、与 harness 和分类器无关的路由器。
 - [`@reasoning-router/opencode`](packages/opencode/README_CN.md)：OpenCode V2 插件。
 - [`@reasoning-router/classifiers`](packages/classifiers/README_CN.md)：各分类器
-  （Jev、Cloudflare Clef、Laya、Kev、OpenAI Decisions、CLM、Microsoft-Decision-1、Liquid d1 和 SGLang），通过 `classifier.provider` 选择。
+  （Jev、Cloudflare Clef、Laya、Kev、OpenAI Decisions、CLM、Microsoft-Decision-1、Liquid d1、SGLang 和 OpenRouter），通过 `classifier.provider` 选择。
 - [`@reasoning-router/pi`](packages/pi/README_CN.md)：Pi 扩展（目前仅支持 Claude 模型）。
 - [`@reasoning-router/proxy`](packages/proxy/README_CN.md)：独立的
   Responses/Messages 代理（命令为 `reasoning-router`）。
@@ -288,6 +288,24 @@ REASONING_ROUTER_CLASSIFIER=sglang reasoning-router
 ### Gemini Decision 1
 
 设置 `provider: "gemini-decision"`，即可通过 Vercel AI Gateway 使用 Gemini Decision 1。设置和使用方法参见[分类器 README](packages/classifiers/README_CN.md#gemini-decision-1)。仅发送有长度限制的文本状态。模拟测试覆盖 API 兼容性；推理强度选择的质量尚未验证，现有默认设置保持不变。
+
+### OpenRouter
+
+[OpenRouter](https://openrouter.ai/) 通过一个密钥提供多种决策模型，包括 Jev、Clef、Kev 和 Liquid d1。
+创建 OpenRouter API 密钥，从其
+[决策模型目录](https://openrouter.ai/api/v1/models?output_modalities=decisions)
+中选择一个模型，然后：
+
+```bash
+REASONING_ROUTER_CLASSIFIER=openrouter \
+REASONING_ROUTER_CLASSIFIER_API_KEY=<openrouter-key> \
+REASONING_ROUTER_CLASSIFIER_MODEL=typesafe/jev-1.13 \
+reasoning-router
+```
+
+这两项设置均为必填。它使用 OpenRouter 的 Decisions API，该 API 标记为 alpha。
+它只针对模拟响应进行过测试；实际兼容性和强度选择质量均未经验证。详情请参阅
+[packages/classifiers](packages/classifiers/README_CN.md#openrouter-provider-openrouter)。
 
 <a id="supported-models"></a>
 ## 支持的模型

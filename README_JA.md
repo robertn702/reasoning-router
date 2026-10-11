@@ -108,7 +108,7 @@ wire_api = "responses"
 
 - [`@reasoning-router/core`](packages/core/README_JA.md): ハーネスにも分類器にも依存しない、共有のルーター。
 - [`@reasoning-router/opencode`](packages/opencode/README_JA.md): OpenCode V2 プラグイン。
-- [`@reasoning-router/classifiers`](packages/classifiers/README_JA.md): 分類器（Jev、Cloudflare Clef、Laya、Kev、OpenAI Decisions、CLM、Microsoft-Decision-1、Liquid d1、SGLang）。`classifier.provider` で選択します。
+- [`@reasoning-router/classifiers`](packages/classifiers/README_JA.md): 分類器（Jev、Cloudflare Clef、Laya、Kev、OpenAI Decisions、CLM、Microsoft-Decision-1、Liquid d1、SGLang、OpenRouter）。`classifier.provider` で選択します。
 - [`@reasoning-router/pi`](packages/pi/README_JA.md): Pi 拡張機能（現時点では Claude モデルのみ）。
 - [`@reasoning-router/proxy`](packages/proxy/README_JA.md): スタンドアロンの Responses/Messages プロキシ（コマンド `reasoning-router`）。
 
@@ -241,6 +241,21 @@ REASONING_ROUTER_CLASSIFIER=sglang reasoning-router
 ### Gemini Decision 1
 
 `provider: "gemini-decision"` を選択すると、Vercel AI Gateway 経由で Gemini Decision 1 を利用できます。設定と使い方は[分類器 README](packages/classifiers/README_JA.md#gemini-decision-1)を参照してください。長さに上限のあるテキスト状態のみを送ります。モックテストで API 互換性を確認しており、推論強度の選択品質は未検証です。既存のデフォルト設定は変更しません。
+
+### OpenRouter
+
+[OpenRouter](https://openrouter.ai/) は、Jev、Clef、Kev、Liquid d1 を含む多くの判断モデルを 1 つのキーで提供します。OpenRouter API キーを作成し、[判断モデルのカタログ](https://openrouter.ai/api/v1/models?output_modalities=decisions)からモデルを選んで、次のように実行します。
+
+```bash
+REASONING_ROUTER_CLASSIFIER=openrouter \
+REASONING_ROUTER_CLASSIFIER_API_KEY=<openrouter-key> \
+REASONING_ROUTER_CLASSIFIER_MODEL=typesafe/jev-1.13 \
+reasoning-router
+```
+
+2 つの設定はどちらも必須です。alpha とされている OpenRouter の Decisions API を使用します。モックしたレスポンスに対してのみテストされており、実環境での互換性と推論強度の選択品質は未検証です。詳細は
+[packages/classifiers](packages/classifiers/README_JA.md#openrouter-provider-openrouter)
+を参照してください。
 
 <a id="supported-models"></a>
 
