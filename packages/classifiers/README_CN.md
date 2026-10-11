@@ -114,6 +114,31 @@ OpenAI 声称延迟比 Responses API 低约 10 倍，这是其自己的说法，
 
 调用 `{baseUrl}/v1/systemone`，密钥规则与 Laya 相同（bearer token；空白密钥视为未设置）。
 
+<a id="microsoft-decision-1-provider-microsoft-decision"></a>
+## Microsoft-Decision-1（`provider: "microsoft-decision"`）
+
+Microsoft 的 [Microsoft-Decision-1](https://learn.microsoft.com/azure/foundry/foundry-models/how-to/use-foundry-models-microsoft-decision)，
+部署在你自己的 Microsoft Foundry 资源中。部署该模型后，从部署详情页面复制资源端点、部署名称和 API 密钥。
+
+| 字段 | 默认值 | 用途 |
+| --- | --- | --- |
+| `baseUrl` | 无 | Foundry 资源端点，例如 `https://<resource>.services.ai.azure.com`。必填。使用 HTTPS，不含凭据、查询字符串或片段。 |
+| `apiKey` | 无 | 该资源的 API 密钥，通过 `api-key` 请求头发送。必填。 |
+| `model` | 无 | 你的部署名称，而不是模型名称。必填。 |
+| `timeoutMs` | `4000` | 分类的总预算，含重试。 |
+
+该提供方调用 `POST {baseUrl}/providers/microsoft/v1/systemone`，请求体为 System One 请求：
+有限的状态，以及一个名为 `effort` 的 `choice` 问题，选项为目标模型所支持的强度。
+它读取 `answers.effort.choice`；不受支持或缺失的选项会作为 `classifier_invalid_output` 回退。
+错误响应体会被丢弃。认证错误不会重试；429 和 5xx 响应会在截止时间内重试，并遵循 `Retry-After`。
+不支持 Microsoft Entra ID 持有者 token，因为路由器不会获取或刷新它们。
+定价未重新核对；使用前请查看 Foundry 的模型目录。
+
+该契约已于 2026-10-11 对照 Microsoft 的操作指南核对过（请参阅
+[issue #64](https://github.com/robertn702/reasoning-router/issues/64)）。
+验证仅使用了模拟的 HTTP 契约测试；没有进行任何实际调用或带认证的调用。
+Microsoft 关于准确率和延迟的说法是其自己的说法，强度选择质量尚未评估，因此 Jev 仍然是默认选项。
+
 ## 导出
 
 - `classifierProviders`：所有分类器，供 [`@reasoning-router/core`](../core/README_CN.md) 中的
@@ -123,6 +148,8 @@ OpenAI 声称延迟比 Responses API 低约 10 倍，这是其自己的说法，
 - `openAIDecisionsClassifierProvider`、`createOpenAIDecisionsTransport`、
   `resolveOpenAIDecisionsConnection`，以及 `OpenAIDecisionsConnection` 类型。
 - `clmClassifierProvider`、`createClmTransport`、`resolveClmConnection`，以及 `ClmConnection` 类型。
+- `microsoftDecisionClassifierProvider`、`createMicrosoftDecisionTransport`、
+  `resolveMicrosoftDecisionConnection`，以及 `MicrosoftDecisionConnection` 类型。
 - `createJevClassifier`、`createJevTransport`、`createClefTransport`、
   `createLayaTransport`、`createKevTransport`、`resolveJevConnection`、
   `resolveClefConnection`、`resolveLayaConnection`、`resolveKevConnection`：

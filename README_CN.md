@@ -129,7 +129,7 @@ wire_api = "responses"
 - [`@reasoning-router/core`](packages/core/README_CN.md)：共享的、与 harness 和分类器无关的路由器。
 - [`@reasoning-router/opencode`](packages/opencode/README_CN.md)：OpenCode V2 插件。
 - [`@reasoning-router/classifiers`](packages/classifiers/README_CN.md)：各分类器
-  （Jev、Cloudflare Clef、Laya、Kev、OpenAI Decisions 和 CLM），通过 `classifier.provider` 选择。
+  （Jev、Cloudflare Clef、Laya、Kev、OpenAI Decisions、CLM 和 Microsoft-Decision-1），通过 `classifier.provider` 选择。
 - [`@reasoning-router/pi`](packages/pi/README_CN.md)：Pi 扩展（目前仅支持 Claude 模型）。
 - [`@reasoning-router/proxy`](packages/proxy/README_CN.md)：独立的
   Responses/Messages 代理（命令为 `reasoning-router`）。
@@ -232,6 +232,24 @@ REASONING_ROUTER_CLASSIFIER=clm reasoning-router
 `REASONING_ROUTER_CLASSIFIER_API_KEY`，并通过 `REASONING_ROUTER_CLASSIFIER_MODEL` 选择 CLM head
 （服务器默认使用 `clm-latest`）。固定的版本、池化后端以及 2,048 token 的截断，请参阅
 [docs/classifiers/clm.md](docs/classifiers/clm.md)。目前只验证了 API 兼容性，尚未验证推理强度决策的质量。
+
+### Microsoft-Decision-1
+
+[Microsoft-Decision-1](https://learn.microsoft.com/azure/foundry/foundry-models/how-to/use-foundry-models-microsoft-decision)
+是 Microsoft 在 Microsoft Foundry 上提供的决策模型。在你的 Foundry 资源中部署它，然后使用部署详情页面上的
+资源端点、部署名称和 API 密钥：
+
+```bash
+REASONING_ROUTER_CLASSIFIER=microsoft-decision \
+REASONING_ROUTER_CLASSIFIER_BASE_URL=https://<resource>.services.ai.azure.com \
+REASONING_ROUTER_CLASSIFIER_MODEL=<deployment-name> \
+REASONING_ROUTER_CLASSIFIER_API_KEY=<foundry-api-key> \
+reasoning-router
+```
+
+这三项设置均为必填。仅支持 API 密钥，不支持 Microsoft Entra ID token。它只针对模拟响应进行过测试；
+实际兼容性和强度选择质量均未经验证。详情请参阅
+[packages/classifiers](packages/classifiers/README_CN.md#microsoft-decision-1-provider-microsoft-decision)。
 
 <a id="supported-models"></a>
 ## 支持的模型

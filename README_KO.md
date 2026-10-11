@@ -108,7 +108,7 @@ wire_api = "responses"
 
 - [`@reasoning-router/core`](packages/core/README_KO.md): 하네스와 분류기에 독립적인 공유 라우터.
 - [`@reasoning-router/opencode`](packages/opencode/README_KO.md): OpenCode V2 플러그인.
-- [`@reasoning-router/classifiers`](packages/classifiers/README_KO.md): 분류기(Jev, Cloudflare Clef, Laya, Kev, OpenAI Decisions, CLM). `classifier.provider`로 선택합니다.
+- [`@reasoning-router/classifiers`](packages/classifiers/README_KO.md): 분류기(Jev, Cloudflare Clef, Laya, Kev, OpenAI Decisions, CLM, Microsoft-Decision-1). `classifier.provider`로 선택합니다.
 - [`@reasoning-router/pi`](packages/pi/README_KO.md): Pi 확장 프로그램(현재는 Claude 모델만 지원).
 - [`@reasoning-router/proxy`](packages/proxy/README_KO.md): 독립 실행형 Responses/Messages 프록시(명령어 `reasoning-router`).
 
@@ -195,6 +195,22 @@ REASONING_ROUTER_CLASSIFIER=clm reasoning-router
 ```
 
 기본 base URL은 `http://127.0.0.1:8700`입니다. `REASONING_ROUTER_CLASSIFIER_API_KEY`는 서버에서 `CLM_API_KEY`를 설정한 경우에만 설정하세요. CLM 헤드는 `REASONING_ROUTER_CLASSIFIER_MODEL`로 선택합니다(서버 기본값은 `clm-latest`). 고정된 버전, 풀링 백엔드, 2,048 토큰 잘라내기는 [docs/classifiers/clm.md](docs/classifiers/clm.md)를 참조하세요. 검증된 것은 API 호환성뿐이며, 추론 수준 결정의 품질은 검증되지 않았습니다.
+
+### Microsoft-Decision-1
+
+[Microsoft-Decision-1](https://learn.microsoft.com/azure/foundry/foundry-models/how-to/use-foundry-models-microsoft-decision)은 Microsoft Foundry에서 제공하는 Microsoft의 결정 모델입니다. 사용자의 Foundry 리소스에 배포한 뒤, 배포 세부 정보 페이지에 표시된 리소스 엔드포인트, 배포 이름, API 키를 사용하세요.
+
+```bash
+REASONING_ROUTER_CLASSIFIER=microsoft-decision \
+REASONING_ROUTER_CLASSIFIER_BASE_URL=https://<resource>.services.ai.azure.com \
+REASONING_ROUTER_CLASSIFIER_MODEL=<deployment-name> \
+REASONING_ROUTER_CLASSIFIER_API_KEY=<foundry-api-key> \
+reasoning-router
+```
+
+세 가지 설정은 모두 필수입니다. API 키만 지원되며 Microsoft Entra ID 토큰은 지원되지 않습니다. 모킹된 응답에 대해서만 테스트되었으며, 실제 환경에서의 호환성과 추론 수준 선택 품질은 검증되지 않았습니다. 자세한 내용은
+[packages/classifiers](packages/classifiers/README_KO.md#microsoft-decision-1-provider-microsoft-decision)를
+참조하세요.
 
 <a id="supported-models"></a>
 

@@ -135,6 +135,36 @@ effort-decision quality.
 Calls `{baseUrl}/v1/systemone`, with the same key rules as Laya (a bearer
 token; a blank key counts as unset).
 
+## Microsoft-Decision-1 (`provider: "microsoft-decision"`)
+
+Microsoft's [Microsoft-Decision-1](https://learn.microsoft.com/azure/foundry/foundry-models/how-to/use-foundry-models-microsoft-decision),
+deployed in your own Microsoft Foundry resource. Deploy the model, then copy
+the resource endpoint, deployment name, and API key from the deployment
+details page.
+
+| Field | Default | Purpose |
+| --- | --- | --- |
+| `baseUrl` | none | Foundry resource endpoint, e.g. `https://<resource>.services.ai.azure.com`. Required. HTTPS, without credentials, query, or fragment. |
+| `apiKey` | none | The resource's API key, sent in an `api-key` header. Required. |
+| `model` | none | Your deployment name, not the model name. Required. |
+| `timeoutMs` | `4000` | Total classification budget, including retries. |
+
+The provider calls `POST {baseUrl}/providers/microsoft/v1/systemone` with the
+System One request: the bounded state and one `choice` question named
+`effort` over the target model's supported efforts. It reads
+`answers.effort.choice`; an unsupported or missing choice falls back as
+`classifier_invalid_output`. Error bodies are discarded. Authentication errors
+are not retried; 429 and 5xx responses retry within the deadline, honoring
+`Retry-After`. Microsoft Entra ID bearer tokens are not supported, because
+the router does not acquire or refresh them. Pricing was not rechecked;
+see Foundry's model catalog before use.
+
+The contract was checked against Microsoft's how-to guide on 2026-10-11 (see
+[issue #64](https://github.com/robertn702/reasoning-router/issues/64)).
+Verification used mocked HTTP contract tests only; no live or authenticated
+calls were made. Microsoft's accuracy and latency claims are its own, and
+effort-selection quality has not been evaluated, so Jev remains the default.
+
 ## Exports
 
 - `classifierProviders`: every classifier, for `createConfiguredSelector` in
@@ -145,6 +175,9 @@ token; a blank key counts as unset).
   `resolveOpenAIDecisionsConnection`, and the `OpenAIDecisionsConnection` type.
 - `clmClassifierProvider`, `createClmTransport`, `resolveClmConnection`, and
   the `ClmConnection` type.
+- `microsoftDecisionClassifierProvider`, `createMicrosoftDecisionTransport`,
+  `resolveMicrosoftDecisionConnection`, and the `MicrosoftDecisionConnection`
+  type.
 - `createJevClassifier`, `createJevTransport`, `createClefTransport`,
   `createLayaTransport`, `createKevTransport`, `resolveJevConnection`,
   `resolveClefConnection`, `resolveLayaConnection`, `resolveKevConnection`:

@@ -94,12 +94,30 @@ OpenAI には、他の分類器と同じ長さに上限を設けた要約が送�
 
 `{baseUrl}/v1/systemone` を呼び出し、キーの規則は Laya と同じです（bearer トークン。空白のキーは未設定として扱われます）。
 
+<a id="microsoft-decision-1-provider-microsoft-decision"></a>
+
+## Microsoft-Decision-1（`provider: "microsoft-decision"`）
+
+Microsoft の [Microsoft-Decision-1](https://learn.microsoft.com/azure/foundry/foundry-models/how-to/use-foundry-models-microsoft-decision)。ご自身の Microsoft Foundry リソースにデプロイして使います。モデルをデプロイしたら、デプロイの詳細ページからリソースエンドポイント、デプロイ名、API キーをコピーします。
+
+| フィールド | デフォルト | 用途 |
+| --- | --- | --- |
+| `baseUrl` | なし | Foundry リソースエンドポイント。例: `https://<resource>.services.ai.azure.com`。必須。HTTPS で、認証情報、クエリ、フラグメントを含まないこと。 |
+| `apiKey` | なし | リソースの API キー。`api-key` ヘッダーで送信されます。必須。 |
+| `model` | なし | モデル名ではなく、ご自身のデプロイ名。必須。 |
+| `timeoutMs` | `4000` | リトライを含む、分類全体の時間予算。 |
+
+このプロバイダーは、System One リクエストを付けて `POST {baseUrl}/providers/microsoft/v1/systemone` を呼び出します。リクエストは、長さに上限を設けた状態と、対象モデルがサポートする推論強度を選択肢とする `effort` という名前の `choice` 質問 1 つで構成されます。`answers.effort.choice` を読み取り、未サポートまたは欠落した選択は `classifier_invalid_output` としてフォールバックします。エラーボディは破棄されます。認証エラーはリトライされません。429 と 5xx のレスポンスは、`Retry-After` を尊重しつつ、期限内でリトライされます。ルーターは Microsoft Entra ID のベアラートークンを取得も更新もしないため、サポートされません。料金は再確認していません。使用前に Foundry のモデルカタログを確認してください。
+
+このコントラクトは 2026-10-11 に Microsoft のハウツーガイドと照合して確認しました（[issue #64](https://github.com/robertn702/reasoning-router/issues/64) を参照）。検証にはモックした HTTP コントラクトテストのみを使用し、実環境での、または認証付きの呼び出しは行っていません。精度とレイテンシに関する Microsoft の主張は同社自身のものであり、推論強度の選択品質は評価していないため、デフォルトは引き続き Jev です。
+
 ## エクスポート
 
 - `classifierProviders`: すべての分類器。[`@reasoning-router/core`](../core/README_JA.md) の `createConfiguredSelector` 用。
 - `jevClassifierProvider`、`clefClassifierProvider`、`layaClassifierProvider`、`kevClassifierProvider`: 各プロバイダー。
 - `openAIDecisionsClassifierProvider`、`createOpenAIDecisionsTransport`、`resolveOpenAIDecisionsConnection`、および `OpenAIDecisionsConnection` 型。
 - `clmClassifierProvider`、`createClmTransport`、`resolveClmConnection`、および `ClmConnection` 型。
+- `microsoftDecisionClassifierProvider`、`createMicrosoftDecisionTransport`、`resolveMicrosoftDecisionConnection`、および `MicrosoftDecisionConnection` 型。
 - `createJevClassifier`、`createJevTransport`、`createClefTransport`、`createLayaTransport`、`createKevTransport`、`resolveJevConnection`、`resolveClefConnection`、`resolveLayaConnection`、`resolveKevConnection`: 低レベルのヘルパー。
 - `ClassifierRequestError` と `Fetch` 型。トランスポートが使用します。
 
