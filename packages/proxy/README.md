@@ -60,11 +60,12 @@ different port also gets `400 invalid_host`.
 
 ## Codex CLI
 
-Start the proxy as above, then add a custom provider to
-`~/.codex/config.toml`:
+Start the proxy as above, then create a Codex profile at
+`~/.codex/reasoning-router.config.toml`. It keeps the model name and changes only the
+provider, so your default Codex setup is untouched:
 
 ```toml
-model = "gpt-6.1-sol"
+model = "gpt-6-astra"
 model_provider = "reasoning-router"
 
 [model_providers.reasoning-router]
@@ -73,19 +74,55 @@ base_url = "http://127.0.0.1:4320/v1"
 wire_api = "responses"
 ```
 
+Run `codex -p reasoning-router` to route through the proxy; plain `codex` is
+unchanged. `-p` names the profile file, not the provider; both are called
+`reasoning-router` here. The profile is not tied to one model: pick another
+with `-m`, for example `codex -p reasoning-router -m gpt-6-sol`. Profiles (`-p`) need Codex 0.161.0 or later. On older versions, put
+the same lines in `~/.codex/config.toml` instead.
+
 Codex sends no credential; the proxy adds
 `REASONING_ROUTER_UPSTREAM_API_KEY` (`REASONING_ROUTER_UPSTREAM_AUTH=bearer`).
 Leave `supports_websockets` unset, since the proxy serves HTTP only.
 
-- Only OpenAI API keys work. ChatGPT-subscription login is not supported.
+- Keep the real model ID. Codex reads model metadata by name, and the proxy
+  has no aliases, so a made-up name like `astra-rr` would get generic
+  metadata from Codex and a local `400` from the proxy.
 - Use `gpt-6-astra`, `gpt-6-luna`, `gpt-6-sol`, or `gpt-6.1-sol`. Other models
   get a local `400`.
 - The classifier picks the effort. Codex's `model_reasoning_effort` and
   `/model` effort are ignored, though Codex still displays them.
-- Codex 0.159.0 does not know `gpt-6.1-sol` and runs it with generic metadata
-  unless you supply `model_catalog_json`.
 - The proxy closes an upstream stream after 60 seconds without data. Raise
   `REASONING_ROUTER_UPSTREAM_IDLE_TIMEOUT_MS` if long turns are cut off.
+
+### ChatGPT subscription through CLIProxyAPI
+
+The proxy cannot use a ChatGPT login directly. To use a subscription, run
+[CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI) with a Codex login
+and put it behind the proxy:
+
+```text
+codex -p reasoning-router → reasoning-router (127.0.0.1:4320) → CLIProxyAPI (127.0.0.1:8317) → ChatGPT
+```
+
+Start the proxy in `forward` mode against CLIProxyAPI, with no upstream key:
+
+```dotenv
+REASONING_ROUTER_UPSTREAM_BASE_URL=http://127.0.0.1:8317/v1
+REASONING_ROUTER_UPSTREAM_AUTH=forward
+```
+
+Then add `env_key` to the profile's provider block so Codex sends your
+CLIProxyAPI client key, which the proxy forwards unchanged:
+
+```toml
+env_key = "CLIPROXY_KEY"   # environment variable holding a CLIProxyAPI api-key
+```
+
+CLIProxyAPI passes `configuration_update` through for GPT-6 models on Codex
+Plus, Pro, and Team plans; on the Free plan it strips it for every model
+except `gpt-6-luna`, so routing has no effect there. Verified with Codex
+0.161.0 and CLIProxyAPI 8.0.23: the backend accepted effort changes and kept
+the prompt cache across them.
 
 See [`docs/harnesses/codex.md`](../../docs/harnesses/codex.md) for details.
 

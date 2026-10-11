@@ -57,7 +57,7 @@ REASONING_ROUTER_UPSTREAM_API_KEY=<openai-key> \
 npx @reasoning-router/proxy
 ```
 
-对于 Codex，在 `~/.codex/config.toml` 中将代理添加为 provider。推理强度由分类器选择，因此 Codex 自身的推理强度设置会被忽略：
+对于 Codex，在 `~/.codex/reasoning-router.config.toml` 中添加一个配置文件（profile），它保留模型，只替换 provider，然后运行 `codex -p reasoning-router`（需要 Codex 0.161.0 或更高版本），可加上 `-m gpt-6-sol` 或其他模型来覆盖默认模型。直接运行 `codex` 不受影响。推理强度由分类器选择，因此 Codex 自身的推理强度设置会被忽略。若要使用 ChatGPT 订阅而非 API 密钥，请将代理串联到 CLIProxyAPI（[指南](packages/proxy/README_CN.md#chatgpt-subscription-through-cliproxyapi)）：
 
 ```toml
 model = "gpt-6-astra"
@@ -106,7 +106,7 @@ wire_api = "responses"
 ## Alpha 阶段的限制
 
 - **已测试环境：** Node.js 24.x、OpenCode V2 2.0.18、Pi 1.0.4，以及 Codex CLI 0.159.0
-  （通过代理）。其他版本可能可用，但未经测试。
+  和 0.161.0（通过代理）。其他版本可能可用，但未经测试。
 - **模型：** 仅限[支持的模型](#supported-models)中列出的模型。其他模型会在本地被拒绝。Pi 仅路由 Claude 模型。
 - **分类器：** 路由器向已配置的分类器发出询问并采用其答案；对于任何分类器在你的工作负载上选择强度的效果，
   它不做任何保证。
