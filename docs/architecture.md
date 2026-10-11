@@ -139,6 +139,12 @@ that Jev-specific names become provider-neutral.
   `openai-decisions` preset sends the state as JSON text and one `effort`
   choice, and matches the answer by name. It shares the transport; the
   translation stays in the preset.
+- **Microsoft-Decision-1:** Microsoft's decision model on
+  [Microsoft Foundry](https://learn.microsoft.com/azure/foundry/foundry-models/how-to/use-foundry-models-microsoft-decision)
+  ([#64](https://github.com/robertn702/reasoning-router/issues/64)), at
+  `{resource endpoint}/providers/microsoft/v1/systemone` with the System One
+  request and response. `model` is the user's deployment name, and API keys
+  go in an `api-key` header.
 - **Transport:** presets share one `fetch`-based client that maps HTTP
   status and `fetch` failures to the error categories and reads
   `Retry-After`. `@typesafe-ai/sdk` is dropped; it only adds a `choice()`
@@ -149,9 +155,10 @@ that Jev-specific names become provider-neutral.
   failure summary, and the target model ID). The single question is a
   `choice` named `effort` whose options are the target model's supported
   efforts. The answer is `answers.effort.choice`, rejected if the model does
-  not support it. Laya, Kev, Clef, and CLM accept the same request and response
-  shape as Jev's `system_one`, so they fit this contract; OpenAI Decisions
-  maps the same state and question onto its own format.
+  not support it. Laya, Kev, Clef, CLM, and Microsoft-Decision-1 accept the
+  same request and response shape as Jev's `system_one`, so they fit this
+  contract; OpenAI Decisions maps the same state and question onto its own
+  format.
 - **Policy:** as in `opencode-jev-router`'s
   [classification policy](https://github.com/robertn702/opencode-jev-router/blob/main/docs/classification-policy.md):
   a 4000 ms total deadline, one retry for connection errors, timeouts, 429,
@@ -162,8 +169,9 @@ that Jev-specific names become provider-neutral.
   `classifier: { provider: "clef", accountId, apiKey, model, timeoutMs }`,
   `classifier: { provider: "laya", baseUrl, apiKey, model, timeoutMs }`,
   `classifier: { provider: "kev", baseUrl, apiKey, model, timeoutMs }`,
-  `classifier: { provider: "openai-decisions", apiKey, baseUrl, model, timeoutMs }`, or
-  `classifier: { provider: "clm", baseUrl, apiKey, model, timeoutMs }`.
+  `classifier: { provider: "openai-decisions", apiKey, baseUrl, model, timeoutMs }`,
+  `classifier: { provider: "clm", baseUrl, apiKey, model, timeoutMs }`, or
+  `classifier: { provider: "microsoft-decision", baseUrl, apiKey, model, timeoutMs }`.
 - **Logging:** the same metadata-only decision events, with Jev-specific
   names made provider-neutral (`jev_attempts` becomes `classifier_attempts`,
   `jev_timeout` becomes `classifier_timeout`) and the classifier recorded.
@@ -238,6 +246,13 @@ These are reversible:
   `eu.` OpenAI API roots), so a base URL left over from another classifier
   cannot receive the OpenAI key. `model` accepts only `gpt-6-luna` until
   OpenAI adds models.
+- **Microsoft-Decision-1 takes an API key only**, sent in Foundry's `api-key`
+  header through an optional header name on the shared transport. Microsoft
+  Entra ID bearer tokens expire within hours and the router does not acquire
+  or refresh them, so they are not accepted. `baseUrl` is any HTTPS URL
+  without credentials, query, or fragment, not an Azure host allowlist,
+  because Foundry endpoints, sovereign clouds, and gateways vary. It and
+  `model` (the deployment name) have no default.
 
 ## Open questions
 

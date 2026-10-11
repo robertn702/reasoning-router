@@ -156,8 +156,8 @@ The packages are:
   classifier-independent router.
 - [`@reasoning-router/opencode`](packages/opencode): the OpenCode V2 plugin.
 - [`@reasoning-router/classifiers`](packages/classifiers): the
-  classifiers (Jev, Cloudflare Clef, Laya, Kev, OpenAI Decisions, and CLM),
-  selected by `classifier.provider`.
+  classifiers (Jev, Cloudflare Clef, Laya, Kev, OpenAI Decisions, CLM, and
+  Microsoft-Decision-1), selected by `classifier.provider`.
 - [`@reasoning-router/pi`](packages/pi): the Pi extension (Claude models
   only, for now).
 - [`@reasoning-router/proxy`](packages/proxy): the standalone
@@ -275,6 +275,27 @@ and `REASONING_ROUTER_CLASSIFIER_MODEL` to choose a CLM head (the server
 defaults to `clm-latest`). See [docs/classifiers/clm.md](docs/classifiers/clm.md)
 for the pinned version, the pooling backend, and the 2,048-token truncation.
 Only API compatibility has been verified. Effort-decision quality has not.
+
+### Microsoft-Decision-1
+
+[Microsoft-Decision-1](https://learn.microsoft.com/azure/foundry/foundry-models/how-to/use-foundry-models-microsoft-decision)
+is Microsoft's decision model on Microsoft Foundry. Deploy it in your Foundry
+resource, then use the resource endpoint, deployment name, and API key from
+the deployment details page:
+
+```bash
+REASONING_ROUTER_CLASSIFIER=microsoft-decision \
+REASONING_ROUTER_CLASSIFIER_BASE_URL=https://<resource>.services.ai.azure.com \
+REASONING_ROUTER_CLASSIFIER_MODEL=<deployment-name> \
+REASONING_ROUTER_CLASSIFIER_API_KEY=<foundry-api-key> \
+reasoning-router
+```
+
+All three settings are required. Only API keys are supported, not Microsoft
+Entra ID tokens. It is tested against mocked responses only; live
+compatibility and effort-selection quality are unverified. See
+[packages/classifiers](packages/classifiers/README.md#microsoft-decision-1-provider-microsoft-decision)
+for details.
 
 ## Supported models
 

@@ -108,7 +108,7 @@ wire_api = "responses"
 
 - [`@reasoning-router/core`](packages/core/README_JA.md): ハーネスにも分類器にも依存しない、共有のルーター。
 - [`@reasoning-router/opencode`](packages/opencode/README_JA.md): OpenCode V2 プラグイン。
-- [`@reasoning-router/classifiers`](packages/classifiers/README_JA.md): 分類器（Jev、Cloudflare Clef、Laya、Kev、OpenAI Decisions、CLM）。`classifier.provider` で選択します。
+- [`@reasoning-router/classifiers`](packages/classifiers/README_JA.md): 分類器（Jev、Cloudflare Clef、Laya、Kev、OpenAI Decisions、CLM、Microsoft-Decision-1）。`classifier.provider` で選択します。
 - [`@reasoning-router/pi`](packages/pi/README_JA.md): Pi 拡張機能（現時点では Claude モデルのみ）。
 - [`@reasoning-router/proxy`](packages/proxy/README_JA.md): スタンドアロンの Responses/Messages プロキシ（コマンド `reasoning-router`）。
 
@@ -195,6 +195,22 @@ REASONING_ROUTER_CLASSIFIER=clm reasoning-router
 ```
 
 デフォルトのベース URL は `http://127.0.0.1:8700` です。`REASONING_ROUTER_CLASSIFIER_API_KEY` は、サーバー側で `CLM_API_KEY` を設定している場合にのみ設定してください。CLM ヘッドは `REASONING_ROUTER_CLASSIFIER_MODEL` で選びます（サーバーのデフォルトは `clm-latest`）。固定バージョン、プーリングバックエンド、2,048 トークンでの切り詰めについては [docs/classifiers/clm.md](docs/classifiers/clm.md) を参照してください。検証したのは API の互換性のみで、推論強度の判断品質は検証していません。
+
+### Microsoft-Decision-1
+
+[Microsoft-Decision-1](https://learn.microsoft.com/azure/foundry/foundry-models/how-to/use-foundry-models-microsoft-decision) は、Microsoft Foundry 上で提供される Microsoft の判断モデルです。ご自身の Foundry リソースにデプロイし、デプロイの詳細ページに表示されるリソースエンドポイント、デプロイ名、API キーを使用します。
+
+```bash
+REASONING_ROUTER_CLASSIFIER=microsoft-decision \
+REASONING_ROUTER_CLASSIFIER_BASE_URL=https://<resource>.services.ai.azure.com \
+REASONING_ROUTER_CLASSIFIER_MODEL=<deployment-name> \
+REASONING_ROUTER_CLASSIFIER_API_KEY=<foundry-api-key> \
+reasoning-router
+```
+
+3 つの設定はすべて必須です。サポートされるのは API キーのみで、Microsoft Entra ID トークンはサポートされません。モックしたレスポンスに対してのみテストされており、実環境での互換性と推論強度の選択品質は未検証です。詳細は
+[packages/classifiers](packages/classifiers/README_JA.md#microsoft-decision-1-provider-microsoft-decision)
+を参照してください。
 
 <a id="supported-models"></a>
 

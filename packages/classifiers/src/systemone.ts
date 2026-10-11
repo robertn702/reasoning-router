@@ -53,6 +53,8 @@ export async function postJson(request: {
   fetch: Fetch | undefined;
   url: string;
   apiKey: string | undefined;
+  /** Sends the key as-is in this header instead of as a bearer token. */
+  apiKeyHeader?: string;
   body: unknown;
   signal: AbortSignal;
 }): Promise<unknown> {
@@ -62,9 +64,10 @@ export async function postJson(request: {
     const response = await (request.fetch ?? globalThis.fetch)(request.url, {
       method: "POST",
       headers: {
-        ...(request.apiKey !== undefined && {
-          authorization: `Bearer ${request.apiKey}`,
-        }),
+        ...(request.apiKey !== undefined &&
+          (request.apiKeyHeader
+            ? { [request.apiKeyHeader]: request.apiKey }
+            : { authorization: `Bearer ${request.apiKey}` })),
         accept: "application/json",
         "content-type": "application/json",
       },
@@ -101,8 +104,10 @@ export async function postJson(request: {
 export function createSystemOneClassifier(options: {
   name: string;
   url: string;
-  /** Sent as a bearer token; no `authorization` header when unset. */
+  /** Sent as a bearer token, or in `apiKeyHeader`; no auth header when unset. */
   apiKey?: string;
+  /** Sends the key as-is in this header instead of as a bearer token. */
+  apiKeyHeader?: string;
   /** The classifier model, sent as the request's `model` when set. */
   model?: string;
   fetch?: Fetch;
@@ -120,6 +125,7 @@ export function createSystemOneClassifier(options: {
         fetch: options.fetch,
         url: options.url,
         apiKey: options.apiKey,
+        apiKeyHeader: options.apiKeyHeader,
         signal,
         body: {
           model: options.model,

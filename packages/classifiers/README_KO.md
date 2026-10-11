@@ -94,12 +94,30 @@ OpenAI는 다른 분류기와 동일하게 길이를 제한한 요약을 받습�
 
 `{baseUrl}/v1/systemone`을 호출하며, 키 규칙은 Laya와 같습니다(bearer 토큰, 빈 키는 설정되지 않은 것으로 간주).
 
+<a id="microsoft-decision-1-provider-microsoft-decision"></a>
+
+## Microsoft-Decision-1 (`provider: "microsoft-decision"`)
+
+Microsoft의 [Microsoft-Decision-1](https://learn.microsoft.com/azure/foundry/foundry-models/how-to/use-foundry-models-microsoft-decision)로, 사용자의 Microsoft Foundry 리소스에 배포해 사용합니다. 모델을 배포한 뒤 배포 세부 정보 페이지에서 리소스 엔드포인트, 배포 이름, API 키를 복사하세요.
+
+| 필드 | 기본값 | 용도 |
+| --- | --- | --- |
+| `baseUrl` | 없음 | Foundry 리소스 엔드포인트. 예: `https://<resource>.services.ai.azure.com`. 필수. HTTPS여야 하며 자격 증명, 쿼리, 프래그먼트를 포함하면 안 됩니다. |
+| `apiKey` | 없음 | 리소스의 API 키이며 `api-key` 헤더로 전송됩니다. 필수. |
+| `model` | 없음 | 모델 이름이 아닌 사용자의 배포 이름. 필수. |
+| `timeoutMs` | `4000` | 재시도를 포함한 전체 분류 시간 예산. |
+
+이 제공자는 System One 요청과 함께 `POST {baseUrl}/providers/microsoft/v1/systemone`를 호출합니다. 요청은 길이를 제한한 상태와, 대상 모델이 지원하는 추론 수준을 선택지로 하는 `effort`라는 이름의 `choice` 질문 하나로 구성됩니다. `answers.effort.choice`를 읽으며, 지원되지 않거나 누락된 선택은 `classifier_invalid_output`으로 폴백합니다. 오류 본문은 버립니다. 인증 오류는 재시도하지 않으며, 429 및 5xx 응답은 `Retry-After`를 준수하면서 기한 내에서 재시도합니다. 라우터가 Microsoft Entra ID 베어러 토큰을 획득하거나 갱신하지 않으므로 이를 지원하지 않습니다. 가격은 다시 확인하지 않았으니 사용하기 전에 Foundry의 모델 카탈로그를 확인하세요.
+
+이 계약은 2026-10-11에 Microsoft의 하우투 가이드와 대조해 확인했습니다([issue #64](https://github.com/robertn702/reasoning-router/issues/64) 참조). 검증에는 모킹된 HTTP 계약 테스트만 사용했으며, 실제 호출이나 인증된 호출은 수행하지 않았습니다. 정확도와 지연 시간에 대한 Microsoft의 주장은 Microsoft 자체의 것이며, 추론 수준 선택 품질은 평가하지 않았으므로 기본값은 계속 Jev입니다.
+
 ## 내보내기(Exports)
 
 - `classifierProviders`: 모든 분류기. [`@reasoning-router/core`](../core/README_KO.md)의 `createConfiguredSelector`용.
 - `jevClassifierProvider`, `clefClassifierProvider`, `layaClassifierProvider`, `kevClassifierProvider`: 각 제공자.
 - `openAIDecisionsClassifierProvider`, `createOpenAIDecisionsTransport`, `resolveOpenAIDecisionsConnection`, 그리고 `OpenAIDecisionsConnection` 타입.
 - `clmClassifierProvider`, `createClmTransport`, `resolveClmConnection`, 그리고 `ClmConnection` 타입.
+- `microsoftDecisionClassifierProvider`, `createMicrosoftDecisionTransport`, `resolveMicrosoftDecisionConnection`, 그리고 `MicrosoftDecisionConnection` 타입.
 - `createJevClassifier`, `createJevTransport`, `createClefTransport`, `createLayaTransport`, `createKevTransport`, `resolveJevConnection`, `resolveClefConnection`, `resolveLayaConnection`, `resolveKevConnection`: 저수준 헬퍼.
 - `ClassifierRequestError`와 `Fetch` 타입. 트랜스포트에서 사용합니다.
 
