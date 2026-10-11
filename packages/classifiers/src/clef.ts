@@ -16,7 +16,7 @@ const API_KEY_REQUIRED =
   "classifier.apiKey is required for Clef classification";
 const ACCOUNT_ID =
   "classifier.accountId must be a 32-character Cloudflare account ID";
-const MODEL = "classifier.model must be one of clef, clef-flash";
+const MODEL = "classifier.model must be one of clef, clef-omni, clef-flash";
 
 const clefConnectionSchema = z.object({
   accountId: z
@@ -24,7 +24,7 @@ const clefConnectionSchema = z.object({
     .trim()
     .regex(/^[0-9a-f]{32}$/i, ACCOUNT_ID),
   apiKey: z.string(API_KEY_REQUIRED).trim().min(1, API_KEY_REQUIRED),
-  model: z.enum(["clef", "clef-flash"], MODEL),
+  model: z.enum(["clef", "clef-omni", "clef-flash"], MODEL),
 });
 
 export type ClefConnection = z.output<typeof clefConnectionSchema>;

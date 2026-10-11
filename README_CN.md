@@ -172,7 +172,7 @@ REASONING_ROUTER_CLASSIFIER_MODEL=clef \
 reasoning-router
 ```
 
-将 `REASONING_ROUTER_CLASSIFIER_MODEL` 设置为 `clef` 或 `clef-flash`。此项为必填。
+将 `REASONING_ROUTER_CLASSIFIER_MODEL` 设置为 `clef`、`clef-omni` 或 `clef-flash`。此项为必填。
 
 ### Laya
 

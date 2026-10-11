@@ -31,7 +31,7 @@ on Workers AI.
 | --- | --- | --- |
 | `apiKey` | none | Cloudflare API token with Workers AI permissions. Required. |
 | `accountId` | none | Cloudflare account ID. Required. |
-| `model` | none | `clef` or `clef-flash`. Required. |
+| `model` | none | `clef`, `clef-omni`, or `clef-flash`. Required. |
 | `timeoutMs` | `4000` | Total classification budget, including retries. |
 
 The key is used with the account ID to call Workers AI at
