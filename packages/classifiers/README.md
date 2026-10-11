@@ -193,6 +193,37 @@ Verification used mocked HTTP contract tests only; no live or authenticated
 calls were made. Liquid's quality claims are its own, and effort-selection
 quality has not been evaluated, so Jev remains the default.
 
+## OpenRouter (`provider: "openrouter"`)
+
+Any [OpenRouter](https://openrouter.ai/) decision model, with one OpenRouter
+key. The catalog is at
+`https://openrouter.ai/api/v1/models?output_modalities=decisions`.
+
+| Field | Default | Purpose |
+| --- | --- | --- |
+| `apiKey` | none | OpenRouter API key. Required. |
+| `model` | none | An OpenRouter decision model ID, such as `typesafe/jev-1.13` or `cloudflare/clef`. Required. Not checked against the catalog, so new models need no release. |
+| `timeoutMs` | `4000` | Total classification budget, including retries. |
+
+The provider calls `POST https://openrouter.ai/api/alpha/decisions` with the
+System One request and a bearer key, and reads `answers.effort.choice`.
+`baseUrl` is ignored, and the optional `provider`, `trace`, `session_id`, and
+`user` fields are not sent. An unsupported or missing choice falls back as
+`classifier_invalid_output`. Error bodies are discarded. Authentication errors
+and 402 (insufficient credits) are not retried; 429 and 5xx responses retry
+within the deadline, honoring `Retry-After`. `probabilities`, `confidence`,
+and `usage` are ignored.
+
+The Decisions API is marked alpha. OpenRouter also serves
+`/api/v1/systemone`, but documents it only for Jev, so the provider uses the
+Decisions API, which its reference says takes any catalog decision model. The
+contract was checked against OpenRouter's Decisions API reference and Jev
+guide on 2026-10-11 (see
+[issue #71](https://github.com/robertn702/reasoning-router/issues/71)).
+Verification used mocked HTTP contract tests only; no live or authenticated
+calls were made. Effort-selection quality has not been evaluated for any
+OpenRouter model, so Jev remains the default.
+
 ## Exports
 
 - `classifierProviders`: every classifier, for `createConfiguredSelector` in
@@ -208,6 +239,8 @@ quality has not been evaluated, so Jev remains the default.
   type.
 - `liquidClassifierProvider`, `createLiquidTransport`,
   `resolveLiquidConnection`, and the `LiquidConnection` type.
+- `openRouterClassifierProvider`, `createOpenRouterTransport`,
+  `resolveOpenRouterConnection`, and the `OpenRouterConnection` type.
 - `createJevClassifier`, `createJevTransport`, `createClefTransport`,
   `createLayaTransport`, `createKevTransport`, `resolveJevConnection`,
   `resolveClefConnection`, `resolveLayaConnection`, `resolveKevConnection`:

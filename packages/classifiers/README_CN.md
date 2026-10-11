@@ -164,6 +164,31 @@ d1 的 `probabilities` 和 `confidence` 会被忽略。
 验证仅使用了模拟的 HTTP 契约测试；没有进行任何实际调用或带认证的调用。
 Liquid 关于质量的说法是其自己的说法，强度选择质量尚未评估，因此 Jev 仍然是默认选项。
 
+<a id="openrouter-provider-openrouter"></a>
+## OpenRouter（`provider: "openrouter"`）
+
+使用一个 OpenRouter 密钥访问任意 [OpenRouter](https://openrouter.ai/) 决策模型。模型目录位于
+`https://openrouter.ai/api/v1/models?output_modalities=decisions`。
+
+| 字段 | 默认值 | 用途 |
+| --- | --- | --- |
+| `apiKey` | 无 | OpenRouter API 密钥。必填。 |
+| `model` | 无 | OpenRouter 决策模型 ID，例如 `typesafe/jev-1.13` 或 `cloudflare/clef`。必填。不会对照目录检查，因此新模型无需发布新版本。 |
+| `timeoutMs` | `4000` | 分类的总预算，含重试。 |
+
+该提供方调用 `POST https://openrouter.ai/api/alpha/decisions`，请求体为 System One 请求，并携带 bearer 密钥，
+然后读取 `answers.effort.choice`。`baseUrl` 会被忽略，也不会发送可选的 `provider`、`trace`、`session_id` 和 `user` 字段。
+不受支持或缺失的选项会作为 `classifier_invalid_output` 回退。错误响应体会被丢弃。
+认证错误和 402（额度不足）不会重试；429 和 5xx 响应会在截止时间内重试，并遵循 `Retry-After`。
+`probabilities`、`confidence` 和 `usage` 会被忽略。
+
+Decisions API 标记为 alpha。OpenRouter 也提供 `/api/v1/systemone`，但仅为 Jev 提供了文档，
+因此该提供方使用 Decisions API；其参考文档说明它接受目录中的任意决策模型。
+该契约已于 2026-10-11 对照 OpenRouter 的 Decisions API 参考和 Jev 指南核对过（请参阅
+[issue #71](https://github.com/robertn702/reasoning-router/issues/71)）。
+验证仅使用了模拟的 HTTP 契约测试；没有进行任何实际调用或带认证的调用。
+尚未评估任何 OpenRouter 模型的强度选择质量，因此 Jev 仍然是默认选项。
+
 ## 导出
 
 - `classifierProviders`：所有分类器，供 [`@reasoning-router/core`](../core/README_CN.md) 中的
@@ -177,6 +202,8 @@ Liquid 关于质量的说法是其自己的说法，强度选择质量尚未评�
   `resolveMicrosoftDecisionConnection`，以及 `MicrosoftDecisionConnection` 类型。
 - `liquidClassifierProvider`、`createLiquidTransport`、
   `resolveLiquidConnection`，以及 `LiquidConnection` 类型。
+- `openRouterClassifierProvider`、`createOpenRouterTransport`、
+  `resolveOpenRouterConnection`，以及 `OpenRouterConnection` 类型。
 - `createJevClassifier`、`createJevTransport`、`createClefTransport`、
   `createLayaTransport`、`createKevTransport`、`resolveJevConnection`、
   `resolveClefConnection`、`resolveLayaConnection`、`resolveKevConnection`：

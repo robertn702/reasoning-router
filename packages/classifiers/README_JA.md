@@ -128,6 +128,22 @@ Liquid AI のホスト型判断モデル [Liquid d1](https://docs.liquid.ai/lfm/
 
 このコントラクトは 2026-10-11 に Liquid の d1 ガイド、および Vercel の TypeSafe API ページと d1 の変更履歴と照合して確認しました（[issue #68](https://github.com/robertn702/reasoning-router/issues/68) を参照）。検証にはモックした HTTP コントラクトテストのみを使用し、実環境での、または認証付きの呼び出しは行っていません。品質に関する Liquid の主張は同社自身のものであり、推論強度の選択品質は評価していないため、デフォルトは引き続き Jev です。
 
+<a id="openrouter-provider-openrouter"></a>
+
+## OpenRouter（`provider: "openrouter"`）
+
+1 つの OpenRouter キーで、任意の [OpenRouter](https://openrouter.ai/) 判断モデルを利用します。モデルカタログは `https://openrouter.ai/api/v1/models?output_modalities=decisions` にあります。
+
+| フィールド | デフォルト | 用途 |
+| --- | --- | --- |
+| `apiKey` | なし | OpenRouter API キー。必須。 |
+| `model` | なし | `typesafe/jev-1.13` や `cloudflare/clef` などの OpenRouter 判断モデル ID。必須。カタログとは照合しないため、新しいモデルにリリースは不要です。 |
+| `timeoutMs` | `4000` | リトライを含む、分類全体の時間予算。 |
+
+このプロバイダーは、System One リクエストと bearer キーを付けて `POST https://openrouter.ai/api/alpha/decisions` を呼び出し、`answers.effort.choice` を読み取ります。`baseUrl` は無視され、省略可能な `provider`、`trace`、`session_id`、`user` フィールドは送信しません。未サポートまたは欠落した選択は `classifier_invalid_output` としてフォールバックします。エラーボディは破棄されます。認証エラーと 402（クレジット不足）はリトライされません。429 と 5xx のレスポンスは、`Retry-After` を尊重しつつ、期限内でリトライされます。`probabilities`、`confidence`、`usage` は無視されます。
+
+Decisions API は alpha とされています。OpenRouter は `/api/v1/systemone` も提供していますが、ドキュメントがあるのは Jev のみのため、このプロバイダーは、リファレンスでカタログ内の任意の判断モデルを受け付けるとされている Decisions API を使用します。このコントラクトは 2026-10-11 に OpenRouter の Decisions API リファレンスと Jev ガイドと照合して確認しました（[issue #71](https://github.com/robertn702/reasoning-router/issues/71) を参照）。検証にはモックした HTTP コントラクトテストのみを使用し、実環境での、または認証付きの呼び出しは行っていません。どの OpenRouter モデルについても推論強度の選択品質は評価していないため、デフォルトは引き続き Jev です。
+
 ## エクスポート
 
 - `classifierProviders`: すべての分類器。[`@reasoning-router/core`](../core/README_JA.md) の `createConfiguredSelector` 用。
@@ -136,6 +152,7 @@ Liquid AI のホスト型判断モデル [Liquid d1](https://docs.liquid.ai/lfm/
 - `clmClassifierProvider`、`createClmTransport`、`resolveClmConnection`、および `ClmConnection` 型。
 - `microsoftDecisionClassifierProvider`、`createMicrosoftDecisionTransport`、`resolveMicrosoftDecisionConnection`、および `MicrosoftDecisionConnection` 型。
 - `liquidClassifierProvider`、`createLiquidTransport`、`resolveLiquidConnection`、および `LiquidConnection` 型。
+- `openRouterClassifierProvider`、`createOpenRouterTransport`、`resolveOpenRouterConnection`、および `OpenRouterConnection` 型。
 - `createJevClassifier`、`createJevTransport`、`createClefTransport`、`createLayaTransport`、`createKevTransport`、`resolveJevConnection`、`resolveClefConnection`、`resolveLayaConnection`、`resolveKevConnection`: 低レベルのヘルパー。
 - `ClassifierRequestError` と `Fetch` 型。トランスポートが使用します。
 
