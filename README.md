@@ -14,13 +14,13 @@ that can talk to a local proxy, with the classifier you choose.
 
 ![Illustrative effort routing: a classifier lowers effort for a rename and keeps it high for debugging a race condition.](assets/readme.gif)
 
-![Core comparison: both arms solve 44 of 44; Jev averages 20.2% less input, 14.3% less output, and 8.7% less time than fixed high.](eval/results/router-core-comparison.svg)
-
-Across the tested GPT-6 Astra task mix, Jev-routed effort and fixed `high`
-effort each solved **44/44 attempts**, and Jev used **14% fewer output tokens**
-(including reasoning) and finished **9% faster** on average. Results on other
-workloads, models, and classifiers may differ.
-[See the evaluation](eval/results/router-consolidated-2026-09-25.md).
+In our SWE-bench Verified runs on GPT-6 Astra, Jev-routed effort solved every
+task that fixed `high` effort solved, and how much it saved depended on how
+hard the task was. On a short Flask fix, Jev used **52% fewer output tokens**
+(including reasoning) and finished in about half the time. On harder Django and
+pytest issues, output fell by only 5–7% and time changed by less than 10%.
+These are a few selected tasks, so treat them as examples, not an expected
+saving. [See the evaluation](eval/results/router-consolidated-2026-09-25.md).
 
 > **Status: alpha.** Install the packages below from npm as described in each
 > package README.
