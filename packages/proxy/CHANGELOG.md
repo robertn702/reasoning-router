@@ -1,5 +1,15 @@
 # @reasoning-router/proxy
 
+## 0.1.6
+
+### Patch Changes
+
+- 3cb45c1: `--help` lists the bundled classifier providers from the registry and links to the classifiers README for per-provider settings, instead of repeating each provider's defaults.
+- Updated dependencies [1c449e2]
+- Updated dependencies [a359865]
+- Updated dependencies [dbdc499]
+  - @reasoning-router/classifiers@0.5.0
+
 ## 0.1.5
 
 ### Patch Changes
