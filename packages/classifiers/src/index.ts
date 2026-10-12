@@ -7,6 +7,7 @@ import { layaClassifierProvider } from "./laya.js";
 import { liquidClassifierProvider } from "./liquid.js";
 import { microsoftDecisionClassifierProvider } from "./microsoft-decision.js";
 import { openAIDecisionsClassifierProvider } from "./openai-decisions.js";
+import { sglangClassifierProvider } from "./sglang.js";
 
 export {
   type ClefConnection,
@@ -59,6 +60,12 @@ export {
   openAIDecisionsClassifierProvider,
   resolveOpenAIDecisionsConnection,
 } from "./openai-decisions.js";
+export {
+  createSglangTransport,
+  resolveSglangConnection,
+  type SglangConnection,
+  sglangClassifierProvider,
+} from "./sglang.js";
 export { ClassifierRequestError, type Fetch } from "./systemone.js";
 
 /** Every bundled classifier, for `createConfiguredSelector`. */
@@ -71,4 +78,5 @@ export const classifierProviders: readonly ClassifierProvider[] = [
   clmClassifierProvider,
   microsoftDecisionClassifierProvider,
   liquidClassifierProvider,
+  sglangClassifierProvider,
 ];

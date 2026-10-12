@@ -128,6 +128,19 @@ Liquid AI의 호스팅형 결정 모델인 [Liquid d1](https://docs.liquid.ai/lf
 
 이 계약은 2026-10-11에 Liquid의 d1 가이드, 그리고 Vercel의 TypeSafe API 페이지와 d1 변경 로그와 대조해 확인했습니다([issue #68](https://github.com/robertn702/reasoning-router/issues/68) 참조). 검증에는 모킹된 HTTP 계약 테스트만 사용했으며, 실제 호출이나 인증된 호출은 수행하지 않았습니다. 품질에 대한 Liquid의 주장은 Liquid 자체의 것이며, 추론 수준 선택 품질은 평가하지 않았으므로 기본값은 계속 Jev입니다.
 
+## SGLang (`provider: "sglang"`)
+
+직접 실행하는 [SGLang](https://docs.sglang.io/docs/supported-models/decision_models) 서버로, 채팅 모델(v0.5.21 이상) 또는 PPLX-Decider 같은 결정 체크포인트(nightly 빌드)를 제공합니다. 이 패키지는 HTTP로 호출만 합니다. 고정된 버전과 제한 사항은 [docs/classifiers/sglang.md](../../docs/classifiers/sglang.md)를 참조하세요. 검증된 것은 API 호환성뿐이며, 추론 수준 결정의 품질은 검증되지 않았습니다.
+
+| 필드 | 기본값 | 용도 |
+| --- | --- | --- |
+| `baseUrl` | `http://127.0.0.1:30000` | SGLang 서버. HTTPS, 또는 루프백 호스트에 대한 평문 HTTP만 허용. |
+| `apiKey` | 없음 | 선택 사항. 서버에서 `--api-key`로 실행하는 경우에만 설정합니다. |
+| `model` | `default` | SGLang이 필수로 요구하므로 전송되지만 SGLang은 값을 무시합니다. 콜론을 포함하면 안 되며, SGLang은 콜론을 LoRA 어댑터로 해석합니다. |
+| `timeoutMs` | `4000` | 재시도를 포함한 전체 분류 시간 예산. |
+
+`{baseUrl}/v1/systemone`을 호출하며, 키 규칙은 Laya와 같습니다(bearer 토큰, 빈 키는 설정되지 않은 것으로 간주). SGLang은 일부 서버와 채팅 템플릿을 400으로 거부하며, 이 경우 재시도 없이 폴백합니다.
+
 ## 내보내기(Exports)
 
 - `classifierProviders`: 모든 분류기. [`@reasoning-router/core`](../core/README_KO.md)의 `createConfiguredSelector`용.
@@ -136,6 +149,7 @@ Liquid AI의 호스팅형 결정 모델인 [Liquid d1](https://docs.liquid.ai/lf
 - `clmClassifierProvider`, `createClmTransport`, `resolveClmConnection`, 그리고 `ClmConnection` 타입.
 - `microsoftDecisionClassifierProvider`, `createMicrosoftDecisionTransport`, `resolveMicrosoftDecisionConnection`, 그리고 `MicrosoftDecisionConnection` 타입.
 - `liquidClassifierProvider`, `createLiquidTransport`, `resolveLiquidConnection`, 그리고 `LiquidConnection` 타입.
+- `sglangClassifierProvider`, `createSglangTransport`, `resolveSglangConnection`, 그리고 `SglangConnection` 타입.
 - `createJevClassifier`, `createJevTransport`, `createClefTransport`, `createLayaTransport`, `createKevTransport`, `resolveJevConnection`, `resolveClefConnection`, `resolveLayaConnection`, `resolveKevConnection`: 저수준 헬퍼.
 - `ClassifierRequestError`와 `Fetch` 타입. 트랜스포트에서 사용합니다.
 

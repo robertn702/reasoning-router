@@ -74,7 +74,7 @@ wire_api = "responses"
 
 ## 何がどこに送信されるか
 
-- **分類器へ:** 直近のユーザーおよびアシスタントのテキストの抜粋（長さに上限あり）、最大 8 件の直近のツール結果（ツール名とエラーフラグ付き）、短い失敗の要約、およびモデル ID。ホスト型ツールとコンピューター操作のペイロードは送信されません。Laya、Kev、CLM は自分のサーバー上で動作します。
+- **分類器へ:** 直近のユーザーおよびアシスタントのテキストの抜粋（長さに上限あり）、最大 8 件の直近のツール結果（ツール名とエラーフラグ付き）、短い失敗の要約、およびモデル ID。ホスト型ツールとコンピューター操作のペイロードは送信されません。Laya、Kev、CLM、SGLang は自分のサーバー上で動作します。
 - **お使いのエンドポイントへ:** 推論強度の更新を追加した完全なリクエスト。
 - **ログに記録されるもの:** メタデータのみ（ID、モデル、推論強度、レイテンシ、トークン数）で、記録先もプロキシの stdout か、有効にした判断ログのみです。プロンプト、ツールの出力、認証情報、生のエラーが記録されることはありません。
 
@@ -108,7 +108,7 @@ wire_api = "responses"
 
 - [`@reasoning-router/core`](packages/core/README_JA.md): ハーネスにも分類器にも依存しない、共有のルーター。
 - [`@reasoning-router/opencode`](packages/opencode/README_JA.md): OpenCode V2 プラグイン。
-- [`@reasoning-router/classifiers`](packages/classifiers/README_JA.md): 分類器（Jev、Cloudflare Clef、Laya、Kev、OpenAI Decisions、CLM、Microsoft-Decision-1、Liquid d1）。`classifier.provider` で選択します。
+- [`@reasoning-router/classifiers`](packages/classifiers/README_JA.md): 分類器（Jev、Cloudflare Clef、Laya、Kev、OpenAI Decisions、CLM、Microsoft-Decision-1、Liquid d1、SGLang）。`classifier.provider` で選択します。
 - [`@reasoning-router/pi`](packages/pi/README_JA.md): Pi 拡張機能（現時点では Claude モデルのみ）。
 - [`@reasoning-router/proxy`](packages/proxy/README_JA.md): スタンドアロンの Responses/Messages プロキシ（コマンド `reasoning-router`）。
 
@@ -225,6 +225,17 @@ reasoning-router
 代わりに Vercel AI Gateway のキーを使う場合は、`REASONING_ROUTER_CLASSIFIER_BASE_URL=https://ai-gateway.vercel.sh/typesafe` も設定します。Liquid の無料のテキスト専用モデルを使うには、`REASONING_ROUTER_CLASSIFIER_MODEL=d1:free` を設定します。モックしたレスポンスに対してのみテストされており、実環境での互換性と推論強度の選択品質は未検証です。詳細は
 [packages/classifiers](packages/classifiers/README_JA.md#liquid-d1-provider-liquid)
 を参照してください。
+
+### SGLang
+
+[SGLang](https://docs.sglang.io/docs/supported-models/decision_models) は、チャットモデル（v0.5.21 以降）や、PPLX-Decider のような判断チェックポイント（nightly ビルド）向けに System One エンドポイントを提供します。サーバーは自分で動かします。ルーターは HTTP 経由で呼び出すだけです。
+
+```bash
+python -m sglang.launch_server --model-path Qwen/Qwen3.8-27B --host 127.0.0.1 --port 30000
+REASONING_ROUTER_CLASSIFIER=sglang reasoning-router
+```
+
+デフォルトのベース URL は `http://127.0.0.1:30000` です。`REASONING_ROUTER_CLASSIFIER_API_KEY` は、サーバーを `--api-key` 付きで起動している場合にのみ設定してください。固定バージョン、モデルとテンプレートの制限、およびチャットモデルの次トークンスコアと較正済みの判断チェックポイントの違いについては [docs/classifiers/sglang.md](docs/classifiers/sglang.md) を参照してください。検証したのは API の互換性のみで、推論強度の判断品質は検証していません。
 
 <a id="supported-models"></a>
 

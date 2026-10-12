@@ -187,6 +187,7 @@ describe("Clef classifier", () => {
       "clm",
       "microsoft-decision",
       "liquid",
+      "sglang",
     ]);
     expect(() =>
       createConfiguredSelector(
