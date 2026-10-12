@@ -108,7 +108,7 @@ wire_api = "responses"
 
 - [`@reasoning-router/core`](packages/core/README_KO.md): 하네스와 분류기에 독립적인 공유 라우터.
 - [`@reasoning-router/opencode`](packages/opencode/README_KO.md): OpenCode V2 플러그인.
-- [`@reasoning-router/classifiers`](packages/classifiers/README_KO.md): 분류기(Jev, Cloudflare Clef, Laya, Kev, OpenAI Decisions, CLM, Microsoft-Decision-1, Liquid d1). `classifier.provider`로 선택합니다.
+- [`@reasoning-router/classifiers`](packages/classifiers/README_KO.md): 분류기(Jev, Cloudflare Clef, Laya, Kev, OpenAI Decisions, CLM, Microsoft-Decision-1, Liquid d1, OpenRouter). `classifier.provider`로 선택합니다.
 - [`@reasoning-router/pi`](packages/pi/README_KO.md): Pi 확장 프로그램(현재는 Claude 모델만 지원).
 - [`@reasoning-router/proxy`](packages/proxy/README_KO.md): 독립 실행형 Responses/Messages 프록시(명령어 `reasoning-router`).
 
@@ -224,6 +224,21 @@ reasoning-router
 
 대신 Vercel AI Gateway 키를 사용하려면 `REASONING_ROUTER_CLASSIFIER_BASE_URL=https://ai-gateway.vercel.sh/typesafe`도 설정하세요. Liquid의 무료 텍스트 전용 모델을 사용하려면 `REASONING_ROUTER_CLASSIFIER_MODEL=d1:free`로 설정하세요. 모킹된 응답에 대해서만 테스트되었으며, 실제 환경에서의 호환성과 추론 수준 선택 품질은 검증되지 않았습니다. 자세한 내용은
 [packages/classifiers](packages/classifiers/README_KO.md#liquid-d1-provider-liquid)를
+참조하세요.
+
+### OpenRouter
+
+[OpenRouter](https://openrouter.ai/)는 Jev, Clef, Kev, Liquid d1을 포함한 여러 결정 모델을 키 하나로 제공합니다. OpenRouter API 키를 만들고 [결정 모델 카탈로그](https://openrouter.ai/api/v1/models?output_modalities=decisions)에서 모델을 고른 뒤 다음과 같이 실행하세요.
+
+```bash
+REASONING_ROUTER_CLASSIFIER=openrouter \
+REASONING_ROUTER_CLASSIFIER_API_KEY=<openrouter-key> \
+REASONING_ROUTER_CLASSIFIER_MODEL=typesafe/jev-1.13 \
+reasoning-router
+```
+
+두 설정 모두 필수입니다. alpha로 표시된 OpenRouter의 Decisions API를 사용합니다. 모킹된 응답에 대해서만 테스트되었으며, 실제 환경에서의 호환성과 추론 수준 선택 품질은 검증되지 않았습니다. 자세한 내용은
+[packages/classifiers](packages/classifiers/README_KO.md#openrouter-provider-openrouter)를
 참조하세요.
 
 <a id="supported-models"></a>

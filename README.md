@@ -157,7 +157,8 @@ The packages are:
 - [`@reasoning-router/opencode`](packages/opencode): the OpenCode V2 plugin.
 - [`@reasoning-router/classifiers`](packages/classifiers): the
   classifiers (Jev, Cloudflare Clef, Laya, Kev, OpenAI Decisions, CLM,
-  Microsoft-Decision-1, and Liquid d1), selected by `classifier.provider`.
+  Microsoft-Decision-1, Liquid d1, and OpenRouter), selected by
+  `classifier.provider`.
 - [`@reasoning-router/pi`](packages/pi): the Pi extension (Claude models
   only, for now).
 - [`@reasoning-router/proxy`](packages/proxy): the standalone
@@ -315,6 +316,27 @@ Set `REASONING_ROUTER_CLASSIFIER_MODEL=d1:free` for Liquid's free text-only
 model. It is tested against mocked responses only; live compatibility and
 effort-selection quality are unverified. See
 [packages/classifiers](packages/classifiers/README.md#liquid-d1-provider-liquid)
+for details.
+
+### OpenRouter
+
+[OpenRouter](https://openrouter.ai/) serves many decision models, including
+Jev, Clef, Kev, and Liquid d1, behind one key. Create an OpenRouter API key,
+pick a model from its
+[decision model catalog](https://openrouter.ai/api/v1/models?output_modalities=decisions),
+then:
+
+```bash
+REASONING_ROUTER_CLASSIFIER=openrouter \
+REASONING_ROUTER_CLASSIFIER_API_KEY=<openrouter-key> \
+REASONING_ROUTER_CLASSIFIER_MODEL=typesafe/jev-1.13 \
+reasoning-router
+```
+
+Both settings are required. It uses OpenRouter's Decisions API, which is
+marked alpha. It is tested against mocked responses only; live compatibility
+and effort-selection quality are unverified. See
+[packages/classifiers](packages/classifiers/README.md#openrouter-provider-openrouter)
 for details.
 
 ## Supported models
