@@ -128,6 +128,19 @@ Liquid AI のホスト型判断モデル [Liquid d1](https://docs.liquid.ai/lfm/
 
 このコントラクトは 2026-10-11 に Liquid の d1 ガイド、および Vercel の TypeSafe API ページと d1 の変更履歴と照合して確認しました（[issue #68](https://github.com/robertn702/reasoning-router/issues/68) を参照）。検証にはモックした HTTP コントラクトテストのみを使用し、実環境での、または認証付きの呼び出しは行っていません。品質に関する Liquid の主張は同社自身のものであり、推論強度の選択品質は評価していないため、デフォルトは引き続き Jev です。
 
+## SGLang（`provider: "sglang"`）
+
+[SGLang](https://docs.sglang.io/docs/supported-models/decision_models)。自分で動かす SGLang サーバーが提供する、チャットモデル（v0.5.21 以降）または PPLX-Decider のような判断チェックポイント（nightly ビルド）です。このパッケージは HTTP 経由で呼び出すだけです。固定バージョンと制限については [docs/classifiers/sglang.md](../../docs/classifiers/sglang.md) を参照してください。検証したのは API の互換性のみで、推論強度の判断品質は検証していません。
+
+| フィールド | デフォルト | 用途 |
+| --- | --- | --- |
+| `baseUrl` | `http://127.0.0.1:30000` | SGLang サーバー。HTTPS、またはループバックホスト宛ての平文 HTTP のみ。 |
+| `apiKey` | なし | 省略可。サーバーを `--api-key` 付きで起動している場合にのみ設定します。 |
+| `model` | `default` | SGLang が必須としているため送信されますが、SGLang は値を無視します。コロンを含めてはいけません（SGLang はコロンを LoRA アダプターとして解釈します）。 |
+| `timeoutMs` | `4000` | リトライを含む、分類全体の時間予算。 |
+
+`{baseUrl}/v1/systemone` を呼び出し、キーの規則は Laya と同じです（bearer トークン。空白のキーは未設定として扱われます）。SGLang は一部のサーバーとチャットテンプレートを 400 で拒否し、その場合はリトライせずにフォールバックします。
+
 ## エクスポート
 
 - `classifierProviders`: すべての分類器。[`@reasoning-router/core`](../core/README_JA.md) の `createConfiguredSelector` 用。
@@ -136,6 +149,7 @@ Liquid AI のホスト型判断モデル [Liquid d1](https://docs.liquid.ai/lfm/
 - `clmClassifierProvider`、`createClmTransport`、`resolveClmConnection`、および `ClmConnection` 型。
 - `microsoftDecisionClassifierProvider`、`createMicrosoftDecisionTransport`、`resolveMicrosoftDecisionConnection`、および `MicrosoftDecisionConnection` 型。
 - `liquidClassifierProvider`、`createLiquidTransport`、`resolveLiquidConnection`、および `LiquidConnection` 型。
+- `sglangClassifierProvider`、`createSglangTransport`、`resolveSglangConnection`、および `SglangConnection` 型。
 - `createJevClassifier`、`createJevTransport`、`createClefTransport`、`createLayaTransport`、`createKevTransport`、`resolveJevConnection`、`resolveClefConnection`、`resolveLayaConnection`、`resolveKevConnection`: 低レベルのヘルパー。
 - `ClassifierRequestError` と `Fetch` 型。トランスポートが使用します。
 

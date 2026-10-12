@@ -84,7 +84,7 @@ wire_api = "responses"
 
 - **发送给分类器：** 近期用户文本和助手文本的有限摘录、最多 8 条近期工具结果
   （含工具名称和错误标记）、一份简短的失败摘要，以及模型 ID。托管工具和 computer-use
-  的载荷不会发送。Laya、Kev 和 CLM 运行在你自己的服务器上。
+  的载荷不会发送。Laya、Kev、CLM 和 SGLang 运行在你自己的服务器上。
 - **发送给你的端点：** 完整请求，并附加强度更新。
 - **日志记录：** 仅记录元数据（ID、模型、强度、延迟、token 数量），并且只输出到代理的
   stdout 或你启用的决策日志。提示词、工具输出、凭据和原始错误绝不会被记录。
@@ -129,7 +129,7 @@ wire_api = "responses"
 - [`@reasoning-router/core`](packages/core/README_CN.md)：共享的、与 harness 和分类器无关的路由器。
 - [`@reasoning-router/opencode`](packages/opencode/README_CN.md)：OpenCode V2 插件。
 - [`@reasoning-router/classifiers`](packages/classifiers/README_CN.md)：各分类器
-  （Jev、Cloudflare Clef、Laya、Kev、OpenAI Decisions、CLM、Microsoft-Decision-1 和 Liquid d1），通过 `classifier.provider` 选择。
+  （Jev、Cloudflare Clef、Laya、Kev、OpenAI Decisions、CLM、Microsoft-Decision-1、Liquid d1 和 SGLang），通过 `classifier.provider` 选择。
 - [`@reasoning-router/pi`](packages/pi/README_CN.md)：Pi 扩展（目前仅支持 Claude 模型）。
 - [`@reasoning-router/proxy`](packages/proxy/README_CN.md)：独立的
   Responses/Messages 代理（命令为 `reasoning-router`）。
@@ -267,6 +267,22 @@ reasoning-router
 将 `REASONING_ROUTER_CLASSIFIER_MODEL` 设置为 `d1:free` 可使用 Liquid 免费的纯文本模型。
 它只针对模拟响应进行过测试；实际兼容性和强度选择质量均未经验证。详情请参阅
 [packages/classifiers](packages/classifiers/README_CN.md#liquid-d1-provider-liquid)。
+
+### SGLang
+
+[SGLang](https://docs.sglang.io/docs/supported-models/decision_models) 为聊天模型（v0.5.21 及更高版本）和决策检查点
+（例如 PPLX-Decider，需使用 nightly 构建）提供 System One 端点。服务器由你自行运行；
+路由器只通过 HTTP 调用它：
+
+```bash
+python -m sglang.launch_server --model-path Qwen/Qwen3.8-27B --host 127.0.0.1 --port 30000
+REASONING_ROUTER_CLASSIFIER=sglang reasoning-router
+```
+
+默认的基础 URL 是 `http://127.0.0.1:30000`。仅当服务器使用 `--api-key` 运行时才需要设置
+`REASONING_ROUTER_CLASSIFIER_API_KEY`。固定的版本、模型和模板限制，以及聊天模型的 next-token 分数与
+经过校准的决策检查点之间的区别，请参阅 [docs/classifiers/sglang.md](docs/classifiers/sglang.md)。
+目前只验证了 API 兼容性，尚未验证推理强度决策的质量。
 
 <a id="supported-models"></a>
 ## 支持的模型

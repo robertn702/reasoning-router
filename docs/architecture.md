@@ -151,6 +151,12 @@ that Jev-specific names become provider-neutral.
   `d1:free`) or Vercel AI Gateway's TypeSafe-compatible
   `https://ai-gateway.vercel.sh/typesafe/v1/systemone` (model `liquid/d1`),
   with the System One request and response and a bearer key.
+- **SGLang:** an
+  [SGLang](https://docs.sglang.io/docs/supported-models/decision_models)
+  server the user runs ([#27](https://github.com/robertn702/reasoning-router/issues/27)),
+  at `{baseUrl}/v1/systemone`. It scores a chat model's next-token labels
+  (v0.5.21 and later) or serves a decision checkpoint such as PPLX-Decider
+  (nightly builds) ([findings](classifiers/sglang.md)).
 - **Transport:** presets share one `fetch`-based client that maps HTTP
   status and `fetch` failures to the error categories and reads
   `Retry-After`. `@typesafe-ai/sdk` is dropped; it only adds a `choice()`
@@ -161,10 +167,10 @@ that Jev-specific names become provider-neutral.
   failure summary, and the target model ID). The single question is a
   `choice` named `effort` whose options are the target model's supported
   efforts. The answer is `answers.effort.choice`, rejected if the model does
-  not support it. Laya, Kev, Clef, CLM, Microsoft-Decision-1, and Liquid d1
-  accept the same request and response shape as Jev's `system_one`, so they
-  fit this contract; OpenAI Decisions maps the same state and question onto its own
-  format.
+  not support it. Laya, Kev, Clef, CLM, Microsoft-Decision-1, Liquid d1,
+  and SGLang accept the same request and response shape as Jev's
+  `system_one`, so they fit this contract; OpenAI Decisions maps the same
+  state and question onto its own format.
 - **Policy:** as in `opencode-jev-router`'s
   [classification policy](https://github.com/robertn702/opencode-jev-router/blob/main/docs/classification-policy.md):
   a 4000 ms total deadline, one retry for connection errors, timeouts, 429,
@@ -177,8 +183,9 @@ that Jev-specific names become provider-neutral.
   `classifier: { provider: "kev", baseUrl, apiKey, model, timeoutMs }`,
   `classifier: { provider: "openai-decisions", apiKey, baseUrl, model, timeoutMs }`,
   `classifier: { provider: "clm", baseUrl, apiKey, model, timeoutMs }`,
-  `classifier: { provider: "microsoft-decision", baseUrl, apiKey, model, timeoutMs }`, or
-  `classifier: { provider: "liquid", apiKey, baseUrl, model, timeoutMs }`.
+  `classifier: { provider: "microsoft-decision", baseUrl, apiKey, model, timeoutMs }`,
+  `classifier: { provider: "liquid", apiKey, baseUrl, model, timeoutMs }`, or
+  `classifier: { provider: "sglang", baseUrl, apiKey, model, timeoutMs }`.
 - **Logging:** the same metadata-only decision events, with Jev-specific
   names made provider-neutral (`jev_attempts` becomes `classifier_attempts`,
   `jev_timeout` becomes `classifier_timeout`) and the classifier recorded.
@@ -242,9 +249,10 @@ These are reversible:
   `http://127.0.0.1:8008`.
 - **CLM is likewise its own `clm` preset** with Laya's connection rules. Its
   default base URL is `clm-serve`'s `http://127.0.0.1:8700`.
-- **Presets for a System One server the user runs (Laya, Kev, CLM) share
-  `createServerPreset`** in `packages/classifiers/src/server.ts`, which takes a
-  name and a default base URL.
+- **Presets for a System One server the user runs (Laya, Kev, CLM,
+  SGLang) share `createServerPreset`** in
+  `packages/classifiers/src/server.ts`, which takes a name and a default
+  base URL.
 - **Per-provider settings are documented only in
   `packages/classifiers/README.md`.** Other docs describe the shared
   `REASONING_ROUTER_CLASSIFIER*` variables generically and link there, so a new
@@ -264,6 +272,9 @@ These are reversible:
   Like Jev, `baseUrl` is an allowlist (Liquid direct, the default, and
   Vercel's TypeSafe-compatible gateway), and `model` must be one the endpoint
   serves: `d1` or the text-only `d1:free` on Liquid, `liquid/d1` on Vercel.
+- **SGLang is its own `sglang` preset** with Laya's connection rules. Its
+  default base URL is SGLang's `http://127.0.0.1:30000`. SGLang requires a
+  `model` it otherwise ignores, so an unset `model` is sent as `default`.
 
 ## Open questions
 

@@ -193,6 +193,26 @@ Verification used mocked HTTP contract tests only; no live or authenticated
 calls were made. Liquid's quality claims are its own, and effort-selection
 quality has not been evaluated, so Jev remains the default.
 
+## SGLang (`provider: "sglang"`)
+
+An [SGLang](https://docs.sglang.io/docs/supported-models/decision_models)
+server that you run, serving a chat model (v0.5.21 and later) or a decision
+checkpoint such as PPLX-Decider (nightly builds). This package only calls it
+over HTTP. See [docs/classifiers/sglang.md](../../docs/classifiers/sglang.md)
+for the pinned version and limits. Only API compatibility is verified, not
+effort-decision quality.
+
+| Field | Default | Purpose |
+| --- | --- | --- |
+| `baseUrl` | `http://127.0.0.1:30000` | SGLang server. HTTPS, or plain HTTP to a loopback host only. |
+| `apiKey` | none | Optional; set only when the server runs with `--api-key`. |
+| `model` | `default` | Sent because SGLang requires it, but SGLang ignores the value. Must not contain a colon, which SGLang reads as a LoRA adapter. |
+| `timeoutMs` | `4000` | Total classification budget, including retries. |
+
+Calls `{baseUrl}/v1/systemone`, with the same key rules as Laya (a bearer
+token; a blank key counts as unset). SGLang refuses some servers and chat
+templates with a 400, which falls back without a retry.
+
 ## Exports
 
 - `classifierProviders`: every classifier, for `createConfiguredSelector` in
@@ -208,6 +228,8 @@ quality has not been evaluated, so Jev remains the default.
   type.
 - `liquidClassifierProvider`, `createLiquidTransport`,
   `resolveLiquidConnection`, and the `LiquidConnection` type.
+- `sglangClassifierProvider`, `createSglangTransport`,
+  `resolveSglangConnection`, and the `SglangConnection` type.
 - `createJevClassifier`, `createJevTransport`, `createClefTransport`,
   `createLayaTransport`, `createKevTransport`, `resolveJevConnection`,
   `resolveClefConnection`, `resolveLayaConnection`, `resolveKevConnection`:

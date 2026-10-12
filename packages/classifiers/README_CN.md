@@ -164,6 +164,24 @@ d1 的 `probabilities` 和 `confidence` 会被忽略。
 验证仅使用了模拟的 HTTP 契约测试；没有进行任何实际调用或带认证的调用。
 Liquid 关于质量的说法是其自己的说法，强度选择质量尚未评估，因此 Jev 仍然是默认选项。
 
+## SGLang（`provider: "sglang"`）
+
+[SGLang](https://docs.sglang.io/docs/supported-models/decision_models)，由你自行运行的
+SGLang 服务器提供服务，可运行聊天模型（v0.5.21 及更高版本）或 PPLX-Decider 等决策检查点（nightly 构建）。
+本软件包只通过 HTTP 调用它。固定的版本和限制请参阅
+[docs/classifiers/sglang.md](../../docs/classifiers/sglang.md)。
+目前只验证了 API 兼容性，尚未验证推理强度决策的质量。
+
+| 字段 | 默认值 | 用途 |
+| --- | --- | --- |
+| `baseUrl` | `http://127.0.0.1:30000` | SGLang 服务器。使用 HTTPS，或仅限回环主机的纯 HTTP。 |
+| `apiKey` | 无 | 可选；仅当服务器使用 `--api-key` 运行时才设置。 |
+| `model` | `default` | 因 SGLang 要求而发送，但 SGLang 会忽略该值。不得包含冒号，SGLang 会将冒号解读为 LoRA 适配器。 |
+| `timeoutMs` | `4000` | 分类的总预算，含重试。 |
+
+调用 `{baseUrl}/v1/systemone`，密钥规则与 Laya 相同（bearer token；空白密钥视为未设置）。
+SGLang 会以 400 拒绝某些服务器和聊天模板，此时会回退而不重试。
+
 ## 导出
 
 - `classifierProviders`：所有分类器，供 [`@reasoning-router/core`](../core/README_CN.md) 中的
@@ -177,6 +195,8 @@ Liquid 关于质量的说法是其自己的说法，强度选择质量尚未评�
   `resolveMicrosoftDecisionConnection`，以及 `MicrosoftDecisionConnection` 类型。
 - `liquidClassifierProvider`、`createLiquidTransport`、
   `resolveLiquidConnection`，以及 `LiquidConnection` 类型。
+- `sglangClassifierProvider`、`createSglangTransport`、
+  `resolveSglangConnection`，以及 `SglangConnection` 类型。
 - `createJevClassifier`、`createJevTransport`、`createClefTransport`、
   `createLayaTransport`、`createKevTransport`、`resolveJevConnection`、
   `resolveClefConnection`、`resolveLayaConnection`、`resolveKevConnection`：

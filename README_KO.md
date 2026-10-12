@@ -74,7 +74,7 @@ wire_api = "responses"
 
 ## 무엇이 어디로 전송되는가
 
-- **분류기로:** 최근 사용자 및 어시스턴트 텍스트의 발췌문(길이 제한 있음), 최대 8개의 최근 도구 결과(도구 이름과 오류 플래그 포함), 짧은 실패 요약, 그리고 모델 ID. 호스팅 도구와 컴퓨터 사용(computer-use) 페이로드는 전송되지 않습니다. Laya, Kev, CLM은 사용자의 서버에서 실행됩니다.
+- **분류기로:** 최근 사용자 및 어시스턴트 텍스트의 발췌문(길이 제한 있음), 최대 8개의 최근 도구 결과(도구 이름과 오류 플래그 포함), 짧은 실패 요약, 그리고 모델 ID. 호스팅 도구와 컴퓨터 사용(computer-use) 페이로드는 전송되지 않습니다. Laya, Kev, CLM, SGLang은 사용자의 서버에서 실행됩니다.
 - **사용자의 엔드포인트로:** 추론 수준 업데이트가 추가된 전체 요청.
 - **로그에 기록되는 것:** 메타데이터(ID, 모델, 추론 수준, 지연 시간, 토큰 수)만 기록되며, 기록 위치도 프록시의 stdout 또는 사용자가 활성화한 결정 로그뿐입니다. 프롬프트, 도구 출력, 자격 증명, 원시 오류는 절대 기록되지 않습니다.
 
@@ -108,7 +108,7 @@ wire_api = "responses"
 
 - [`@reasoning-router/core`](packages/core/README_KO.md): 하네스와 분류기에 독립적인 공유 라우터.
 - [`@reasoning-router/opencode`](packages/opencode/README_KO.md): OpenCode V2 플러그인.
-- [`@reasoning-router/classifiers`](packages/classifiers/README_KO.md): 분류기(Jev, Cloudflare Clef, Laya, Kev, OpenAI Decisions, CLM, Microsoft-Decision-1, Liquid d1). `classifier.provider`로 선택합니다.
+- [`@reasoning-router/classifiers`](packages/classifiers/README_KO.md): 분류기(Jev, Cloudflare Clef, Laya, Kev, OpenAI Decisions, CLM, Microsoft-Decision-1, Liquid d1, SGLang). `classifier.provider`로 선택합니다.
 - [`@reasoning-router/pi`](packages/pi/README_KO.md): Pi 확장 프로그램(현재는 Claude 모델만 지원).
 - [`@reasoning-router/proxy`](packages/proxy/README_KO.md): 독립 실행형 Responses/Messages 프록시(명령어 `reasoning-router`).
 
@@ -225,6 +225,17 @@ reasoning-router
 대신 Vercel AI Gateway 키를 사용하려면 `REASONING_ROUTER_CLASSIFIER_BASE_URL=https://ai-gateway.vercel.sh/typesafe`도 설정하세요. Liquid의 무료 텍스트 전용 모델을 사용하려면 `REASONING_ROUTER_CLASSIFIER_MODEL=d1:free`로 설정하세요. 모킹된 응답에 대해서만 테스트되었으며, 실제 환경에서의 호환성과 추론 수준 선택 품질은 검증되지 않았습니다. 자세한 내용은
 [packages/classifiers](packages/classifiers/README_KO.md#liquid-d1-provider-liquid)를
 참조하세요.
+
+### SGLang
+
+[SGLang](https://docs.sglang.io/docs/supported-models/decision_models)은 채팅 모델(v0.5.21 이상)과 PPLX-Decider 같은 결정 체크포인트(nightly 빌드)를 위한 System One 엔드포인트를 제공합니다. 서버는 직접 실행하며, 라우터는 HTTP로 호출만 합니다.
+
+```bash
+python -m sglang.launch_server --model-path Qwen/Qwen3.8-27B --host 127.0.0.1 --port 30000
+REASONING_ROUTER_CLASSIFIER=sglang reasoning-router
+```
+
+기본 base URL은 `http://127.0.0.1:30000`입니다. `REASONING_ROUTER_CLASSIFIER_API_KEY`는 서버를 `--api-key`로 실행하는 경우에만 설정하세요. 고정된 버전, 모델 및 템플릿 제한 사항, 그리고 채팅 모델의 next-token 점수와 보정된 결정 체크포인트의 차이는 [docs/classifiers/sglang.md](docs/classifiers/sglang.md)를 참조하세요. 검증된 것은 API 호환성뿐이며, 추론 수준 결정의 품질은 검증되지 않았습니다.
 
 <a id="supported-models"></a>
 
