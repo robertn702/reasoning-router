@@ -1,6 +1,6 @@
 {
   "name": "@reasoning-router/classifiers",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Reasoning-effort classifiers (Jev, Clef, Laya, Kev, OpenAI Decisions, CLM, Microsoft-Decision-1, Liquid d1, SGLang) for reasoning-router",
   "type": "module",
   "license": "MIT",
