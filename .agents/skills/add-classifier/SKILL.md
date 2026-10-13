@@ -142,10 +142,8 @@ these apply, plus anything specific to the new contract:
 - config: defaults, every accepted value, and every rejected base URL or
   missing required field;
 - selection through `createConfiguredSelector({ provider: "<name>" },
-  classifierProviders, {})`.
-
-Also update tests that list every provider name, such as the list in
-`clef.test.ts`; step 6 finds them.
+  classifierProviders, {})`. This selection test is what proves the provider
+  is registered; no test lists every provider name.
 
 ### 5. Update the docs and examples
 
