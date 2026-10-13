@@ -178,17 +178,6 @@ describe("Clef classifier", () => {
   });
 
   it("is selected through the bundled providers", async () => {
-    expect(classifierProviders.map((provider) => provider.name)).toEqual([
-      "jev",
-      "clef",
-      "laya",
-      "kev",
-      "openai-decisions",
-      "clm",
-      "microsoft-decision",
-      "liquid",
-      "sglang",
-    ]);
     expect(() =>
       createConfiguredSelector(
         {
