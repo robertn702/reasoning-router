@@ -1,5 +1,11 @@
 # @reasoning-router/opencode
 
+## 0.1.9
+
+### Patch Changes
+
+- 693909a: Aliases now advertise their source model's input and output capabilities explicitly, so OpenCode sends PDF attachments to aliases whose source accepts PDFs. Before the source resolves, or if it never does, an alias advertises text only instead of text and image.
+
 ## 0.1.8
 
 ### Patch Changes
