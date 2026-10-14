@@ -1,6 +1,6 @@
 {
   "name": "@reasoning-router/pi",
-  "version": "0.1.6",
+  "version": "0.2.0",
   "description": "Adaptive per-step reasoning effort for the Pi coding agent",
   "type": "module",
   "license": "MIT",
