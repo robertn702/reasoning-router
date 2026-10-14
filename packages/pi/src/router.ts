@@ -18,6 +18,7 @@ import {
   isRecord,
   type ModelProfile,
   modelsFor,
+  type Provider,
   type StateEffortSelector,
   supportsEffort,
   type Usage,
@@ -27,8 +28,11 @@ import { classifierState, toEffort, toThinkingLevel } from "./messages.js";
 
 /** The provider the virtual models are listed under. */
 export const PROVIDER = "reasoning-router";
-/** The provider of the physical models; the router keeps the model and changes only effort. */
-const PHYSICAL_PROVIDER = "anthropic";
+/** The API each physical provider must use for Pi to place effort without breaking the cache. */
+const PHYSICAL_API: Record<Provider, { api: Api; name: string }> = {
+  anthropic: { api: "anthropic-messages", name: "Anthropic Messages" },
+  openai: { api: "openai-responses", name: "OpenAI Responses" },
+};
 
 /** The last classified effort, stored on the session branch for `previous` fallback. */
 export interface RouterState {
@@ -58,6 +62,7 @@ export interface RouterOptions {
 }
 
 interface Pending {
+  provider: Provider;
   model: string;
   decision: EffortDecision;
   previousEffort: Effort | null;
@@ -72,15 +77,15 @@ function storedEffort(state: unknown, model: ModelProfile): Effort | undefined {
 }
 
 /** Pi places effort without breaking the cache only for models with mid-conversation effort. */
-function supportsMidConvoEffort(model: Model<Api>): boolean {
+function supportsMidConvoEffort(model: Model<Api>, api: Api): boolean {
   return (
-    model.api === "anthropic-messages" &&
+    model.api === api &&
     isRecord(model.compat) &&
     model.compat.supportsMidConvoEffort === true
   );
 }
 
-/** Registers one virtual model per wrapped Anthropic model, such as `reasoning-router/claude-opus-5-5`. */
+/** Registers one virtual model per wrapped model, such as `reasoning-router/claude-opus-5-5`. */
 export function createReasoningRouter(
   pi: ExtensionAPI,
   loadOptions: () => RouterOptions,
@@ -176,7 +181,8 @@ export function createReasoningRouter(
     }
   }
 
-  for (const model of modelsFor("anthropic")) {
+  for (const model of [...modelsFor("anthropic"), ...modelsFor("openai")]) {
+    const { api, name } = PHYSICAL_API[model.provider];
     pi.registerVirtualModel<RouterState>({
       provider: PROVIDER,
       id: model.id,
@@ -185,11 +191,20 @@ export function createReasoningRouter(
         request: ModelRouteRequest<RouterState>,
         ctx: ExtensionContext,
       ): Promise<ModelRoute<RouterState>> {
-        const physical = ctx.modelRegistry.find(PHYSICAL_PROVIDER, model.id);
-        if (!physical || !supportsMidConvoEffort(physical))
+        const physical = ctx.modelRegistry.find(model.provider, model.id);
+        if (!physical || !supportsMidConvoEffort(physical, api))
           throw new PiRouteError(
             "unsupported_model",
-            `${PHYSICAL_PROVIDER}/${model.id} is not an Anthropic Messages model with mid-conversation effort in this Pi`,
+            `${model.provider}/${model.id} is not an ${name} model with mid-conversation effort in this Pi`,
+          );
+        // Pi sends request-level effort with Sign in with ChatGPT, so every change would miss the cache.
+        if (
+          model.provider === "openai" &&
+          ctx.modelRegistry.isUsingOAuth(physical)
+        )
+          throw new PiRouteError(
+            "unsupported_model",
+            `${model.provider}/${model.id} with Sign in with ChatGPT gets no mid-conversation effort in Pi; use an OpenAI API key`,
           );
         const options = resolve();
         const previousEffort = storedEffort(request.state, model);
@@ -201,6 +216,7 @@ export function createReasoningRouter(
           const stale = pending.get(session);
           if (stale) emit(stale, session, "failed");
           pending.set(session, {
+            provider: model.provider,
             model: model.id,
             decision,
             previousEffort: previousEffort ?? null,
@@ -223,11 +239,15 @@ export function createReasoningRouter(
 
   pi.on("message_end", (event, ctx) => {
     const { message } = event;
-    if (message.role !== "assistant" || message.provider !== PHYSICAL_PROVIDER)
-      return;
+    if (message.role !== "assistant") return;
     const session = ctx.sessionManager.getSessionId();
     const current = pending.get(session);
-    if (!current || current.model !== message.model) return;
+    if (
+      !current ||
+      current.provider !== message.provider ||
+      current.model !== message.model
+    )
+      return;
     pending.delete(session);
     const { input, output, cacheRead, cacheWrite } = message.usage;
     emit(

@@ -64,6 +64,12 @@ const physical = (id: string, supportsMidConvoEffort = true) => ({
   compat: { supportsMidConvoEffort },
 });
 
+/** An OpenAI model as Pi's registry lists it; Pi before #10930 has no `supportsMidConvoEffort`. */
+const openaiPhysical = (
+  id: string,
+  compat: Record<string, unknown> = { supportsMidConvoEffort: true },
+) => ({ provider: "openai", id, api: "openai-responses", compat });
+
 const classified = (effort: EffortDecision["effort"]): EffortDecision => ({
   effort,
   classifier: "fake",
@@ -77,6 +83,7 @@ function host(
   catalog: Record<string, unknown> = {
     "anthropic/claude-opus-5-5": physical("claude-opus-5-5"),
   },
+  oauthProviders: string[] = [],
 ) {
   const definitions = new Map<string, any>();
   const handlers = new Map<string, (event: any, ctx: any) => void>();
@@ -106,6 +113,8 @@ function host(
   const ctx: any = {
     modelRegistry: {
       find: (provider: string, id: string) => catalog[`${provider}/${id}`],
+      isUsingOAuth: (model: { provider: string }) =>
+        oauthProviders.includes(model.provider),
     },
     sessionManager: { getSessionId: () => "session-1" },
   };
@@ -166,13 +175,18 @@ function policySelector(
 }
 
 describe("registration", () => {
-  it("registers one virtual model per Anthropic model in the core registry", () => {
+  it("registers one virtual model per Anthropic and OpenAI model in the core registry", () => {
     const { definitions } = host();
     expect([...definitions.keys()]).toEqual(
-      modelsFor("anthropic").map((model) => `${PROVIDER}/${model.id}`),
+      [...modelsFor("anthropic"), ...modelsFor("openai")].map(
+        (model) => `${PROVIDER}/${model.id}`,
+      ),
     );
     expect(definitions.get(`${PROVIDER}/claude-opus-5-5`)).toMatchObject({
       name: "Claude Opus 5.5 (reasoning-router)",
+    });
+    expect(definitions.get(`${PROVIDER}/gpt-6-sol`)).toMatchObject({
+      name: "GPT-6 Sol (reasoning-router)",
     });
   });
 });
@@ -271,6 +285,61 @@ describe("route", () => {
       );
     expect(calls).toHaveLength(0);
   });
+
+  it("routes OpenAI GPT-6 models to the openai provider", async () => {
+    const { route, calls } = host(
+      {},
+      { "openai/gpt-6-sol": openaiPhysical("gpt-6-sol") },
+    );
+    expect(await route({}, "gpt-6-sol")).toEqual({
+      model: openaiPhysical("gpt-6-sol"),
+      thinkingLevel: "low",
+      state: { effort: "low" },
+    });
+    expect(calls[0]!.model).toMatchObject({
+      provider: "openai",
+      id: "gpt-6-sol",
+    });
+  });
+
+  it("rejects OpenAI models without mid-conversation effort, before classifying", async () => {
+    const { route, calls } = host(
+      {},
+      {
+        // Pi before #10930: no compat flag.
+        "openai/gpt-6-luna": openaiPhysical("gpt-6-luna", {}),
+        "openai/gpt-6-astra": openaiPhysical("gpt-6-astra", {
+          supportsMidConvoEffort: false,
+        }),
+        "openai/gpt-6.1-sol": {
+          ...openaiPhysical("gpt-6.1-sol"),
+          api: "openai-codex-responses",
+        },
+      },
+    );
+    for (const id of ["gpt-6-sol", "gpt-6-luna", "gpt-6-astra", "gpt-6.1-sol"])
+      await expect(route({}, id)).rejects.toThrow(
+        `reasoning-router unsupported_model: openai/${id} is not an OpenAI Responses model`,
+      );
+    expect(calls).toHaveLength(0);
+  });
+
+  it("rejects Sign in with ChatGPT on OpenAI, before classifying", async () => {
+    const { route, calls } = host(
+      {},
+      { "openai/gpt-6-sol": openaiPhysical("gpt-6-sol") },
+      ["openai"],
+    );
+    await expect(route({}, "gpt-6-sol")).rejects.toThrow(
+      "reasoning-router unsupported_model: openai/gpt-6-sol with Sign in with ChatGPT",
+    );
+    expect(calls).toHaveLength(0);
+  });
+
+  it("does not check the credential type for Anthropic", async () => {
+    const { route } = host(undefined, undefined, ["anthropic"]);
+    expect((await route()).thinkingLevel).toBe("low");
+  });
 });
 
 describe("lazy options", () => {
@@ -299,6 +368,9 @@ describe("error messages", () => {
       failing.route({ signal: controller.signal }),
       failing.route({}, "claude-mythos-5-1"),
       host({}, {}).route({}, "claude-opus-5-5"),
+      host({}, { "openai/gpt-6-sol": openaiPhysical("gpt-6-sol") }, [
+        "openai",
+      ]).route({}, "gpt-6-sol"),
     ]) {
       try {
         await attempt;
@@ -309,6 +381,7 @@ describe("error messages", () => {
     expect(messages.map((message) => message.split(":")[0])).toEqual([
       "reasoning-router classification_failed",
       "reasoning-router cancelled",
+      "reasoning-router unsupported_model",
       "reasoning-router unsupported_model",
       "reasoning-router unsupported_model",
     ]);
@@ -435,6 +508,20 @@ describe("decision events", () => {
       outcome: "completed",
     });
     expect(JSON.stringify(evidence)).not.toMatch(/SECRET|failing test/);
+  });
+
+  it("logs OpenAI responses only from the openai provider", async () => {
+    const { route, end, evidence } = host(
+      {},
+      { "openai/gpt-6-sol": openaiPhysical("gpt-6-sol") },
+    );
+    await route({}, "gpt-6-sol");
+    end({ model: "gpt-6-sol" });
+    expect(evidence).toEqual([]);
+    end({ provider: "openai", model: "gpt-6-sol" });
+    expect(evidence).toMatchObject([
+      { model: "gpt-6-sol", effort: "low", cached_input_tokens: 900 },
+    ]);
   });
 
   it("records failed responses and replaced decisions as failed", async () => {

@@ -2,7 +2,10 @@
 
 Status: findings for [#13](https://github.com/robertn702/reasoning-router/issues/13).
 [`@reasoning-router/pi`](../../packages/pi) implements the virtual-model
-route for Anthropic models; the OpenAI payload rewrite is not implemented.
+route for Anthropic models and, on a Pi that includes
+[pi#10930](https://github.com/earendil-works/pi/pull/10930), for OpenAI GPT-6
+models on the `openai` provider. The `openai-codex` payload rewrite is not
+implemented.
 
 [Pi](https://pi.dev) is the `pi` coding agent. Its repository moved from
 `badlogic/pi-mono` to [`earendil-works/pi`](https://github.com/earendil-works/pi),
@@ -36,16 +39,21 @@ On Anthropic models that accept mid-conversation effort, Pi already does what
 the router's rewrite does. It pins the request-level `output_config.effort`,
 inserts an effort-only system message for each turn, and stores each turn's
 effort in the session file. A virtual model that only picks the thinking level
-therefore gets cache-preserving effort changes without rewriting anything. On
-OpenAI Responses and Codex, Pi changes the request-level `reasoning.effort`.
-That invalidates the cached prefix. Fixing it takes a `before_provider_request`
-rewrite: the core's `configuration_update` insertion.
+therefore gets cache-preserving effort changes without rewriting anything.
+Since [pi#10930](https://github.com/earendil-works/pi/pull/10930) (merged
+after 1.2.0), Pi does the same for OpenAI GPT-6 models on the `openai`
+provider with an API key: it pins `reasoning.effort` and sends
+`configuration_update` items. On `openai-codex`, Pi still changes the
+request-level `reasoning.effort`. That invalidates the cached prefix. Fixing
+it takes a `before_provider_request` rewrite: the core's
+`configuration_update` insertion.
 
 Recommendation: build a `@reasoning-router/pi` Pi package (an npm package
 installed with `pi install`). It classifies in a virtual model's `route()`.
-On OpenAI it rewrites the payload in `before_provider_request`. On Anthropic it
-leaves effort placement to Pi. The smallest first slice is the Anthropic
-virtual model, which needs no payload rewrite.
+On Anthropic and on OpenAI GPT-6 it leaves effort placement to Pi. Only
+`openai-codex` would need a payload rewrite in `before_provider_request`. The
+smallest first slice is the Anthropic virtual model, which needs no payload
+rewrite.
 
 ## Extension point
 
@@ -219,8 +227,35 @@ How a mid-conversation effort change affects the prompt cache:
   in-memory lineage it survives restarts, branch navigation, and compaction.
   `drop_block` addresses the "Invalid signature in thinking block" failure
   that [`behavior.md`](../behavior.md) lists as unverified.
-- **OpenAI Responses and Codex, cache broken.** Pi sets the request-level
-  `reasoning.effort` to the selected level
+- **OpenAI Responses GPT-6 with an API key, cache preserved (verified on
+  Pi main at `b45e0eb`, after 1.2.0).**
+  [pi#10930](https://github.com/earendil-works/pi/pull/10930) sets
+  `compat.supportsMidConvoEffort` on `gpt-6-astra`, `gpt-6-sol`,
+  `gpt-6-luna`, and `gpt-6.1-sol` on the `openai` provider
+  (`openai-responses`). For these models Pi does the following:
+  - It pins the request-level `reasoning.effort` to `medium`.
+  - Before each historical assistant reply that recorded a
+    `providerThinkingLevel`, it inserts a `configuration_update` item with
+    that level.
+  - It appends one more with the current level at the tail.
+
+  **Verified:** three `pi -p` turns in one session, with the extension
+  classifying `high`, `high`, then `low` against a fake Responses endpoint on
+  `127.0.0.1` with a dummy `sk-` key, sent `reasoning.effort: "medium"` every
+  time. Each request's `input` began with the previous request's `input`, and
+  the third carried `configuration_update` items `high`, `high`, `low`. Pi
+  1.0.4 has no such flag, so the extension rejects these models there with
+  `unsupported_model`. Pi falls back to request-level effort in two cases:
+  - **Sign in with ChatGPT** on the `openai` provider. Pi detects it as a
+    non-`sk-` key sent to `api.openai.com`. The extension rejects an OAuth
+    login on `openai` with `unsupported_model`
+    (`ctx.modelRegistry.isUsingOAuth()`); it cannot see a non-`sk-` API key,
+    which would also fall back.
+  - **Thinking `off`.** Pi sends `reasoning.effort: "none"` and drops
+    `include`, so a `none` decision on `gpt-6-luna` or `gpt-6-sol` misses the
+    cache on that request and the next (code-read).
+- **OpenAI Codex, and OpenAI Responses before pi#10930, cache broken.** Pi
+  sets the request-level `reasoning.effort` to the selected level
   ([`openai-responses.ts`](https://github.com/earendil-works/pi/blob/v1.0.0/packages/ai/src/api/openai-responses.ts#L363-L378),
   [`openai-codex-responses.ts`](https://github.com/earendil-works/pi/blob/v1.0.0/packages/ai/src/api/openai-codex-responses.ts#L581-L597)).
   It never emits `configuration_update`. A user reported that changing the
@@ -323,8 +358,13 @@ Build a `@reasoning-router/pi` adapter package. Do not use the proxy.
    `previous` fallback across restarts.
 3. **Anthropic:** return the effort as `thinkingLevel`. Pi places it and keeps
    the cache. No rewrite is needed.
-4. **OpenAI Responses and Codex:** return the base effort, or any fixed
-   level, as `thinkingLevel`. Then in `before_provider_request`:
+4. **OpenAI:** on the `openai` provider, GPT-6 works like Anthropic once Pi
+   includes [pi#10930](https://github.com/earendil-works/pi/pull/10930):
+   return the effort as `thinkingLevel`, with no rewrite. The extension does
+   this, gated on `compat.supportsMidConvoEffort`, and rejects Sign in with
+   ChatGPT. Only `openai-codex` (out of scope for now) still needs a rewrite:
+   return the base effort, or any fixed level, as `thinkingLevel`. Then in
+   `before_provider_request`:
    - keep the request-level `reasoning.effort` fixed;
    - insert `configuration_update` items with the core's OpenAI wire adapter.
 
@@ -360,8 +400,9 @@ Build a `@reasoning-router/pi` adapter package. Do not use the proxy.
   package needs a pinned minimum Pi version and a smoke test against a real
   Pi, like `smoke:plugin:v2`.
 - The core's lineage store reconstructs OpenAI updates in memory only. After
-  a restart, a resumed Responses session loses its cached prefix once. The
-  Anthropic path has no such loss.
+  a restart, a resumed Codex session with the rewrite would lose its cached
+  prefix once. The Anthropic and `openai` GPT-6 paths have no such loss,
+  because Pi stores each reply's level in the session.
 - Optional classifier peers (Laya) are not installed, as with OpenCode.
 
 ### Smallest first slice
@@ -390,12 +431,14 @@ ones Pi already inserts (**unverified**).
 
 ## Open questions
 
-- **Upstream first?** Pi closed the `configuration_update` request
+- **Upstream first?** Answered for `openai`: Pi closed the first request
   ([pi#9335](https://github.com/earendil-works/pi/issues/9335)) without
-  action, but it does the equivalent for Anthropic. A pi-ai change that keeps
-  the request-level effort fixed on Responses and Codex would leave the
-  adapter as only a virtual model, with no payload hook. Should the router
-  propose it upstream before building step 4?
+  action, then added `configuration_update` for GPT-6 on `openai-responses`
+  ([pi#10853](https://github.com/earendil-works/pi/issues/10853),
+  [pi#10930](https://github.com/earendil-works/pi/pull/10930)), so that path
+  needs no payload hook. It is not enabled for `openai-codex`; the maintainer
+  is waiting until Codex CLI turns on `features.reasoning_effort_override`.
+  Should the router wait for that too, or build the Codex rewrite?
 - **Classifier transport.** Pi already calls Jev and Clef with the user's Pi
   credentials (`ctx.modelRegistry.classify()`). Should
   `@reasoning-router/classifiers` gain a preset that delegates to it inside

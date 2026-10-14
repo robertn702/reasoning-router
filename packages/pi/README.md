@@ -40,7 +40,15 @@ system message, so changing effort keeps the cached prefix.
   assistant text, and the names and output excerpts of recent tool results.
   System messages, thinking blocks, and tool-call arguments are not sent.
 
-OpenAI models are not routed yet.
+GPT-6 models (`gpt-6-astra`, `gpt-6-sol`, `gpt-6-luna`, `gpt-6.1-sol`) are
+routed the same way, to `openai/<id>`, on a Pi release that includes
+[pi#10930](https://github.com/earendil-works/pi/pull/10930). Pi then pins
+`reasoning.effort` and sends the chosen effort as `configuration_update`
+items. Older Pi rejects them with `unsupported_model`. They need an OpenAI API
+key: Sign in with ChatGPT is rejected with `unsupported_model`, because Pi
+then changes the request's effort and misses the cache. A `none` decision on
+`gpt-6-luna` or `gpt-6-sol` is also sent as request-level effort and misses
+the cache. `openai-codex` models are not routed.
 
 ## Environment
 

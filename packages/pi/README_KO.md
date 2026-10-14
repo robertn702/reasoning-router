@@ -20,7 +20,7 @@ pi --model reasoning-router/claude-opus-5-5
 - `error` 폴백 모드에서 분류에 실패하면 `reasoning-router classification_failed: ...`로 요청이 거부됩니다. 요청을 취소하면 절대 폴백하지 않습니다. Pi는 일시적인 제공자 장애처럼 보이는 오류를 재시도하므로, 메시지에는 HTTP 상태 코드가 포함되지 않습니다.
 - 분류기 엔드포인트는 가장 최근의 사용자 텍스트, 가장 최근의 어시스턴트 텍스트, 그리고 최근 도구 결과의 이름과 출력 발췌문을 받습니다. 시스템 메시지, 사고(thinking) 블록, 도구 호출 인자는 전송되지 않습니다.
 
-OpenAI 모델은 아직 라우팅되지 않습니다.
+[pi#10930](https://github.com/earendil-works/pi/pull/10930)이 포함된 Pi 릴리스에서는 GPT-6 모델(`gpt-6-astra`, `gpt-6-sol`, `gpt-6-luna`, `gpt-6.1-sol`)도 같은 방식으로 `openai/<id>`에 라우팅됩니다. 이때 Pi는 `reasoning.effort`를 고정하고, 선택된 추론 수준을 `configuration_update` 항목으로 전달합니다. 이전 Pi는 이 모델들을 `unsupported_model`로 거부합니다. OpenAI API 키가 필요합니다. Sign in with ChatGPT는 `unsupported_model`로 거부됩니다. 이 경우 Pi가 요청 수준의 추론 수준을 바꾸어 프롬프트 캐시가 깨지기 때문입니다. `gpt-6-luna` 또는 `gpt-6-sol`에서 `none`이 선택되면 이것도 요청 수준의 추론 수준으로 전송되어 프롬프트 캐시가 깨집니다. `openai-codex` 모델은 라우팅되지 않습니다.
 
 ## 환경
 
