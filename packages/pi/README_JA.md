@@ -20,7 +20,7 @@ pi --model reasoning-router/claude-opus-5-5
 - `error` フォールバックモードで分類に失敗すると、リクエストは `reasoning-router classification_failed: ...` で拒否されます。リクエストのキャンセル時は決してフォールバックしません。Pi は一時的なプロバイダー障害のように見えるエラーをリトライするため、これらのメッセージには HTTP ステータスコードを含めません。
 - 分類器のエンドポイントが受け取るのは、直近のユーザーテキスト、直近のアシスタントテキスト、および直近のツール結果の名前と出力の抜粋です。システムメッセージ、thinking ブロック、ツール呼び出しの引数は送信されません。
 
-OpenAI モデルはまだルーティングされません。
+[pi#10930](https://github.com/earendil-works/pi/pull/10930) を含む Pi リリースでは、GPT-6 モデル（`gpt-6-astra`、`gpt-6-sol`、`gpt-6-luna`、`gpt-6.1-sol`）も同じ方法で `openai/<id>` にルーティングされます。このとき Pi は `reasoning.effort` を固定し、選ばれた推論強度を `configuration_update` 項目で伝えます。古い Pi はこれらのモデルを `unsupported_model` で拒否します。OpenAI API キーが必要です。Sign in with ChatGPT は `unsupported_model` で拒否されます。この場合 Pi はリクエスト単位の推論強度を変更し、プロンプトキャッシュが外れるためです。`gpt-6-luna` または `gpt-6-sol` で `none` が選ばれた場合も、リクエスト単位の推論強度として送られ、プロンプトキャッシュが外れます。`openai-codex` モデルはルーティングされません。
 
 ## 環境変数
 

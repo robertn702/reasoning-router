@@ -28,7 +28,7 @@ Pi 会固定 `output_config.effort: "high"`，并在仅含强度的系统消息�
 - 分类器端点会收到最近的用户文本、最近的助手文本，以及近期工具结果的名称和输出摘录。
   系统消息、thinking 块和工具调用参数不会被发送。
 
-目前尚不路由 OpenAI 模型。
+在包含 [pi#10930](https://github.com/earendil-works/pi/pull/10930) 的 Pi 版本上，GPT-6 模型（`gpt-6-astra`、`gpt-6-sol`、`gpt-6-luna`、`gpt-6.1-sol`）也以同样方式路由到 `openai/<id>`。此时 Pi 会固定 `reasoning.effort`，并以 `configuration_update` 项传达所选的推理强度。较旧的 Pi 会以 `unsupported_model` 拒绝这些模型。它们需要 OpenAI API 密钥：使用 Sign in with ChatGPT 登录会被以 `unsupported_model` 拒绝，因为此时 Pi 会更改请求级推理强度，导致提示缓存未命中。在 `gpt-6-luna` 或 `gpt-6-sol` 上选择 `none` 时，也会作为请求级推理强度发送，导致提示缓存未命中。`openai-codex` 模型不会被路由。
 
 ## 环境
 
