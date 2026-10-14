@@ -451,6 +451,40 @@ describe("Anthropic Messages wire", () => {
     );
   });
 
+  it("forwards PDF document blocks unchanged, including on lineage replay", async () => {
+    const router = new ResponsesRouter({
+      selectEffort: async () => ({
+        effort: "low",
+        classifierLatencyMs: 0,
+        fallback: null,
+      }),
+    });
+    const request = {
+      signal: new AbortController().signal,
+      scope,
+      provider: "anthropic" as const,
+    };
+    const pdf = user([
+      {
+        type: "document",
+        source: {
+          type: "base64",
+          media_type: "application/pdf",
+          data: "JVBERi0xLjQK",
+        },
+        title: "State Articles.pdf",
+        cache_control: { type: "ephemeral" },
+      },
+      { type: "text", text: "summarize" },
+    ]);
+    const first = (await router.prepare(body([pdf]), request))!;
+    expect(first.body.messages).toEqual([update("low"), pdf]);
+    first.finish("completed", 200, true);
+    const history = [pdf, assistant("done"), user("next")];
+    const second = (await router.prepare(body(history), request))!;
+    expect(second.body.messages).toEqual([update("low"), ...history]);
+  });
+
   it("preserves the entire outbound prefix across un-echoed turns, tool results and retries", async () => {
     const efforts = ["low", "medium", "high", "max", "max"] as const;
     const records: Record<string, unknown>[] = [];

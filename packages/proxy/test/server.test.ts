@@ -346,6 +346,40 @@ describe("forwarding lifecycle", () => {
     expect(openai.requests).toHaveLength(0);
   });
 
+  it("forwards Anthropic PDF document blocks to the upstream unchanged", async () => {
+    const upstream = await startUpstream((_request, response) =>
+      response.end("{}"),
+    );
+    const app = await startLimitedApp(upstream.url, {
+      anthropicUpstream: { baseUrl: upstream.url, auth: { policy: "forward" } },
+    });
+    const message = {
+      role: "user",
+      content: [
+        {
+          type: "document",
+          source: {
+            type: "base64",
+            media_type: "application/pdf",
+            data: "JVBERi0xLjQK",
+          },
+          title: "State Articles.pdf",
+        },
+        { type: "text", text: "summarize" },
+      ],
+    };
+    const response = await fetch(`${app}/v1/messages`, {
+      method: "POST",
+      headers: { "x-api-key": "client-key" },
+      body: JSON.stringify({ model: "claude-opus-5-5", messages: [message] }),
+    });
+    expect(response.status).toBe(200);
+    await response.text();
+    expect(JSON.parse(upstream.requests[0]!.body).messages.at(-1)).toEqual(
+      message,
+    );
+  });
+
   it("forwards client Anthropic credentials and version only in forward mode", async () => {
     const upstream = await startUpstream((_request, response) =>
       response.end("{}"),

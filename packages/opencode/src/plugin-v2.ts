@@ -142,11 +142,9 @@ export async function setupV2(ctx: Host): Promise<() => void> {
           name: profile.name,
           package: PACKAGES[group],
           settings: { baseURL: "http://127.0.0.1:1/v1" },
-          capabilities: {
-            tools: true,
-            input: ["text", "image"],
-            output: ["text"],
-          },
+          // Text only until ctx.model.transform copies the source's capabilities,
+          // so OpenCode never sends an attachment the source may not accept.
+          capabilities: { tools: true, input: ["text"], output: ["text"] },
           variants: [],
           time: { released: 0 },
           cost: [],
@@ -216,6 +214,11 @@ export async function setupV2(ctx: Host): Promise<() => void> {
           providerID: PROVIDER_ID,
           package: source!.package ?? resolved.package,
           name: profile!.name,
+          capabilities: {
+            ...source!.capabilities,
+            input: [...source!.capabilities.input],
+            output: [...source!.capabilities.output],
+          },
           transport: "http",
           settings,
           headers: { ...resolved.headers, ...source!.headers },
