@@ -291,7 +291,10 @@ rewrite, lineage, limits, and usage observation):
 
 - `wrap.openai` and `wrap.anthropic` list existing `provider/model` source refs.
   Aliases under `reasoning-router/<profile>` inherit source model metadata and provider
-  route, headers and API-key settings. The alias pins top-level model transport
+  route, headers and API-key settings. That includes `capabilities`, which decide
+  which attachments OpenCode sends: an alias accepts PDFs or images only if its
+  source does. Until the source resolves (and if it never does), an alias
+  advertises text input and output only. The alias pins top-level model transport
   to HTTP (in addition to the provider setting) even if its source prefers
   websocket. OpenAI sources may use `@opencode/ai/providers/openai` or
   `@opencode/ai/providers/openai/responses`; Anthropic sources must use

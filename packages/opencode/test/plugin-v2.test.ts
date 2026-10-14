@@ -433,6 +433,94 @@ describe("V2 wrap aliases", () => {
     h.cleanup();
   });
 
+  const capabilities = (input: string[]) => ({
+    tools: true,
+    input,
+    output: ["text"],
+  });
+
+  it("advertises PDF input for an alias whose source accepts PDFs", async () => {
+    const source = sources();
+    source.get("claude")!.models.set(
+      "claude-opus-5-5",
+      model("claude", "claude-opus-5-5", {
+        capabilities: capabilities(["text", "image", "pdf"]),
+      }),
+    );
+    const h = await host(base, source);
+    expect(h.aliases.get("claude-opus-5-5")?.capabilities).toEqual(
+      capabilities(["text", "image", "pdf"]),
+    );
+    h.cleanup();
+  });
+
+  it("advertises neither image nor PDF input for a text-only source", async () => {
+    const source = sources();
+    source
+      .get("gw")!
+      .models.set(
+        "gpt-6-astra",
+        model("gw", "gpt-6-astra", { capabilities: capabilities(["text"]) }),
+      );
+    const h = await host(base, source);
+    expect(h.aliases.get("gpt-6-astra")?.capabilities).toEqual(
+      capabilities(["text"]),
+    );
+    h.cleanup();
+  });
+
+  it("registers text-only placeholders and keeps them for an unresolved source", async () => {
+    const h = await host({ ...base, wrap: { openai: ["absent/gpt-6-astra"] } });
+    for (const placeholder of h.registrations[0]!.models)
+      expect(placeholder.capabilities).toEqual(capabilities(["text"]));
+    expect(h.aliases.get("gpt-6-astra")?.capabilities).toEqual(
+      capabilities(["text"]),
+    );
+    h.cleanup();
+  });
+
+  it("forwards PDF parts upstream unchanged on both wires", async () => {
+    const pdf = "JVBERi0xLjQK";
+    const bodies: any[] = [];
+    mockFetch(async (request) => {
+      bodies.push(await request.json());
+      return new Response("{}");
+    });
+    const h = await host();
+    const document = {
+      type: "document",
+      source: { type: "base64", media_type: "application/pdf", data: pdf },
+      title: "State Articles.pdf",
+      cache_control: { type: "ephemeral" },
+    };
+    const claude = {
+      role: "user",
+      content: [document, { type: "text", text: "summarize" }],
+    };
+    await h.exchange(
+      { model: "claude-opus-5-5", messages: [claude] },
+      {
+        model: "claude-opus-5-5",
+        url: "https://claude.test/v1/messages",
+        headers: { "x-api-key": "tenant" },
+      },
+    );
+    const file = {
+      type: "input_file",
+      filename: "State Articles.pdf",
+      file_data: `data:application/pdf;base64,${pdf}`,
+    };
+    const openai = {
+      type: "message",
+      role: "user",
+      content: [file, { type: "input_text", text: "summarize" }],
+    };
+    await h.exchange({ ...body, input: [openai] });
+    expect(bodies[0].messages.at(-1)).toEqual(claude);
+    expect(bodies[1].input.at(-1)).toEqual(openai);
+    h.cleanup();
+  });
+
   it.each([
     ["missing", { openai: ["absent/gpt-6-astra"] }, "not found"],
     ["non-profile", { openai: ["gw/other"] }, "not found"],
