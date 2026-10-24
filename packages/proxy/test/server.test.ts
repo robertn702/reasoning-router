@@ -357,6 +357,26 @@ describe("query strings", () => {
       error: "not_found",
       message: "unknown route",
     });
+
+    // Stripping the query must not bypass the configuration gate: messages
+    // stays unrouted when no Anthropic upstream is configured.
+    const unconfigured = await startLimitedApp(openai.url, {
+      probeDependency: async () => true,
+      selectEffort: async () => ({
+        effort: "low",
+        classifierLatencyMs: 0,
+        fallback: null,
+      }),
+    });
+    const unrouted = await fetch(`${unconfigured}/v1/messages?beta=true`, {
+      method: "POST",
+      body: JSON.stringify({
+        model: "claude-opus-5-5",
+        messages: [{ role: "user", content: "hi" }],
+      }),
+    });
+    expect(unrouted.status).toBe(404);
+    expect(anthropic.requests).toHaveLength(1);
   });
 });
 
