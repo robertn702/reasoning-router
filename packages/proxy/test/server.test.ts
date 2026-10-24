@@ -211,6 +211,57 @@ describe("Host validation", () => {
   });
 });
 
+describe("query strings", () => {
+  it("routes on the path so a query string still reaches each handler", async () => {
+    const upstream = await startUpstream((_request, response) =>
+      response.end("{}"),
+    );
+    const app = await startLimitedApp(upstream.url, {
+      anthropicUpstream: { baseUrl: upstream.url, auth: { policy: "forward" } },
+      selectEffort: async () => ({
+        effort: "low",
+        classifierLatencyMs: 0,
+        fallback: null,
+      }),
+    });
+    for (const path of ["/health", "/ready", "/v1/models"]) {
+      const bare = await fetch(`${app}${path}`);
+      const queried = await fetch(`${app}${path}?client_version=1`);
+      expect([path, queried.status]).toEqual([path, bare.status]);
+      expect(await queried.json()).toEqual(await bare.json());
+    }
+    const responses = await fetch(`${app}/v1/responses?client_version=1`, {
+      method: "POST",
+      body: simpleInput,
+    });
+    expect(responses.status).toBe(200);
+    const messages = await fetch(`${app}/v1/messages?beta=true`, {
+      method: "POST",
+      body: JSON.stringify({
+        model: "claude-opus-5-5",
+        messages: [{ role: "user", content: "hi" }],
+      }),
+    });
+    expect(messages.status).toBe(200);
+    expect(upstream.requests.map((request) => request.url)).toEqual([
+      "/models",
+      "/models",
+      "/responses",
+      "/messages",
+    ]);
+  });
+
+  it("keeps the 404 for an unknown path with a query string", async () => {
+    const app = await startApp("http://127.0.0.1:1/v1");
+    const response = await fetch(`${app}/v1/unknown?client_version=1`);
+    expect(response.status).toBe(404);
+    expect(await response.json()).toEqual({
+      error: "not_found",
+      message: "unknown route",
+    });
+  });
+});
+
 async function listen(server: http.Server): Promise<string> {
   server.listen(0, "127.0.0.1");
   await once(server, "listening");
