@@ -144,6 +144,12 @@ function hasLoopbackHost(request: IncomingMessage): boolean {
   );
 }
 
+function requestPath(request: IncomingMessage): string {
+  const url = request.url ?? "";
+  const query = url.indexOf("?");
+  return query === -1 ? url : url.slice(0, query);
+}
+
 function upstreamUrl(base: string, path: string): URL {
   const normalizedBase = base.endsWith("/") ? base : `${base}/`;
   return new URL(path.replace(/^\//, ""), normalizedBase);
@@ -236,11 +242,8 @@ export function createAppServer(options: AppServerOptions): Server {
       writeJson(response, 400, { error: "invalid_host" });
       return;
     }
-    if (
-      state.draining &&
-      request.url !== "/health" &&
-      request.url !== "/ready"
-    ) {
+    const path = requestPath(request);
+    if (state.draining && path !== "/health" && path !== "/ready") {
       request.pause();
       response.setHeader("connection", "close");
       writeJson(response, 503, { error: "draining" });
@@ -262,10 +265,10 @@ export function createAppServer(options: AppServerOptions): Server {
 
     const proxied =
       (request.method === "POST" &&
-        (request.url === "/v1/responses" ||
-          (request.url === "/v1/messages" &&
+        (path === "/v1/responses" ||
+          (path === "/v1/messages" &&
             options.anthropicUpstream !== undefined))) ||
-      (request.method === "GET" && request.url === "/v1/models");
+      (request.method === "GET" && path === "/v1/models");
     if (proxied && inFlight >= (options.maxInFlight ?? 32)) {
       request.pause();
       response.setHeader("connection", "close");
@@ -320,13 +323,14 @@ async function handle(
   readinessReason: () => Promise<string | null>,
   router: ResponsesRouter,
 ): Promise<void> {
+  const path = requestPath(request);
   try {
-    if (request.method === "GET" && request.url === "/health") {
+    if (request.method === "GET" && path === "/health") {
       writeJson(response, 200, { status: "ok" });
       return;
     }
 
-    if (request.method === "GET" && request.url === "/ready") {
+    if (request.method === "GET" && path === "/ready") {
       const reason = await readinessReason();
       writeJson(
         response,
@@ -336,7 +340,7 @@ async function handle(
       return;
     }
 
-    if (request.method === "GET" && request.url === "/v1/models") {
+    if (request.method === "GET" && path === "/v1/models") {
       const outcome = await forwardUpstream(response, {
         method: "GET",
         url: upstreamUrl(options.upstreamBaseUrl, "models"),
@@ -355,11 +359,11 @@ async function handle(
 
     if (
       request.method === "POST" &&
-      (request.url === "/v1/responses" ||
-        (request.url === "/v1/messages" && options.anthropicUpstream))
+      (path === "/v1/responses" ||
+        (path === "/v1/messages" && options.anthropicUpstream))
     ) {
       const provider: Provider =
-        request.url === "/v1/messages" ? "anthropic" : "openai";
+        path === "/v1/messages" ? "anthropic" : "openai";
       const adapter = wireFor(provider);
       const baseUrl =
         provider === "anthropic"
