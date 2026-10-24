@@ -291,6 +291,75 @@ const simpleInput = JSON.stringify({
   input: [{ role: "user", content: "hi" }],
 });
 
+describe("query strings", () => {
+  it("routes every path regardless of an appended query string", async () => {
+    const openai = await startUpstream((_request, response) =>
+      response.end("{}"),
+    );
+    const anthropic = await startUpstream((_request, response) =>
+      response.end("{}"),
+    );
+    const app = await startLimitedApp(openai.url, {
+      anthropicUpstream: {
+        baseUrl: `${anthropic.url}/v1`,
+        auth: { policy: "forward" },
+      },
+      probeDependency: async () => true,
+      selectEffort: async () => ({
+        effort: "low",
+        classifierLatencyMs: 0,
+        fallback: null,
+      }),
+    });
+
+    const health = await fetch(`${app}/health?probe=1`);
+    expect(health.status).toBe(200);
+    expect(await health.json()).toEqual({ status: "ok" });
+
+    const ready = await fetch(`${app}/ready?probe=1`);
+    expect(ready.status).toBe(200);
+    expect(await ready.json()).toEqual({ status: "ready" });
+
+    const models = await fetch(`${app}/v1/models?client_version=1`);
+    expect(models.status).toBe(200);
+    await models.text();
+    expect(openai.requests.at(-1)).toMatchObject({
+      method: "GET",
+      url: "/models",
+    });
+
+    const responses = await fetch(`${app}/v1/responses?client_version=1`, {
+      method: "POST",
+      body: simpleInput,
+    });
+    expect(responses.status).toBe(200);
+    await responses.text();
+    expect(openai.requests.at(-1)).toMatchObject({
+      method: "POST",
+      url: "/responses",
+    });
+
+    const messages = await fetch(`${app}/v1/messages?beta=true`, {
+      method: "POST",
+      body: JSON.stringify({
+        model: "claude-opus-5-5",
+        messages: [{ role: "user", content: "hi" }],
+      }),
+    });
+    expect(messages.status).toBe(200);
+    await messages.text();
+    expect(anthropic.requests).toHaveLength(1);
+    expect(anthropic.requests[0]!.url).toBe("/v1/messages");
+
+    const unknown = await fetch(`${app}/v1/unknown?client_version=1`);
+    expect(unknown.status).toBe(404);
+    expect(await unknown.json()).toEqual({
+      error: "not_found",
+      message: "unknown route",
+    });
+  });
+});
+
 describe("forwarding lifecycle", () => {
   it("routes Anthropic messages with pinned effort, merged beta and isolated configured credentials", async () => {
     const openai = await startUpstream((_request, response) =>
