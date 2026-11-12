@@ -153,6 +153,21 @@ Liquid AI のホスト型判断モデル [Liquid d1](https://docs.liquid.ai/lfm/
 - `createJevClassifier`、`createJevTransport`、`createClefTransport`、`createLayaTransport`、`createKevTransport`、`resolveJevConnection`、`resolveClefConnection`、`resolveLayaConnection`、`resolveKevConnection`: 低レベルのヘルパー。
 - `ClassifierRequestError` と `Fetch` 型。トランスポートが使用します。
 
+<a id="gemini-decision-1"></a>
+## Gemini Decision 1
+
+Gemini Decision 1 は Vercel AI Gateway 経由で利用します。`provider: "gemini-decision"` と Gateway の `apiKey` を設定します。`baseUrl` は `https://ai-gateway.vercel.sh/typesafe`、`model` は `google/gemini-decision-1` がデフォルトです。他のエンドポイントやモデルは拒否されます。`timeoutMs` は既存の共有分類期限（デフォルト 4000 ms）を使います。長さに上限のあるテキスト状態のみを送ります。モックテストで API 互換性を確認しており、推論強度の選択品質は未検証です。デフォルト設定は変更しません。[契約と設定](../../docs/classifiers/gemini-decision.md)を参照してください。
+
+```ts
+classifier: {
+  provider: "gemini-decision",
+  apiKey: process.env.REASONING_ROUTER_CLASSIFIER_API_KEY,
+  timeoutMs: 4000,
+}
+```
+
+`geminiDecisionClassifierProvider`, `createGeminiDecisionTransport`, `resolveGeminiDecisionConnection`, `GeminiDecisionConnection`.
+
 ## ライセンス
 
 [MIT](LICENSE)
