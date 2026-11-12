@@ -1,6 +1,7 @@
 import type { ClassifierProvider } from "@reasoning-router/core";
 import { clefClassifierProvider } from "./clef.js";
 import { clmClassifierProvider } from "./clm.js";
+import { geminiDecisionClassifierProvider } from "./gemini-decision.js";
 import { jevClassifierProvider } from "./jev.js";
 import { kevClassifierProvider } from "./kev.js";
 import { layaClassifierProvider } from "./laya.js";
@@ -22,6 +23,12 @@ export {
   resolveClmConnection,
 } from "./clm.js";
 export { loadClassifierConfig } from "./env.js";
+export {
+  createGeminiDecisionTransport,
+  type GeminiDecisionConnection,
+  geminiDecisionClassifierProvider,
+  resolveGeminiDecisionConnection,
+} from "./gemini-decision.js";
 export {
   createJevClassifier,
   createJevTransport,
@@ -79,4 +86,5 @@ export const classifierProviders: readonly ClassifierProvider[] = [
   microsoftDecisionClassifierProvider,
   liquidClassifierProvider,
   sglangClassifierProvider,
+  geminiDecisionClassifierProvider,
 ];

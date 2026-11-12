@@ -236,6 +236,20 @@ templates with a 400, which falls back without a retry.
   lower-level helpers.
 - `ClassifierRequestError` and the `Fetch` type, used by the transports.
 
+## Gemini Decision 1
+
+Gemini Decision 1 uses Vercel AI Gateway. Set `provider: "gemini-decision"` and a Gateway `apiKey`; `baseUrl` defaults to `https://ai-gateway.vercel.sh/typesafe` and `model` to `google/gemini-decision-1`. Other endpoints and models are rejected. `timeoutMs` uses the existing shared classification deadline (4000 ms by default). Only bounded text state is sent. API compatibility is covered by mocked tests; effort-selection quality is unvalidated and defaults are unchanged. See [contract and configuration](../../docs/classifiers/gemini-decision.md).
+
+```ts
+classifier: {
+  provider: "gemini-decision",
+  apiKey: process.env.REASONING_ROUTER_CLASSIFIER_API_KEY,
+  timeoutMs: 4000,
+}
+```
+
+`geminiDecisionClassifierProvider`, `createGeminiDecisionTransport`, `resolveGeminiDecisionConnection`, `GeminiDecisionConnection`.
+
 ## License
 
 [MIT](LICENSE)

@@ -48,3 +48,12 @@ model via `wrap.anthropic` and reuses its provider's route and key.
 | `JEV_BASE_URL` | `REASONING_ROUTER_CLASSIFIER_BASE_URL` |
 | `JEV_ROUTER_<NAME>` | `REASONING_ROUTER_<NAME>` |
 | plugin `jevApiKey`, `jevBaseUrl`, `jevTimeoutMs` | plugin `classifier.apiKey`, `classifier.baseUrl`, `classifier.timeoutMs` |
+
+## Gemini Decision 1
+
+Set `REASONING_ROUTER_CLASSIFIER=gemini-decision` and put a Vercel AI Gateway
+key in `REASONING_ROUTER_CLASSIFIER_API_KEY` for the proxy or Pi. No Google
+provider key is used. The endpoint and model default to the Gateway's
+TypeSafe API and `google/gemini-decision-1`. Existing
+`REASONING_ROUTER_CLASSIFICATION_TIMEOUT_MS` applies, including retries.
+See [configuration and contract](classifiers/gemini-decision.md).

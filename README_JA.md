@@ -272,6 +272,18 @@ npm run check   # typecheck + lint + test
 
 元に戻せる設計とツールの決定事項は [docs/architecture.md](docs/architecture.md#decisions) に記録されています。
 
+<a id="gemini-decision-1"></a>
+## Gemini Decision 1
+
+Gemini Decision 1 は Vercel AI Gateway 経由で利用します。`provider: "gemini-decision"` と Gateway の `apiKey` を設定します。`baseUrl` は `https://ai-gateway.vercel.sh/typesafe`、`model` は `google/gemini-decision-1` がデフォルトです。他のエンドポイントやモデルは拒否されます。`timeoutMs` は既存の共有分類期限（デフォルト 4000 ms）を使います。長さに上限のあるテキスト状態のみを送ります。モックテストで API 互換性を確認しており、推論強度の選択品質は未検証です。デフォルト設定は変更しません。[契約と設定](docs/classifiers/gemini-decision.md)を参照してください。
+
+```bash
+export REASONING_ROUTER_CLASSIFIER=gemini-decision
+export REASONING_ROUTER_CLASSIFIER_API_KEY="$AI_GATEWAY_API_KEY"
+reasoning-router
+# Pi: pi --model reasoning-router/claude-opus-5-5
+```
+
 ## ライセンス
 
 [MIT](LICENSE)

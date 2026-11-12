@@ -379,6 +379,17 @@ See [AGENTS.md](AGENTS.md) for the full command list and repo conventions.
 Reversible design and tooling decisions are recorded in
 [docs/architecture.md](docs/architecture.md#decisions).
 
+## Gemini Decision 1
+
+Gemini Decision 1 uses Vercel AI Gateway. Set `provider: "gemini-decision"` and a Gateway `apiKey`; `baseUrl` defaults to `https://ai-gateway.vercel.sh/typesafe` and `model` to `google/gemini-decision-1`. Other endpoints and models are rejected. `timeoutMs` uses the existing shared classification deadline (4000 ms by default). Only bounded text state is sent. API compatibility is covered by mocked tests; effort-selection quality is unvalidated and defaults are unchanged. See [contract and configuration](docs/classifiers/gemini-decision.md).
+
+```bash
+export REASONING_ROUTER_CLASSIFIER=gemini-decision
+export REASONING_ROUTER_CLASSIFIER_API_KEY="$AI_GATEWAY_API_KEY"
+reasoning-router
+# Pi: pi --model reasoning-router/claude-opus-5-5
+```
+
 ## License
 
 [MIT](LICENSE)
