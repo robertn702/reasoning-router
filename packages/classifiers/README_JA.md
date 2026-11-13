@@ -141,6 +141,33 @@ Liquid AI のホスト型判断モデル [Liquid d1](https://docs.liquid.ai/lfm/
 
 `{baseUrl}/v1/systemone` を呼び出し、キーの規則は Laya と同じです（bearer トークン。空白のキーは未設定として扱われます）。SGLang は一部のサーバーとチャットテンプレートを 400 で拒否し、その場合はリトライせずにフォールバックします。
 
+<a id="gemini-decision-1"></a>
+## Gemini Decision 1
+
+Gemini Decision 1 は Vercel AI Gateway 経由で利用します。`provider: "gemini-decision"` と Gateway の `apiKey` を設定します。`baseUrl` は `https://ai-gateway.vercel.sh/typesafe`、`model` は `google/gemini-decision-1` がデフォルトです。他のエンドポイントやモデルは拒否されます。`timeoutMs` は既存の共有分類期限（デフォルト 4000 ms）を使います。長さに上限のあるテキスト状態のみを送ります。モックテストで API 互換性を確認しており、推論強度の選択品質は未検証です。デフォルト設定は変更しません。[契約と設定](../../docs/classifiers/gemini-decision.md)を参照してください。
+
+```ts
+classifier: {
+  provider: "gemini-decision",
+  apiKey: process.env.REASONING_ROUTER_CLASSIFIER_API_KEY,
+  timeoutMs: 4000,
+}
+```
+
+プロキシと Pi（通常の上流またはハーネスの認証情報を設定した後）：
+
+```bash
+export REASONING_ROUTER_CLASSIFIER=gemini-decision
+export REASONING_ROUTER_CLASSIFIER_API_KEY="$AI_GATEWAY_API_KEY"
+export REASONING_ROUTER_CLASSIFICATION_TIMEOUT_MS=4000
+reasoning-router
+# Pi: pi --model reasoning-router/claude-opus-5-5
+```
+
+OpenCode の JSON 設定では、`classifier` オプションに `"apiKey": "{env:REASONING_ROUTER_CLASSIFIER_API_KEY}"` を指定します。
+
+`geminiDecisionClassifierProvider`, `createGeminiDecisionTransport`, `resolveGeminiDecisionConnection`, `GeminiDecisionConnection`.
+
 ## エクスポート
 
 - `classifierProviders`: すべての分類器。[`@reasoning-router/core`](../core/README_JA.md) の `createConfiguredSelector` 用。

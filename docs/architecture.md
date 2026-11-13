@@ -323,3 +323,9 @@ supported path for that harness?
   models and their supported reasoning efforts, if one exists. Otherwise,
   maintain the registry as a separate package in this repo so it can be
   released more often than the core.
+
+- **Gemini Decision 1 is a `gemini-decision` preset** of the shared System One
+  transport, using Vercel AI Gateway's TypeSafe-compatible endpoint and fixed
+  `google/gemini-decision-1` model. The shared registry exposes it to the proxy,
+  OpenCode, and Pi without provider-specific core or harness code. See the
+  [verified contract](classifiers/gemini-decision.md). Defaults are unchanged.

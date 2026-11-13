@@ -141,6 +141,33 @@ Liquid AI의 호스팅형 결정 모델인 [Liquid d1](https://docs.liquid.ai/lf
 
 `{baseUrl}/v1/systemone`을 호출하며, 키 규칙은 Laya와 같습니다(bearer 토큰, 빈 키는 설정되지 않은 것으로 간주). SGLang은 일부 서버와 채팅 템플릿을 400으로 거부하며, 이 경우 재시도 없이 폴백합니다.
 
+<a id="gemini-decision-1"></a>
+## Gemini Decision 1
+
+Gemini Decision 1은 Vercel AI Gateway를 통해 사용합니다. `provider: "gemini-decision"`과 Gateway `apiKey`를 설정하세요. `baseUrl`의 기본값은 `https://ai-gateway.vercel.sh/typesafe`, `model`의 기본값은 `google/gemini-decision-1`입니다. 다른 엔드포인트와 모델은 거부됩니다. `timeoutMs`는 기존 공유 분류 기한(기본 4000 ms)을 사용합니다. 길이가 제한된 텍스트 상태만 전송합니다. 모의 테스트는 API 호환성을 확인하며 추론 수준 선택 품질은 검증되지 않았습니다. 기본 설정은 유지됩니다. [계약 및 설정](../../docs/classifiers/gemini-decision.md)을 참조하세요.
+
+```ts
+classifier: {
+  provider: "gemini-decision",
+  apiKey: process.env.REASONING_ROUTER_CLASSIFIER_API_KEY,
+  timeoutMs: 4000,
+}
+```
+
+프록시 및 Pi(일반적인 업스트림 또는 하네스 자격 증명을 설정한 후):
+
+```bash
+export REASONING_ROUTER_CLASSIFIER=gemini-decision
+export REASONING_ROUTER_CLASSIFIER_API_KEY="$AI_GATEWAY_API_KEY"
+export REASONING_ROUTER_CLASSIFICATION_TIMEOUT_MS=4000
+reasoning-router
+# Pi: pi --model reasoning-router/claude-opus-5-5
+```
+
+OpenCode JSON 설정의 `classifier` 옵션에 `"apiKey": "{env:REASONING_ROUTER_CLASSIFIER_API_KEY}"`를 사용하세요.
+
+`geminiDecisionClassifierProvider`, `createGeminiDecisionTransport`, `resolveGeminiDecisionConnection`, `GeminiDecisionConnection`.
+
 ## 내보내기(Exports)
 
 - `classifierProviders`: 모든 분류기. [`@reasoning-router/core`](../core/README_KO.md)의 `createConfiguredSelector`용.

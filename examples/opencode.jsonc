@@ -6,7 +6,8 @@
       "package": "@reasoning-router/opencode",
       "options": {
         // Classifier that picks each step's effort. For a direct TypeSafe key,
-        // delete baseUrl.
+        // delete baseUrl. For Gemini Decision 1, use provider gemini-decision
+        // with a Vercel AI Gateway key; baseUrl and model may be omitted.
         "classifier": {
           "provider": "jev",
           "apiKey": "{env:REASONING_ROUTER_CLASSIFIER_API_KEY}",

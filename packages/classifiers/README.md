@@ -213,6 +213,32 @@ Calls `{baseUrl}/v1/systemone`, with the same key rules as Laya (a bearer
 token; a blank key counts as unset). SGLang refuses some servers and chat
 templates with a 400, which falls back without a retry.
 
+## Gemini Decision 1
+
+Gemini Decision 1 uses Vercel AI Gateway. Set `provider: "gemini-decision"` and a Gateway `apiKey`; `baseUrl` defaults to `https://ai-gateway.vercel.sh/typesafe` and `model` to `google/gemini-decision-1`. Other endpoints and models are rejected. `timeoutMs` uses the existing shared classification deadline (4000 ms by default). Only bounded text state is sent. API compatibility is covered by mocked tests; effort-selection quality is unvalidated and defaults are unchanged. See [contract and configuration](../../docs/classifiers/gemini-decision.md).
+
+```ts
+classifier: {
+  provider: "gemini-decision",
+  apiKey: process.env.REASONING_ROUTER_CLASSIFIER_API_KEY,
+  timeoutMs: 4000,
+}
+```
+
+Proxy and Pi (after configuring the usual upstream or harness credentials):
+
+```bash
+export REASONING_ROUTER_CLASSIFIER=gemini-decision
+export REASONING_ROUTER_CLASSIFIER_API_KEY="$AI_GATEWAY_API_KEY"
+export REASONING_ROUTER_CLASSIFICATION_TIMEOUT_MS=4000
+reasoning-router
+# Pi: pi --model reasoning-router/claude-opus-5-5
+```
+
+For OpenCode JSON configuration, use `"apiKey": "{env:REASONING_ROUTER_CLASSIFIER_API_KEY}"` in the `classifier` option.
+
+`geminiDecisionClassifierProvider`, `createGeminiDecisionTransport`, `resolveGeminiDecisionConnection`, `GeminiDecisionConnection`.
+
 ## Exports
 
 - `classifierProviders`: every classifier, for `createConfiguredSelector` in
