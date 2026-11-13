@@ -237,6 +237,11 @@ REASONING_ROUTER_CLASSIFIER=sglang reasoning-router
 
 デフォルトのベース URL は `http://127.0.0.1:30000` です。`REASONING_ROUTER_CLASSIFIER_API_KEY` は、サーバーを `--api-key` 付きで起動している場合にのみ設定してください。固定バージョン、モデルとテンプレートの制限、およびチャットモデルの次トークンスコアと較正済みの判断チェックポイントの違いについては [docs/classifiers/sglang.md](docs/classifiers/sglang.md) を参照してください。検証したのは API の互換性のみで、推論強度の判断品質は検証していません。
 
+<a id="gemini-decision-1"></a>
+### Gemini Decision 1
+
+`provider: "gemini-decision"` を選択すると、Vercel AI Gateway 経由で Gemini Decision 1 を利用できます。設定と使い方は[分類器 README](packages/classifiers/README_JA.md#gemini-decision-1)を参照してください。長さに上限のあるテキスト状態のみを送ります。モックテストで API 互換性を確認しており、推論強度の選択品質は未検証です。既存のデフォルト設定は変更しません。
+
 <a id="supported-models"></a>
 
 ## 対応モデル
@@ -271,18 +276,6 @@ npm run check   # typecheck + lint + test
 コマンドの全一覧とリポジトリの規約については [AGENTS.md](AGENTS.md) を参照してください。
 
 元に戻せる設計とツールの決定事項は [docs/architecture.md](docs/architecture.md#decisions) に記録されています。
-
-<a id="gemini-decision-1"></a>
-## Gemini Decision 1
-
-Gemini Decision 1 は Vercel AI Gateway 経由で利用します。`provider: "gemini-decision"` と Gateway の `apiKey` を設定します。`baseUrl` は `https://ai-gateway.vercel.sh/typesafe`、`model` は `google/gemini-decision-1` がデフォルトです。他のエンドポイントやモデルは拒否されます。`timeoutMs` は既存の共有分類期限（デフォルト 4000 ms）を使います。長さに上限のあるテキスト状態のみを送ります。モックテストで API 互換性を確認しており、推論強度の選択品質は未検証です。デフォルト設定は変更しません。[契約と設定](docs/classifiers/gemini-decision.md)を参照してください。
-
-```bash
-export REASONING_ROUTER_CLASSIFIER=gemini-decision
-export REASONING_ROUTER_CLASSIFIER_API_KEY="$AI_GATEWAY_API_KEY"
-reasoning-router
-# Pi: pi --model reasoning-router/claude-opus-5-5
-```
 
 ## ライセンス
 

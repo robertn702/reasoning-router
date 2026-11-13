@@ -40,33 +40,10 @@ Gateway credential to another host. Logs remain metadata only.
 
 ## Configuration
 
-OpenCode plugin options (see [example](../../examples/opencode.jsonc)):
-
-```json
-{
-  "classifier": {
-    "provider": "gemini-decision",
-    "apiKey": "{env:REASONING_ROUTER_CLASSIFIER_API_KEY}",
-    "timeoutMs": 4000
-  }
-}
-```
-
-Proxy and Pi:
-
-```bash
-export REASONING_ROUTER_CLASSIFIER=gemini-decision
-export REASONING_ROUTER_CLASSIFIER_API_KEY="$AI_GATEWAY_API_KEY"
-export REASONING_ROUTER_CLASSIFICATION_TIMEOUT_MS=4000
-reasoning-router # with the usual upstream configuration
-# Or: pi --model reasoning-router/claude-opus-5-5
-```
-
-`baseUrl` / `REASONING_ROUTER_CLASSIFIER_BASE_URL` may be omitted or set to
-`https://ai-gateway.vercel.sh/typesafe`; `model` /
-`REASONING_ROUTER_CLASSIFIER_MODEL` may be omitted or set to
-`google/gemini-decision-1`. Other endpoints and models are rejected.
-The key is required. Existing classifier and harness defaults remain unchanged.
+See the [classifiers README](../../packages/classifiers/README.md#gemini-decision-1)
+for provider settings and OpenCode, proxy, and Pi setup. The
+[environment reference](../environment.md#classifier) describes the shared
+classifier variables and classification deadline.
 
 ## Compatibility versus quality
 

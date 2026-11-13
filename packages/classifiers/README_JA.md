@@ -141,18 +141,6 @@ Liquid AI のホスト型判断モデル [Liquid d1](https://docs.liquid.ai/lfm/
 
 `{baseUrl}/v1/systemone` を呼び出し、キーの規則は Laya と同じです（bearer トークン。空白のキーは未設定として扱われます）。SGLang は一部のサーバーとチャットテンプレートを 400 で拒否し、その場合はリトライせずにフォールバックします。
 
-## エクスポート
-
-- `classifierProviders`: すべての分類器。[`@reasoning-router/core`](../core/README_JA.md) の `createConfiguredSelector` 用。
-- `jevClassifierProvider`、`clefClassifierProvider`、`layaClassifierProvider`、`kevClassifierProvider`: 各プロバイダー。
-- `openAIDecisionsClassifierProvider`、`createOpenAIDecisionsTransport`、`resolveOpenAIDecisionsConnection`、および `OpenAIDecisionsConnection` 型。
-- `clmClassifierProvider`、`createClmTransport`、`resolveClmConnection`、および `ClmConnection` 型。
-- `microsoftDecisionClassifierProvider`、`createMicrosoftDecisionTransport`、`resolveMicrosoftDecisionConnection`、および `MicrosoftDecisionConnection` 型。
-- `liquidClassifierProvider`、`createLiquidTransport`、`resolveLiquidConnection`、および `LiquidConnection` 型。
-- `sglangClassifierProvider`、`createSglangTransport`、`resolveSglangConnection`、および `SglangConnection` 型。
-- `createJevClassifier`、`createJevTransport`、`createClefTransport`、`createLayaTransport`、`createKevTransport`、`resolveJevConnection`、`resolveClefConnection`、`resolveLayaConnection`、`resolveKevConnection`: 低レベルのヘルパー。
-- `ClassifierRequestError` と `Fetch` 型。トランスポートが使用します。
-
 <a id="gemini-decision-1"></a>
 ## Gemini Decision 1
 
@@ -166,7 +154,31 @@ classifier: {
 }
 ```
 
+プロキシと Pi（通常の上流またはハーネスの認証情報を設定した後）：
+
+```bash
+export REASONING_ROUTER_CLASSIFIER=gemini-decision
+export REASONING_ROUTER_CLASSIFIER_API_KEY="$AI_GATEWAY_API_KEY"
+export REASONING_ROUTER_CLASSIFICATION_TIMEOUT_MS=4000
+reasoning-router
+# Pi: pi --model reasoning-router/claude-opus-5-5
+```
+
+OpenCode の JSON 設定では、`classifier` オプションに `"apiKey": "{env:REASONING_ROUTER_CLASSIFIER_API_KEY}"` を指定します。
+
 `geminiDecisionClassifierProvider`, `createGeminiDecisionTransport`, `resolveGeminiDecisionConnection`, `GeminiDecisionConnection`.
+
+## エクスポート
+
+- `classifierProviders`: すべての分類器。[`@reasoning-router/core`](../core/README_JA.md) の `createConfiguredSelector` 用。
+- `jevClassifierProvider`、`clefClassifierProvider`、`layaClassifierProvider`、`kevClassifierProvider`: 各プロバイダー。
+- `openAIDecisionsClassifierProvider`、`createOpenAIDecisionsTransport`、`resolveOpenAIDecisionsConnection`、および `OpenAIDecisionsConnection` 型。
+- `clmClassifierProvider`、`createClmTransport`、`resolveClmConnection`、および `ClmConnection` 型。
+- `microsoftDecisionClassifierProvider`、`createMicrosoftDecisionTransport`、`resolveMicrosoftDecisionConnection`、および `MicrosoftDecisionConnection` 型。
+- `liquidClassifierProvider`、`createLiquidTransport`、`resolveLiquidConnection`、および `LiquidConnection` 型。
+- `sglangClassifierProvider`、`createSglangTransport`、`resolveSglangConnection`、および `SglangConnection` 型。
+- `createJevClassifier`、`createJevTransport`、`createClefTransport`、`createLayaTransport`、`createKevTransport`、`resolveJevConnection`、`resolveClefConnection`、`resolveLayaConnection`、`resolveKevConnection`: 低レベルのヘルパー。
+- `ClassifierRequestError` と `Fetch` 型。トランスポートが使用します。
 
 ## ライセンス
 

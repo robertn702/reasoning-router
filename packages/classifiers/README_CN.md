@@ -182,6 +182,33 @@ SGLang 服务器提供服务，可运行聊天模型（v0.5.21 及更高版本�
 调用 `{baseUrl}/v1/systemone`，密钥规则与 Laya 相同（bearer token；空白密钥视为未设置）。
 SGLang 会以 400 拒绝某些服务器和聊天模板，此时会回退而不重试。
 
+<a id="gemini-decision-1"></a>
+## Gemini Decision 1
+
+Gemini Decision 1 通过 Vercel AI Gateway 使用。设置 `provider: "gemini-decision"` 和 Gateway `apiKey`；`baseUrl` 默认为 `https://ai-gateway.vercel.sh/typesafe`，`model` 默认为 `google/gemini-decision-1`。不接受其他端点和模型。`timeoutMs` 使用现有的共享分类期限（默认 4000 毫秒）。仅发送有长度限制的文本状态。模拟测试覆盖 API 兼容性；推理强度选择的质量尚未验证，默认设置保持不变。参见[协议和配置](../../docs/classifiers/gemini-decision.md)。
+
+```ts
+classifier: {
+  provider: "gemini-decision",
+  apiKey: process.env.REASONING_ROUTER_CLASSIFIER_API_KEY,
+  timeoutMs: 4000,
+}
+```
+
+代理和 Pi（先配置通常所需的上游或客户端凭据）：
+
+```bash
+export REASONING_ROUTER_CLASSIFIER=gemini-decision
+export REASONING_ROUTER_CLASSIFIER_API_KEY="$AI_GATEWAY_API_KEY"
+export REASONING_ROUTER_CLASSIFICATION_TIMEOUT_MS=4000
+reasoning-router
+# Pi: pi --model reasoning-router/claude-opus-5-5
+```
+
+在 OpenCode JSON 配置的 `classifier` 选项中，使用 `"apiKey": "{env:REASONING_ROUTER_CLASSIFIER_API_KEY}"`。
+
+`geminiDecisionClassifierProvider`, `createGeminiDecisionTransport`, `resolveGeminiDecisionConnection`, `GeminiDecisionConnection`.
+
 ## 导出
 
 - `classifierProviders`：所有分类器，供 [`@reasoning-router/core`](../core/README_CN.md) 中的
@@ -202,21 +229,6 @@ SGLang 会以 400 拒绝某些服务器和聊天模板，此时会回退而不�
   `resolveClefConnection`、`resolveLayaConnection`、`resolveKevConnection`：
   较底层的辅助函数。
 - `ClassifierRequestError` 和 `Fetch` 类型，供各 transport 使用。
-
-<a id="gemini-decision-1"></a>
-## Gemini Decision 1
-
-Gemini Decision 1 通过 Vercel AI Gateway 使用。设置 `provider: "gemini-decision"` 和 Gateway `apiKey`；`baseUrl` 默认为 `https://ai-gateway.vercel.sh/typesafe`，`model` 默认为 `google/gemini-decision-1`。不接受其他端点和模型。`timeoutMs` 使用现有的共享分类期限（默认 4000 毫秒）。仅发送有长度限制的文本状态。模拟测试覆盖 API 兼容性；推理强度选择的质量尚未验证，默认设置保持不变。参见[协议和配置](../../docs/classifiers/gemini-decision.md)。
-
-```ts
-classifier: {
-  provider: "gemini-decision",
-  apiKey: process.env.REASONING_ROUTER_CLASSIFIER_API_KEY,
-  timeoutMs: 4000,
-}
-```
-
-`geminiDecisionClassifierProvider`, `createGeminiDecisionTransport`, `resolveGeminiDecisionConnection`, `GeminiDecisionConnection`.
 
 ## 许可证
 
