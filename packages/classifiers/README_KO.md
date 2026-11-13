@@ -141,18 +141,6 @@ Liquid AI의 호스팅형 결정 모델인 [Liquid d1](https://docs.liquid.ai/lf
 
 `{baseUrl}/v1/systemone`을 호출하며, 키 규칙은 Laya와 같습니다(bearer 토큰, 빈 키는 설정되지 않은 것으로 간주). SGLang은 일부 서버와 채팅 템플릿을 400으로 거부하며, 이 경우 재시도 없이 폴백합니다.
 
-## 내보내기(Exports)
-
-- `classifierProviders`: 모든 분류기. [`@reasoning-router/core`](../core/README_KO.md)의 `createConfiguredSelector`용.
-- `jevClassifierProvider`, `clefClassifierProvider`, `layaClassifierProvider`, `kevClassifierProvider`: 각 제공자.
-- `openAIDecisionsClassifierProvider`, `createOpenAIDecisionsTransport`, `resolveOpenAIDecisionsConnection`, 그리고 `OpenAIDecisionsConnection` 타입.
-- `clmClassifierProvider`, `createClmTransport`, `resolveClmConnection`, 그리고 `ClmConnection` 타입.
-- `microsoftDecisionClassifierProvider`, `createMicrosoftDecisionTransport`, `resolveMicrosoftDecisionConnection`, 그리고 `MicrosoftDecisionConnection` 타입.
-- `liquidClassifierProvider`, `createLiquidTransport`, `resolveLiquidConnection`, 그리고 `LiquidConnection` 타입.
-- `sglangClassifierProvider`, `createSglangTransport`, `resolveSglangConnection`, 그리고 `SglangConnection` 타입.
-- `createJevClassifier`, `createJevTransport`, `createClefTransport`, `createLayaTransport`, `createKevTransport`, `resolveJevConnection`, `resolveClefConnection`, `resolveLayaConnection`, `resolveKevConnection`: 저수준 헬퍼.
-- `ClassifierRequestError`와 `Fetch` 타입. 트랜스포트에서 사용합니다.
-
 <a id="gemini-decision-1"></a>
 ## Gemini Decision 1
 
@@ -166,7 +154,31 @@ classifier: {
 }
 ```
 
+프록시 및 Pi(일반적인 업스트림 또는 하네스 자격 증명을 설정한 후):
+
+```bash
+export REASONING_ROUTER_CLASSIFIER=gemini-decision
+export REASONING_ROUTER_CLASSIFIER_API_KEY="$AI_GATEWAY_API_KEY"
+export REASONING_ROUTER_CLASSIFICATION_TIMEOUT_MS=4000
+reasoning-router
+# Pi: pi --model reasoning-router/claude-opus-5-5
+```
+
+OpenCode JSON 설정의 `classifier` 옵션에 `"apiKey": "{env:REASONING_ROUTER_CLASSIFIER_API_KEY}"`를 사용하세요.
+
 `geminiDecisionClassifierProvider`, `createGeminiDecisionTransport`, `resolveGeminiDecisionConnection`, `GeminiDecisionConnection`.
+
+## 내보내기(Exports)
+
+- `classifierProviders`: 모든 분류기. [`@reasoning-router/core`](../core/README_KO.md)의 `createConfiguredSelector`용.
+- `jevClassifierProvider`, `clefClassifierProvider`, `layaClassifierProvider`, `kevClassifierProvider`: 각 제공자.
+- `openAIDecisionsClassifierProvider`, `createOpenAIDecisionsTransport`, `resolveOpenAIDecisionsConnection`, 그리고 `OpenAIDecisionsConnection` 타입.
+- `clmClassifierProvider`, `createClmTransport`, `resolveClmConnection`, 그리고 `ClmConnection` 타입.
+- `microsoftDecisionClassifierProvider`, `createMicrosoftDecisionTransport`, `resolveMicrosoftDecisionConnection`, 그리고 `MicrosoftDecisionConnection` 타입.
+- `liquidClassifierProvider`, `createLiquidTransport`, `resolveLiquidConnection`, 그리고 `LiquidConnection` 타입.
+- `sglangClassifierProvider`, `createSglangTransport`, `resolveSglangConnection`, 그리고 `SglangConnection` 타입.
+- `createJevClassifier`, `createJevTransport`, `createClefTransport`, `createLayaTransport`, `createKevTransport`, `resolveJevConnection`, `resolveClefConnection`, `resolveLayaConnection`, `resolveKevConnection`: 저수준 헬퍼.
+- `ClassifierRequestError`와 `Fetch` 타입. 트랜스포트에서 사용합니다.
 
 ## 라이선스
 
