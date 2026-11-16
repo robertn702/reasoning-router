@@ -118,6 +118,7 @@ export function createSystemOneClassifier(options: {
 }): Classifier {
   return {
     name: options.name,
+    model: options.model,
     errorCategory: (error) =>
       error instanceof ClassifierRequestError ? error.category : "unknown",
     retryAfterMs: (error) =>

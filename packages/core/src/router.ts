@@ -16,6 +16,8 @@ export interface EffortDecision {
   effort: Effort;
   /** Name of the classifier that was asked; absent for fixed efforts. */
   classifier?: string;
+  /** The classifier's requested model ID, when it has one. */
+  classifierModel?: string;
   classifierLatencyMs: number;
   fallback:
     | "classifier_timeout"
@@ -105,6 +107,7 @@ export class ResponsesRouter {
             outboundModel: model.id,
             outboundEffort: "",
             classifier: error.classifier,
+            classifierModel: error.classifierModel,
             classifierLatencyMs: error.latencyMs,
             classifierAttempts: error.attempts,
             fallback: null,
@@ -162,6 +165,7 @@ export class ResponsesRouter {
             outboundModel: rewritten.model,
             outboundEffort: decision.effort,
             classifier: decision.classifier,
+            classifierModel: decision.classifierModel,
             classifierLatencyMs: decision.classifierLatencyMs,
             fallback: decision.fallback,
             classifierErrorCategory: decision.classifierErrorCategory,

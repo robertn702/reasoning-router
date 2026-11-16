@@ -37,6 +37,7 @@ export class ClassificationFailedError extends Error {
     readonly attempts: number,
     readonly latencyMs: number,
     readonly classifier?: string,
+    readonly classifierModel?: string,
   ) {
     super("classification_failed");
   }

@@ -233,6 +233,7 @@ describe("evidence privacy under inherited debug logging", () => {
       "classifier_attempts",
       "classifier_error_category",
       "classifier_latency_ms",
+      "classifier_model",
       "effort",
       "fallback",
       "history_updates_replayed",

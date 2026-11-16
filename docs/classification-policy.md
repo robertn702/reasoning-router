@@ -21,8 +21,10 @@ selection for the same credential/model/cache context, otherwise the configured
 effort; `error` returns a local 502 `classification_failed` without starting
 upstream generation. Client cancellation always aborts and never falls back.
 
-Decision metadata includes `classifier`, `classifier_attempts` and, when falling back,
-`fallback_source` (`fixed` or `previous`). Failed closed requests emit
+Decision metadata includes `classifier`, `classifier_model`, `classifier_attempts` and, when falling back,
+`fallback_source` (`fixed` or `previous`). `classifier_model` is the classifier
+model the preset requested, omitted when the server chooses; it is not a
+verified backend build. Failed closed requests emit
 `outcome: "classification_failed"` with no selected effort. No prompt or raw
 provider error content is logged.
 

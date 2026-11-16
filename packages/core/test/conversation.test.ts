@@ -134,6 +134,74 @@ describe("createStateSelector", () => {
     });
   });
 
+  it("records the classifier model on success and on every fallback path", async () => {
+    const withModel = (classifier: Classifier): Classifier => ({
+      ...classifier,
+      model: "fake-model",
+    });
+    const select = (classifier: Classifier, timeoutMs = 1000) =>
+      createStateSelector({
+        classifier: withModel(classifier),
+        timeoutMs,
+        maxRetries: 0,
+      })({ ...args, cacheKey: null });
+
+    expect(await select(working)).toMatchObject({
+      classifierModel: "fake-model",
+      fallback: null,
+    });
+    expect(await select(failing)).toMatchObject({
+      classifierModel: "fake-model",
+      fallback: "classifier_error",
+    });
+    expect(
+      await select({ ...working, classify: async () => "bogus" }),
+    ).toMatchObject({
+      classifierModel: "fake-model",
+      fallback: "classifier_invalid_output",
+    });
+    expect(
+      await select({ ...working, classify: () => new Promise(() => {}) }, 5),
+    ).toMatchObject({
+      classifierModel: "fake-model",
+      fallback: "classifier_timeout",
+    });
+  });
+
+  it("puts the classifier model on ClassificationFailedError in error mode", async () => {
+    const select = createStateSelector({
+      classifier: { ...failing, model: "fake-model" },
+      timeoutMs: 1000,
+      maxRetries: 0,
+      fallbackMode: "error",
+    });
+    await expect(select({ ...args, cacheKey: null })).rejects.toMatchObject({
+      classifier: "fake",
+      classifierModel: "fake-model",
+    });
+  });
+
+  it("omits the classifier model when the classifier has none", async () => {
+    const ok = await createStateSelector({
+      classifier: working,
+      timeoutMs: 1000,
+    })({ ...args, cacheKey: null });
+    const fell = await createStateSelector({
+      classifier: failing,
+      timeoutMs: 1000,
+      maxRetries: 0,
+    })({ ...args, cacheKey: null });
+    expect(ok).not.toHaveProperty("classifierModel");
+    expect(fell).not.toHaveProperty("classifierModel");
+    const error = await createStateSelector({
+      classifier: failing,
+      timeoutMs: 1000,
+      maxRetries: 0,
+      fallbackMode: "error",
+    })({ ...args, cacheKey: null }).catch((caught) => caught);
+    expect(error.classifierModel).toBeUndefined();
+  });
+
   it("caches successful efforts only under a cache key", async () => {
     let classifier = working;
     const select = createStateSelector({
