@@ -28,6 +28,7 @@ const CLASSIFIER_ERROR_CATEGORIES = new Set([
 
 export interface Evidence {
   classifier?: string;
+  classifier_model?: string;
   classifier_attempts?: number;
   fallback_source?: string;
   request_id: string;
@@ -51,6 +52,7 @@ export interface Evidence {
 
 export function buildEvidence(parts: {
   classifier?: string;
+  classifierModel?: string;
   classifierAttempts?: number;
   fallbackSource?: string;
   requestId: string;
@@ -76,6 +78,9 @@ export function buildEvidence(parts: {
 
   return {
     ...(parts.classifier === undefined ? {} : { classifier: parts.classifier }),
+    ...(typeof parts.classifierModel === "string"
+      ? { classifier_model: parts.classifierModel }
+      : {}),
     ...(parts.classifierAttempts === undefined
       ? {}
       : { classifier_attempts: parts.classifierAttempts }),
@@ -128,6 +133,9 @@ export function formatDecisionEvent(
     ...(evidence.classifier === undefined
       ? {}
       : { classifier: evidence.classifier }),
+    ...(evidence.classifier_model === undefined
+      ? {}
+      : { classifier_model: evidence.classifier_model }),
     ...(evidence.classifier_attempts === undefined
       ? {}
       : { classifier_attempts: evidence.classifier_attempts }),

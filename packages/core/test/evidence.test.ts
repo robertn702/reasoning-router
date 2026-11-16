@@ -46,6 +46,28 @@ describe("local decision telemetry", () => {
     });
   });
 
+  it("records the classifier model right after the classifier, only when supplied", () => {
+    const base = {
+      requestId: "test-id",
+      outboundModel: "gpt-6-sol",
+      outboundEffort: "medium",
+      classifierLatencyMs: 1,
+      fallback: null,
+      outcome: "completed",
+      classifier: "clef",
+      classifierAttempts: 1,
+    };
+    const withModel = buildEvidence({ ...base, classifierModel: "clef-flash" });
+    expect(withModel.classifier_model).toBe("clef-flash");
+    expect(
+      Object.keys(JSON.parse(formatDecisionEvent(withModel))).slice(0, 3),
+    ).toEqual(["classifier", "classifier_model", "classifier_attempts"]);
+    const without = buildEvidence(base);
+    expect(without).not.toHaveProperty("classifier_model");
+    expect(formatEvidence(without)).not.toContain("classifier_model");
+    expect(formatDecisionEvent(without)).not.toContain("classifier_model");
+  });
+
   it("allows only fixed classifier error categories", () => {
     const base = {
       requestId: "test-id",

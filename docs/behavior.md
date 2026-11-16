@@ -166,7 +166,7 @@ Per prepared execution request the standalone proxy emits a metadata record to
 stdout; when configured, the CLI or plugin also appends a `ReasoningDecision` event containing:
 
 - `request_id`, `session`, and `turn_id` for correlation.
-- `model`, `effort`, `classifier` (the deciding provider), `classifier_latency_ms`, `fallback`, `classifier_error_category`, and
+- `model`, `effort`, `classifier` (the deciding provider), `classifier_model` (the classifier model the preset requested, omitted when the server chooses; not a verified backend build), `classifier_latency_ms`, `fallback`, `classifier_error_category`, and
   `outcome` for routing. The category is a fixed label for `classifier_error` (HTTP
   authentication, rate limit, other 4xx/5xx, connection, timeout/abort, or
   unknown); it is null for other decisions. No error messages or response bodies

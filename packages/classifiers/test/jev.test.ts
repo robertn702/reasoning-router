@@ -109,6 +109,7 @@ describe("Jev classifier", () => {
     expect(decision).toEqual({
       effort: "high",
       classifier: "jev",
+      classifierModel: "typesafe-ai/jev",
       classifierLatencyMs: expect.any(Number),
       classifierAttempts: 1,
       fallback: null,

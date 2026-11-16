@@ -60,6 +60,7 @@ export function createOpenAIDecisionsTransport(
 ): Classifier {
   return {
     name: "openai-decisions",
+    model: connection.model,
     errorCategory: (error) =>
       error instanceof ClassifierRequestError ? error.category : "unknown",
     retryAfterMs: (error) =>

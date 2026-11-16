@@ -17,11 +17,14 @@ export const resolveSglangConnection = sglang.resolve;
  */
 export const createSglangTransport = (
   connection: SglangConnection & { fetch?: Fetch },
-) =>
-  sglang.createTransport({
+) => ({
+  ...sglang.createTransport({
     ...connection,
     model: connection.model ?? "default",
-  });
+  }),
+  // `default` is a placeholder the server ignores, not a model to record.
+  model: connection.model,
+});
 
 /** Selected by `classifier: { provider: "sglang", baseUrl, apiKey, model, timeoutMs }`. */
 export const sglangClassifierProvider: ClassifierProvider = {

@@ -73,6 +73,7 @@ const openaiPhysical = (
 const classified = (effort: EffortDecision["effort"]): EffortDecision => ({
   effort,
   classifier: "fake",
+  classifierModel: "fake-model",
   classifierLatencyMs: 3,
   classifierAttempts: 1,
   fallback: null,
@@ -157,6 +158,7 @@ function policySelector(
 ) {
   const classifier: Classifier = {
     name: "fake",
+    model: "fake-model",
     async classify({ signal }) {
       if (outcome === "error") throw new Error("boom");
       if (outcome === "hang")
@@ -451,6 +453,7 @@ describe("fallback", () => {
         model: "claude-opus-5-5",
         effort: "",
         classifier: "fake",
+        classifier_model: "fake-model",
         classifier_attempts: 1,
       },
     ]);
@@ -498,6 +501,7 @@ describe("decision events", () => {
       effort: "xhigh",
       previous_effort: "low",
       classifier: "fake",
+      classifier_model: "fake-model",
       classifier_attempts: 1,
       fallback: null,
       input_tokens: 930,

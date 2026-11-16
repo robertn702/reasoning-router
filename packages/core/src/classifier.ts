@@ -26,6 +26,11 @@ export type ClassifierErrorCategory = NonNullable<
 export interface Classifier {
   /** Recorded in decision events as `classifier`. */
   readonly name: string;
+  /**
+   * Recorded in decision events as `classifier_model`. It is the requested or
+   * configured model ID, not a verified backend build; unset when the server chooses.
+   */
+  readonly model?: string;
   /** Resolves the chosen effort, or any other value when the output is unusable. */
   classify(request: {
     state: ClassifierState & { model: string };
@@ -206,6 +211,7 @@ export function createStateSelector(
             attempts,
             latency(),
             classifier.name,
+            classifier.model,
           );
         const previous =
           policy.fallbackMode !== "previous"
@@ -216,6 +222,9 @@ export function createStateSelector(
         return {
           effort: usePrevious ? previous : policy.fallbackEffort,
           classifier: classifier.name,
+          ...(classifier.model === undefined
+            ? {}
+            : { classifierModel: classifier.model }),
           classifierLatencyMs: latency(),
           classifierAttempts: attempts,
           fallbackSource: usePrevious ? "previous" : "fixed",
@@ -244,6 +253,9 @@ export function createStateSelector(
       return {
         effort,
         classifier: classifier.name,
+        ...(classifier.model === undefined
+          ? {}
+          : { classifierModel: classifier.model }),
         classifierLatencyMs: latency(),
         classifierAttempts: attempts,
         fallback: null,

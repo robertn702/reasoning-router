@@ -189,6 +189,8 @@ that Jev-specific names become provider-neutral.
 - **Logging:** the same metadata-only decision events, with Jev-specific
   names made provider-neutral (`jev_attempts` becomes `classifier_attempts`,
   `jev_timeout` becomes `classifier_timeout`) and the classifier recorded.
+  `classifier_model` is the classifier model the preset requested, omitted when
+  the server chooses; it is not a verified backend build.
 
 ## Porting
 
