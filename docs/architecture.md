@@ -157,6 +157,10 @@ that Jev-specific names become provider-neutral.
   at `{baseUrl}/v1/systemone`. It scores a chat model's next-token labels
   (v0.5.21 and later) or serves a decision checkpoint such as PPLX-Decider
   (nightly builds) ([findings](classifiers/sglang.md)).
+- **OpenRouter:** any OpenRouter decision model
+  ([#71](https://github.com/robertn702/reasoning-router/issues/71)), at
+  `https://openrouter.ai/api/alpha/decisions` with the System One request and
+  response and a bearer key.
 - **Transport:** presets share one `fetch`-based client that maps HTTP
   status and `fetch` failures to the error categories and reads
   `Retry-After`. `@typesafe-ai/sdk` is dropped; it only adds a `choice()`
@@ -168,7 +172,7 @@ that Jev-specific names become provider-neutral.
   `choice` named `effort` whose options are the target model's supported
   efforts. The answer is `answers.effort.choice`, rejected if the model does
   not support it. Laya, Kev, Clef, CLM, Microsoft-Decision-1, Liquid d1,
-  and SGLang accept the same request and response shape as Jev's
+  SGLang, and OpenRouter accept the same request and response shape as Jev's
   `system_one`, so they fit this contract; OpenAI Decisions maps the same
   state and question onto its own format.
 - **Policy:** as in `opencode-jev-router`'s
@@ -184,8 +188,9 @@ that Jev-specific names become provider-neutral.
   `classifier: { provider: "openai-decisions", apiKey, baseUrl, model, timeoutMs }`,
   `classifier: { provider: "clm", baseUrl, apiKey, model, timeoutMs }`,
   `classifier: { provider: "microsoft-decision", baseUrl, apiKey, model, timeoutMs }`,
-  `classifier: { provider: "liquid", apiKey, baseUrl, model, timeoutMs }`, or
-  `classifier: { provider: "sglang", baseUrl, apiKey, model, timeoutMs }`.
+  `classifier: { provider: "liquid", apiKey, baseUrl, model, timeoutMs }`,
+  `classifier: { provider: "sglang", baseUrl, apiKey, model, timeoutMs }`, or
+  `classifier: { provider: "openrouter", apiKey, model, timeoutMs }`.
 - **Logging:** the same metadata-only decision events, with Jev-specific
   names made provider-neutral (`jev_attempts` becomes `classifier_attempts`,
   `jev_timeout` becomes `classifier_timeout`) and the classifier recorded.
@@ -275,6 +280,11 @@ These are reversible:
 - **SGLang is its own `sglang` preset** with Laya's connection rules. Its
   default base URL is SGLang's `http://127.0.0.1:30000`. SGLang requires a
   `model` it otherwise ignores, so an unset `model` is sent as `default`.
+- **OpenRouter is one `openrouter` preset for every decision model it
+  lists**, not a preset per model. The URL is fixed (no `baseUrl`), and
+  `model` is required but checked only as a non-empty string, so new catalog
+  models need no release. It uses the alpha Decisions API because OpenRouter
+  documents `/api/v1/systemone` only for Jev.
 
 ## Open questions
 

@@ -8,6 +8,7 @@ import { layaClassifierProvider } from "./laya.js";
 import { liquidClassifierProvider } from "./liquid.js";
 import { microsoftDecisionClassifierProvider } from "./microsoft-decision.js";
 import { openAIDecisionsClassifierProvider } from "./openai-decisions.js";
+import { openRouterClassifierProvider } from "./openrouter.js";
 import { sglangClassifierProvider } from "./sglang.js";
 
 export {
@@ -68,6 +69,12 @@ export {
   resolveOpenAIDecisionsConnection,
 } from "./openai-decisions.js";
 export {
+  createOpenRouterTransport,
+  type OpenRouterConnection,
+  openRouterClassifierProvider,
+  resolveOpenRouterConnection,
+} from "./openrouter.js";
+export {
   createSglangTransport,
   resolveSglangConnection,
   type SglangConnection,
@@ -87,4 +94,5 @@ export const classifierProviders: readonly ClassifierProvider[] = [
   liquidClassifierProvider,
   sglangClassifierProvider,
   geminiDecisionClassifierProvider,
+  openRouterClassifierProvider,
 ];

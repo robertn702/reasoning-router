@@ -239,6 +239,46 @@ For OpenCode JSON configuration, use `"apiKey": "{env:REASONING_ROUTER_CLASSIFIE
 
 `geminiDecisionClassifierProvider`, `createGeminiDecisionTransport`, `resolveGeminiDecisionConnection`, `GeminiDecisionConnection`.
 
+## OpenRouter (`provider: "openrouter"`)
+
+Any [OpenRouter](https://openrouter.ai/) decision model, with one OpenRouter
+key. The catalog is at
+`https://openrouter.ai/api/v1/models?output_modalities=decisions`.
+
+| Field | Default | Purpose |
+| --- | --- | --- |
+| `apiKey` | none | OpenRouter API key. Required. |
+| `model` | none | An OpenRouter decision model ID, such as `typesafe/jev-1.13` or `cloudflare/clef`. Required. Not checked against the catalog, so new models need no release. |
+| `timeoutMs` | `4000` | Total classification budget, including retries. |
+
+The provider calls `POST https://openrouter.ai/api/alpha/decisions` with the
+System One request and a bearer key, and reads `answers.effort.choice`.
+`baseUrl` is ignored, and the optional `provider`, `trace`, `session_id`, and
+`user` fields are not sent. An unsupported or missing choice falls back as
+`classifier_invalid_output`. Error bodies are discarded. Authentication errors
+and 402 (insufficient credits) are not retried; 429 and 5xx responses retry
+within the deadline, honoring `Retry-After`. `probabilities`, `confidence`,
+and `usage` are ignored.
+
+The model ID is not checked at startup. A misspelled model ID, or an OpenRouter
+account without credits, makes every classification fail with `http_4xx`, so
+every turn falls back to the fixed effort until you fix it. Check the decision
+events for repeated `classifier_error_category: "http_4xx"`. The classifier
+state (excerpts of recent user text, assistant progress, and tool results) goes
+to OpenRouter and from there to whichever company hosts the chosen model.
+Routing and data-collection preferences come from your OpenRouter account
+settings, because the preset sends no `provider` field.
+
+The Decisions API is marked alpha. OpenRouter also serves
+`/api/v1/systemone`, but documents it only for Jev, so the provider uses the
+Decisions API, which its reference says takes any catalog decision model. The
+contract was checked against OpenRouter's Decisions API reference and Jev
+guide on 2026-10-11 (see
+[issue #71](https://github.com/robertn702/reasoning-router/issues/71)).
+Verification used mocked HTTP contract tests only; no live or authenticated
+calls were made. Effort-selection quality has not been evaluated for any
+OpenRouter model, so Jev remains the default.
+
 ## Exports
 
 - `classifierProviders`: every classifier, for `createConfiguredSelector` in
@@ -256,6 +296,8 @@ For OpenCode JSON configuration, use `"apiKey": "{env:REASONING_ROUTER_CLASSIFIE
   `resolveLiquidConnection`, and the `LiquidConnection` type.
 - `sglangClassifierProvider`, `createSglangTransport`,
   `resolveSglangConnection`, and the `SglangConnection` type.
+- `openRouterClassifierProvider`, `createOpenRouterTransport`,
+  `resolveOpenRouterConnection`, and the `OpenRouterConnection` type.
 - `createJevClassifier`, `createJevTransport`, `createClefTransport`,
   `createLayaTransport`, `createKevTransport`, `resolveJevConnection`,
   `resolveClefConnection`, `resolveLayaConnection`, `resolveKevConnection`:

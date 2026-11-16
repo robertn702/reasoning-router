@@ -168,6 +168,24 @@ OpenCode JSON 설정의 `classifier` 옵션에 `"apiKey": "{env:REASONING_ROUTER
 
 `geminiDecisionClassifierProvider`, `createGeminiDecisionTransport`, `resolveGeminiDecisionConnection`, `GeminiDecisionConnection`.
 
+<a id="openrouter-provider-openrouter"></a>
+
+## OpenRouter (`provider: "openrouter"`)
+
+OpenRouter 키 하나로 모든 [OpenRouter](https://openrouter.ai/) 결정 모델을 사용합니다. 모델 카탈로그는 `https://openrouter.ai/api/v1/models?output_modalities=decisions`에 있습니다.
+
+| 필드 | 기본값 | 용도 |
+| --- | --- | --- |
+| `apiKey` | 없음 | OpenRouter API 키. 필수. |
+| `model` | 없음 | `typesafe/jev-1.13`이나 `cloudflare/clef` 같은 OpenRouter 결정 모델 ID. 필수. 카탈로그와 대조하지 않으므로 새 모델에 새 릴리스가 필요하지 않습니다. |
+| `timeoutMs` | `4000` | 재시도를 포함한 전체 분류 시간 예산. |
+
+이 제공자는 System One 요청과 bearer 키를 함께 보내 `POST https://openrouter.ai/api/alpha/decisions`를 호출하고 `answers.effort.choice`를 읽습니다. `baseUrl`은 무시하며, 선택 사항인 `provider`, `trace`, `session_id`, `user` 필드는 보내지 않습니다. 지원되지 않거나 누락된 선택은 `classifier_invalid_output`으로 폴백합니다. 오류 본문은 버립니다. 인증 오류와 402(크레디트 부족)는 재시도하지 않으며, 429 및 5xx 응답은 `Retry-After`를 준수하면서 기한 내에서 재시도합니다. `probabilities`, `confidence`, `usage`는 무시합니다.
+
+모델 ID는 시작할 때 검증되지 않습니다. 모델 ID의 철자가 틀리거나 OpenRouter 계정에 크레디트가 없으면 모든 분류가 `http_4xx`로 실패하며, 문제를 해결할 때까지 모든 턴이 고정 추론 수준으로 폴백합니다. `ReasoningDecision` 이벤트에 `classifier_error_category: "http_4xx"`가 반복해서 기록되는지 확인하세요. 분류기 상태(최근 사용자 텍스트, 어시스턴트 진행 상황, 도구 결과의 발췌)는 OpenRouter로 전송되고, 거기서 선택한 모델을 호스팅하는 회사로 전달됩니다. 이 프리셋은 `provider` 필드를 보내지 않으므로 라우팅과 데이터 수집 설정은 OpenRouter 계정 설정을 따릅니다.
+
+Decisions API는 alpha로 표시되어 있습니다. OpenRouter는 `/api/v1/systemone`도 제공하지만 Jev에 대해서만 문서화되어 있으므로, 이 제공자는 참조 문서상 카탈로그의 모든 결정 모델을 받는 Decisions API를 사용합니다. 이 계약은 2026-10-11에 OpenRouter의 Decisions API 참조와 Jev 가이드와 대조해 확인했습니다([issue #71](https://github.com/robertn702/reasoning-router/issues/71) 참조). 검증에는 모킹된 HTTP 계약 테스트만 사용했으며, 실제 호출이나 인증된 호출은 수행하지 않았습니다. 어떤 OpenRouter 모델에 대해서도 추론 수준 선택 품질은 평가하지 않았으므로 기본값은 계속 Jev입니다.
+
 ## 내보내기(Exports)
 
 - `classifierProviders`: 모든 분류기. [`@reasoning-router/core`](../core/README_KO.md)의 `createConfiguredSelector`용.
@@ -177,6 +195,7 @@ OpenCode JSON 설정의 `classifier` 옵션에 `"apiKey": "{env:REASONING_ROUTER
 - `microsoftDecisionClassifierProvider`, `createMicrosoftDecisionTransport`, `resolveMicrosoftDecisionConnection`, 그리고 `MicrosoftDecisionConnection` 타입.
 - `liquidClassifierProvider`, `createLiquidTransport`, `resolveLiquidConnection`, 그리고 `LiquidConnection` 타입.
 - `sglangClassifierProvider`, `createSglangTransport`, `resolveSglangConnection`, 그리고 `SglangConnection` 타입.
+- `openRouterClassifierProvider`, `createOpenRouterTransport`, `resolveOpenRouterConnection`, 그리고 `OpenRouterConnection` 타입.
 - `createJevClassifier`, `createJevTransport`, `createClefTransport`, `createLayaTransport`, `createKevTransport`, `resolveJevConnection`, `resolveClefConnection`, `resolveLayaConnection`, `resolveKevConnection`: 저수준 헬퍼.
 - `ClassifierRequestError`와 `Fetch` 타입. 트랜스포트에서 사용합니다.
 
