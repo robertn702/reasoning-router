@@ -1,5 +1,17 @@
 # @reasoning-router/proxy
 
+## 0.1.9
+
+### Patch Changes
+
+- 9a6c5fc: Add the opt-in `gemini-decision` classifier preset for `google/gemini-decision-1`
+  through Vercel AI Gateway's TypeSafe API, using a Gateway key and the existing
+  classification deadline, retries, cancellation, and fallback policy. Defaults
+  are unchanged; API compatibility is tested with mocked HTTP, while effort-selection
+  quality and paid inference remain unevaluated.
+- Updated dependencies [9a6c5fc]
+  - @reasoning-router/classifiers@0.7.0
+
 ## 0.1.8
 
 ### Patch Changes
