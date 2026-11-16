@@ -260,6 +260,15 @@ and 402 (insufficient credits) are not retried; 429 and 5xx responses retry
 within the deadline, honoring `Retry-After`. `probabilities`, `confidence`,
 and `usage` are ignored.
 
+The model ID is not checked at startup. A misspelled model ID, or an OpenRouter
+account without credits, makes every classification fail with `http_4xx`, so
+every turn falls back to the fixed effort until you fix it. Check the decision
+events for repeated `classifier_error_category: "http_4xx"`. The classifier
+state (excerpts of recent user text, assistant progress, and tool results) goes
+to OpenRouter and from there to whichever company hosts the chosen model.
+Routing and data-collection preferences come from your OpenRouter account
+settings, because the preset sends no `provider` field.
+
 The Decisions API is marked alpha. OpenRouter also serves
 `/api/v1/systemone`, but documents it only for Jev, so the provider uses the
 Decisions API, which its reference says takes any catalog decision model. The

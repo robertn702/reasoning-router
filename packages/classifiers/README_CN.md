@@ -227,6 +227,12 @@ reasoning-router
 认证错误和 402（额度不足）不会重试；429 和 5xx 响应会在截止时间内重试，并遵循 `Retry-After`。
 `probabilities`、`confidence` 和 `usage` 会被忽略。
 
+启动时不会检查模型 ID。模型 ID 拼写错误，或 OpenRouter 账户没有额度，都会使每次分类以
+`http_4xx` 失败，因此每一轮都会回退到固定的推理强度，直到问题修复。请在 `ReasoningDecision` 事件中查看是否反复出现
+`classifier_error_category: "http_4xx"`。分类器状态（近期用户文本、助手进展和工具结果的摘录）会发送到
+OpenRouter，再由 OpenRouter 转发给托管所选模型的公司。由于该预设不发送 `provider` 字段，路由和数据收集偏好
+取决于你的 OpenRouter 账户设置。
+
 Decisions API 标记为 alpha。OpenRouter 也提供 `/api/v1/systemone`，但仅为 Jev 提供了文档，
 因此该提供方使用 Decisions API；其参考文档说明它接受目录中的任意决策模型。
 该契约已于 2026-10-11 对照 OpenRouter 的 Decisions API 参考和 Jev 指南核对过（请参阅

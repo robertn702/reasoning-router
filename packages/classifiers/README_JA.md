@@ -182,6 +182,8 @@ OpenCode の JSON 設定では、`classifier` オプションに `"apiKey": "{en
 
 このプロバイダーは、System One リクエストと bearer キーを付けて `POST https://openrouter.ai/api/alpha/decisions` を呼び出し、`answers.effort.choice` を読み取ります。`baseUrl` は無視され、省略可能な `provider`、`trace`、`session_id`、`user` フィールドは送信しません。未サポートまたは欠落した選択は `classifier_invalid_output` としてフォールバックします。エラーボディは破棄されます。認証エラーと 402（クレジット不足）はリトライされません。429 と 5xx のレスポンスは、`Retry-After` を尊重しつつ、期限内でリトライされます。`probabilities`、`confidence`、`usage` は無視されます。
 
+モデル ID は起動時に検証されません。モデル ID のつづりが間違っている場合や、OpenRouter アカウントにクレジットがない場合は、すべての分類が `http_4xx` で失敗し、修正するまですべてのターンが固定の推論強度にフォールバックします。`ReasoningDecision` イベントに `classifier_error_category: "http_4xx"` が繰り返し記録されていないか確認してください。分類器の状態（直近のユーザーテキスト、アシスタントの進捗、ツール結果の抜粋）は OpenRouter に送られ、そこから選んだモデルをホストする会社に渡されます。このプリセットは `provider` フィールドを送信しないため、ルーティングとデータ収集の設定は OpenRouter のアカウント設定に従います。
+
 Decisions API は alpha とされています。OpenRouter は `/api/v1/systemone` も提供していますが、ドキュメントがあるのは Jev のみのため、このプロバイダーは、リファレンスでカタログ内の任意の判断モデルを受け付けるとされている Decisions API を使用します。このコントラクトは 2026-10-11 に OpenRouter の Decisions API リファレンスと Jev ガイドと照合して確認しました（[issue #71](https://github.com/robertn702/reasoning-router/issues/71) を参照）。検証にはモックした HTTP コントラクトテストのみを使用し、実環境での、または認証付きの呼び出しは行っていません。どの OpenRouter モデルについても推論強度の選択品質は評価していないため、デフォルトは引き続き Jev です。
 
 ## エクスポート
