@@ -1,5 +1,14 @@
 # @reasoning-router/proxy
 
+## 0.1.10
+
+### Patch Changes
+
+- e723936: Decision events now record the classifier model as `classifier_model` (the model the preset requested, omitted when the server chooses), alongside `classifier`.
+- Updated dependencies [e723936]
+  - @reasoning-router/core@0.3.0
+  - @reasoning-router/classifiers@0.8.0
+
 ## 0.1.9
 
 ### Patch Changes
