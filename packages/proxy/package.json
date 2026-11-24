@@ -1,6 +1,6 @@
 {
   "name": "@reasoning-router/proxy",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "description": "Standalone adaptive reasoning effort proxy for Responses and Messages API clients",
   "type": "module",
   "license": "MIT",
@@ -33,7 +33,7 @@
   },
   "dependencies": {
     "@reasoning-router/classifiers": "^0.8.0",
-    "@reasoning-router/core": "^0.3.0",
+    "@reasoning-router/core": "^0.3.1",
     "zod": "^4.6.5"
   }
 }
