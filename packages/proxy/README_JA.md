@@ -63,7 +63,7 @@ wire_api = "responses"
 Codex は認証情報を送信しません。プロキシが `REASONING_ROUTER_UPSTREAM_API_KEY` を付与します（`REASONING_ROUTER_UPSTREAM_AUTH=bearer`）。プロキシは HTTP のみを提供するため、`supports_websockets` は未設定のままにしてください。
 
 - 実際のモデル ID を使ってください。Codex はモデルのメタデータを名前で参照し、プロキシにはエイリアスがないため、`astra-rr` のような独自の名前では Codex が汎用メタデータを使い、プロキシからローカルで `400` が返されます。
-- `gpt-6-astra`、`gpt-6-luna`、`gpt-6-sol`、`gpt-6.1-sol` を使用してください。それ以外のモデルはローカルで `400` になります。
+- `gpt-6-astra`、`gpt-6-luna`、`gpt-6-sol`、`gpt-6.1-sol`、`gpt-6.2-sol` を使用してください。それ以外のモデルはローカルで `400` になります。
 - 推論強度は分類器が選びます。Codex の `model_reasoning_effort` と `/model` の推論強度は、Codex 上には表示されますが無視されます。
 - プロキシは、60 秒間データがないアップストリームのストリームを閉じます。長いターンが途中で切れる場合は、`REASONING_ROUTER_UPSTREAM_IDLE_TIMEOUT_MS` を引き上げてください。
 

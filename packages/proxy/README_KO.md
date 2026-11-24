@@ -62,7 +62,7 @@ wire_api = "responses"
 Codex는 자격 증명을 보내지 않으며, 프록시가 `REASONING_ROUTER_UPSTREAM_API_KEY`를 추가합니다(`REASONING_ROUTER_UPSTREAM_AUTH=bearer`). 프록시는 HTTP만 제공하므로 `supports_websockets`는 설정하지 마세요.
 
 - 실제 모델 ID를 사용하세요. Codex는 모델 메타데이터를 이름으로 읽고 프록시에는 별칭이 없으므로, `astra-rr` 같은 임의의 이름을 쓰면 Codex는 일반 메타데이터를 사용하고 프록시는 로컬에서 `400`을 반환합니다.
-- `gpt-6-astra`, `gpt-6-luna`, `gpt-6-sol`, `gpt-6.1-sol`을 사용하세요. 다른 모델은 로컬에서 `400`을 받습니다.
+- `gpt-6-astra`, `gpt-6-luna`, `gpt-6-sol`, `gpt-6.1-sol`, `gpt-6.2-sol`을 사용하세요. 다른 모델은 로컬에서 `400`을 받습니다.
 - 추론 수준은 분류기가 선택합니다. Codex의 `model_reasoning_effort`와 `/model` 추론 수준은 Codex가 계속 표시하더라도 무시됩니다.
 - 프록시는 60초 동안 데이터가 없으면 업스트림 스트림을 닫습니다. 긴 턴이 중간에 끊기면 `REASONING_ROUTER_UPSTREAM_IDLE_TIMEOUT_MS`를 늘리세요.
 

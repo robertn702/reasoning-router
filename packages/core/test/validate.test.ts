@@ -194,6 +194,31 @@ describe("validateResponsesRequest", () => {
     }
   });
 
+  it("rejects none on gpt-6.2-sol, which supports low through max", () => {
+    const model = findModel("gpt-6.2-sol")!;
+    expect(model.supportedEfforts).toEqual([
+      "low",
+      "medium",
+      "high",
+      "xhigh",
+      "max",
+    ]);
+    expect(model.defaultBaseEffort).toBe("medium");
+    expect(() =>
+      validate(
+        {
+          model: "gpt-6.2-sol",
+          input: [
+            { type: "configuration_update", reasoning: { effort: "none" } },
+          ],
+        },
+        model,
+      ),
+    ).toThrow(
+      "request.input[0] configuration_update supports only reasoning.effort valid for request.model",
+    );
+  });
+
   it("rejects a non-object reasoning value", () => {
     expect(() =>
       validateResponsesRequest({

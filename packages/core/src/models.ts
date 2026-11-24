@@ -70,6 +70,13 @@ export const MODELS: readonly ModelProfile[] = Object.freeze([
     "xhigh",
     "max",
   ]),
+  profile("gpt-6.2-sol", "GPT-6.2 Sol", [
+    "low",
+    "medium",
+    "high",
+    "xhigh",
+    "max",
+  ]),
   profile(
     "claude-fable-5-1",
     "Claude Fable 5.1",
