@@ -87,8 +87,8 @@ Leave `supports_websockets` unset, since the proxy serves HTTP only.
 - Keep the real model ID. Codex reads model metadata by name, and the proxy
   has no aliases, so a made-up name like `astra-rr` would get generic
   metadata from Codex and a local `400` from the proxy.
-- Use `gpt-6-astra`, `gpt-6-luna`, `gpt-6-sol`, or `gpt-6.1-sol`. Other models
-  get a local `400`.
+- Use `gpt-6-astra`, `gpt-6-luna`, `gpt-6-sol`, `gpt-6.1-sol`, or
+  `gpt-6.2-sol`. Other models get a local `400`.
 - The classifier picks the effort. Codex's `model_reasoning_effort` and
   `/model` effort are ignored, though Codex still displays them.
 - The proxy closes an upstream stream after 60 seconds without data. Raise

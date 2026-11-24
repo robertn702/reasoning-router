@@ -70,7 +70,7 @@ Codex 不发送任何凭据；代理会添加 `REASONING_ROUTER_UPSTREAM_API_KEY
 （`REASONING_ROUTER_UPSTREAM_AUTH=bearer`）。请不要设置 `supports_websockets`，因为代理只提供 HTTP 服务。
 
 - 请使用真实的模型 ID。Codex 按名称读取模型元数据，而代理没有别名，因此像 `astra-rr` 这样自编的名称会让 Codex 使用通用元数据，并让代理在本地返回 `400`。
-- 使用 `gpt-6-astra`、`gpt-6-luna`、`gpt-6-sol` 或 `gpt-6.1-sol`。其他模型会在本地得到 `400`。
+- 使用 `gpt-6-astra`、`gpt-6-luna`、`gpt-6-sol`、`gpt-6.1-sol` 或 `gpt-6.2-sol`。其他模型会在本地得到 `400`。
 - 由分类器选择强度。Codex 的 `model_reasoning_effort` 和 `/model` 强度会被忽略，尽管 Codex 仍会显示它们。
 - 代理会在上游流 60 秒没有数据后将其关闭。如果较长的轮次被截断，请调高
   `REASONING_ROUTER_UPSTREAM_IDLE_TIMEOUT_MS`。

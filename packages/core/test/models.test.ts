@@ -59,6 +59,7 @@ describe("registered model isolation", () => {
       "gpt-6-luna",
       "gpt-6-sol",
       "gpt-6.1-sol",
+      "gpt-6.2-sol",
     ]);
     expect(
       modelsFor("anthropic").map((model) => [
