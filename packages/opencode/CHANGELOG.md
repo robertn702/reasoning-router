@@ -1,5 +1,13 @@
 # @reasoning-router/opencode
 
+## 0.1.12
+
+### Patch Changes
+
+- f342ad8: Register `gpt-6.2-sol` (efforts low through max, base effort medium), so the OpenCode plugin and the proxy accept it on `/v1/responses` instead of returning a local `400`.
+- Updated dependencies [f342ad8]
+  - @reasoning-router/core@0.3.1
+
 ## 0.1.11
 
 ### Patch Changes

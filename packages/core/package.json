@@ -1,6 +1,6 @@
 {
   "name": "@reasoning-router/core",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Classifier- and harness-independent per-step reasoning effort routing: validation, cache-preserving rewrite, lineage, forwarding, and decision logging",
   "type": "module",
   "license": "MIT",
